@@ -70,12 +70,11 @@ SonarPractice is a passion project that was created over countless hours after w
 If the program helps you reach your goals on your instrument faster,
 I’d appreciate a small contribution:
 
-[https://buymeacoffee.com/sonarpractice]
- – Quickly and easily buy me a cup of coffee.
+[Quickly and easily buy me a cup of coffee.](https://buymeacoffee.com/sonarpractice)
 
-[paypal.me/SandyMarkoKnauer739] – Direct support for further development.
+[Direct support for further development.](paypal.me/SandyMarkoKnauer739)
 
 Thank you very much for your support!
 
-[README_de.md] German Version
+[README_de.md (German Vesion)](README_de.md)
 

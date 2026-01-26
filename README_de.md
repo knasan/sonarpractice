@@ -72,10 +72,10 @@ Wenn dir das Programm hilft, deine Ziele am Instrument schneller zu erreichen,
 
 freue ich mich über eine kleine Unterstützung:
 
-[https://buymeacoffee.com/sonarpractice] – Schnell und unkompliziert eine Tasse Kaffee spendieren.
+[Schnell und unkompliziert eine Tasse Kaffee spendieren.](https://buymeacoffee.com/sonarpractice)
 
-[paypal.me/SandyMarkoKnauer739] – Direkte Unterstützung für die Weiterentwicklung.
+[Direkte Unterstützung für die Weiterentwicklung.](paypal.me/SandyMarkoKnauer739)
 
 Vielen Dank für deine Unterstützung!
 
-[README.md] English version
+[README.md (english Version)](README.md)
