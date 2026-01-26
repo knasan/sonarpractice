@@ -1,11 +1,12 @@
 # SonarPractice (Alpha)
 
+Organisieren Sie Ihr Repertoire und verfolgen Sie Ihre Übungsfortschritte mit SonarPractice – entwickelt von einem Musiker für Musiker.
+
 ## Hintergrund & Motivation
 
 SonarPractice entstand aus einer ganz persönlichen Notwendigkeit heraus. Als Musiker suchte ich nach einer effizienten Möglichkeit, mein Repertoire zu organisieren und meinen Übungsfortschritt systematisch zu dokumentieren.
 
 Papier ist geduldig, aber unflexibel. Tabellenkalkulationen erwiesen sich als zu aufwändig und im Übungsalltag schlicht unkomfortabel. Da keine passende Software existierte, die meine Anforderungen an Performance und Struktur erfüllte, habe ich SonarPractice entwickelt.
-
 
 ## Key Features
 
@@ -28,7 +29,6 @@ Papier ist geduldig, aber unflexibel. Tabellenkalkulationen erwiesen sich als zu
 - Datenbank: SQLite 3 mit optimierten Indizes für schnellen Datenzugriff auch bei großen Beständen.
 
 - Architektur: Durchgängiges Model/View-Pattern zur Trennung von Daten und Darstellung.
-
 
 ### Build-Anleitung
 
@@ -77,3 +77,5 @@ freue ich mich über eine kleine Unterstützung:
 [paypal.me/SandyMarkoKnauer739] – Direkte Unterstützung für die Weiterentwicklung.
 
 Vielen Dank für deine Unterstützung!
+
+[README.md] English version
