@@ -17,8 +17,8 @@
 #include <QVBoxLayout>
 
 /**
- * @brief Konstruktor der MappingPage.
- * Erstellt die UI-Struktur, initialisiert Trees und verbindet Signale.
+ * @brief Constructor of the MappingPage.
+ * Creates the UI structure, initializes trees, and connects signals.
  */
 MappingPage::MappingPage(QWidget *parent) : BasePage(parent) {
     setTitle(tr("Organizing and structuring data"));
@@ -46,8 +46,8 @@ MappingPage::MappingPage(QWidget *parent) : BasePage(parent) {
     auto *infoLabel = new QLabel(this);
 
     infoLabel->setText(tr("<b>Instructions:</b><br>"
-                          "1. Create groups on the right for your structure.<br>"
-                          "2. Select files on the left and drag them into a group using <b>&gt;</b>."));
+                          "1. Create folders for your structure on the right-hand side.<br>"
+                          "2. Select files on the left and drag them into a folder using <b>&gt;</b>."));
     infoLabel->setWordWrap(true);
     styleInfoLabel(infoLabel);
     layout->addWidget(infoLabel);
@@ -219,7 +219,7 @@ bool MappingPage::eventFilter(QObject *obj, QEvent *event) {
             // Keep the focus in the field so the user can continue typing.
             searchLineEdit_m->selectAll();
 
-            // qDebug() << "Enter für Suche konsumiert - Next-Button blockiert";
+            // qDebug() << "Enter is used for search - Next button is blocked";
 
             return true; // IMPORTANT: If Qt says "Event complete", it does not pass to the Wizard!
         }
@@ -363,7 +363,7 @@ void MappingPage::unmapItem() {
             targetParentForReturn = reconstructPathInSource(fullPath);
         }
 
-        // Deep Copy (kopiert Dateien oder ganze Ordner-Bäume)
+        // Deep Copy (copies files or entire folder trees)
         QStandardItem *returnItem = deepCopyItem(item);
         targetParentForReturn->appendRow(returnItem);
 
@@ -473,7 +473,10 @@ bool MappingPage::validatePage() {
                                            "Do you want to continue?").arg(remaining),
                                         QMessageBox::Yes | QMessageBox::No);
 
-        return (res == QMessageBox::Yes);
+        auto ok = (res == QMessageBox::Yes);
+        if (!ok) {
+            return ok;
+        }
     }
 
     this->setEnabled(false);
@@ -513,7 +516,7 @@ bool MappingPage::validatePage() {
                                      tr("No files were selected for import. Continue?")) == QMessageBox::Yes;
     }
 
-    // Falls noch eine alte .tmp Leiche existiert, weg damit
+    // If an old .tmp file still exists, delete it.
     if (QFile::exists(tempDbPath)) QFile::remove(tempDbPath);
 
     // Connection to temporary database & table creation

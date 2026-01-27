@@ -36,7 +36,8 @@ SonarLessonPage::SonarLessonPage(QWidget * parent, DatabaseManager *dbManager) :
 
     // Initials Stand load (first song, today)
     if (songSelector_m->count() > 0) {
-        int firstSongId = songSelector_m->currentData().toInt();
+        qDebug() << "SonarLessionPage load firstSongId: " << songSelector_m->currentData(FileIdRole);
+        int firstSongId = songSelector_m->currentData(FileIdRole).toInt();
         loadJournalForDay(firstSongId, calendar_m->selectedDate());
         loadTableDataForDay(firstSongId, calendar_m->selectedDate());
     }
@@ -251,7 +252,7 @@ void SonarLessonPage::setupUI() {
 
 // The logic: Check files and activate icons.
 void SonarLessonPage::onSongChanged(int index) {
-    if (index <= 0 || isLoading_m || !dbManager_m) {
+    if (index < 0 || isLoading_m || !dbManager_m) {
         currentSongPath_m.clear();
         currentFileId_m = -1;
         updateButtonState();
@@ -260,13 +261,9 @@ void SonarLessonPage::onSongChanged(int index) {
 
     isLoading_m = true;
 
-    currentFileId_m = songSelector_m->itemData(index, FileIdRole).toInt();
-    qDebug() << "currentFileId : " << currentFileId_m;
-    qDebug() << "with func getCurrentSongId: " << getCurrentSongId();
-    qDebug() << "--------------------------------------------------------";
+    currentFileId_m = getCurrentSongId();
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
-
-    // qDebug() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
+    qDebug() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
     if (currentFileId_m > 0) {
@@ -281,9 +278,13 @@ void SonarLessonPage::onSongChanged(int index) {
 
     for (const auto &file : std::as_const(related)) {
         QString ext = QFileInfo(file.fileName).suffix().toLower();
-        if (FileUtils::getPdfFormats().contains("*." + ext)) pdfFiles.append(file);
-        else if (FileUtils::getVideoFormats().contains("*." + ext)) videoFiles.append(file);
-        else if (FileUtils::getAudioFormats().contains("*." + ext)) audioFiles.append(file);
+
+        DatabaseManager::RelatedFile correctedFile = file;
+        correctedFile.relativePath = QDir::cleanPath(dbManager_m->getManagedPath() + "/" + file.fileName);
+
+        if (FileUtils::getPdfFormats().contains("*." + ext)) pdfFiles.append(correctedFile);
+        else if (FileUtils::getVideoFormats().contains("*." + ext)) videoFiles.append(correctedFile);
+        else if (FileUtils::getAudioFormats().contains("*." + ext)) audioFiles.append(correctedFile);
     }
 
     // Helper function for filling in the buttons
@@ -295,7 +296,6 @@ void SonarLessonPage::onSongChanged(int index) {
 }
 
 void SonarLessonPage::setupResourceButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files) {
-     qDebug() << "[SonarLessonPage] setupResourceButton START";
     if (btn->menu()) {
         btn->menu()->deleteLater();
         btn->setMenu(nullptr);
@@ -324,14 +324,18 @@ void SonarLessonPage::setupResourceButton(QPushButton *btn, const QList<Database
         for (const auto &file : files) {
             QString cleanName = QFileInfo(file.fileName).baseName();
             QAction *action = menu->addAction(cleanName);
-            QString fullPath = QDir::cleanPath(dbManager_m->getManagedPath() + "/" + file.relativePath);
+            QString fullPath = QDir::cleanPath(file.relativePath);
+
+            // qDebug() << "[SonarLessonPage] setupResourceButton - file.fileName: " << file.fileName;
+            // qDebug() << "[SonarLessonPage] setupResourceButton - file.relativePath: " << file.relativePath;
 
             // FIX for the Windows "Drive Letter" error (removes the leading / before F:/)
-            if (fullPath.startsWith("/") && fullPath.contains(":/")) {
-                fullPath.remove(0, 1);
-            }
+            // if (fullPath.startsWith("/") && fullPath.contains(":/")) {
+            //     fullPath.remove(0, 1);
+            // }
 
             connect(action, &QAction::triggered, this, [this, fullPath]() {
+                qDebug() << "[SonarLessonPage] setupResourceButton - fullPath: " << fullPath;
                 UIHelper::openFileWithFeedback(this, fullPath);
             });
         }
@@ -343,7 +347,6 @@ void SonarLessonPage::loadData() {
     if (!dbManager_m) return;
 
     isLoading_m = true;
-    // qDebug() << "[SonarLessonPage] loadData SART";
 
     songSelector_m->clear();
     QSqlQuery query;
@@ -351,7 +354,7 @@ void SonarLessonPage::loadData() {
     QString sql = "SELECT DISTINCT "
                   "mf.song_id, "
                   "s.title, "
-                  "mf.file_path, "        // Der Pfad kommt aus media_files (mf)
+                  "mf.file_path, "
                   "a.name AS artist_name, "
                   "t.name AS tuning_name "
                   "FROM songs s "
@@ -399,12 +402,12 @@ void SonarLessonPage::showEvent(QShowEvent *event) {
     loadData(); // Reload the ComboBox
     // Update icons if a song is selected
     if (songSelector_m->currentIndex() != -1) {
-        onSongChanged(songSelector_m->currentIndex());
+        // onSongChanged(songSelector_m->currentIndex());
+        onSongChanged(getCurrentSongId());
     }
 }
 
 void SonarLessonPage::onSaveClicked() {
-    qDebug() << "[SonarLessonPage] onSaveClicked START";
     int songId = getCurrentSongId();
     if (songId <= 0) {
         qDebug() << "[SonarLessonPage] onSaveClicked wrong songId: " << songId;
@@ -477,7 +480,6 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 
     // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
-    qDebug() << "dailyNote: " << dailyNote;
     notesEdit_m->setPlainText(dailyNote);
 
     if (!dailyNote.isEmpty()) {
@@ -552,15 +554,15 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
     if (songId <= 0) return;
     isLoading_m = true;
 
-    // 1. Daten holen
+    // Retrieve data
     QList<PracticeSession> sessions = dbManager_m->getSessionsForDay(songId, date);
 
-    // 2. Tabelle vorbereiten:
-    // Wir setzen die Zeilenzahl exakt auf die Anzahl der Sessions + 1 Puffer-Zeile
+    // Prepare table:
+    // Set the number of rows exactly to the number of sessions + 1 buffer row.
     sessionTable_m->setRowCount(sessions.size() + 1);
     sessionTable_m->clearContents();
 
-    // 3. Daten befüllen
+    // Fill in data
     for (int i = 0; i < sessions.size(); ++i) {
         const auto& s = sessions.at(i);
         sessionTable_m->setItem(i, 0, new QTableWidgetItem(QString::number(s.startBar)));

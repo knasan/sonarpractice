@@ -37,6 +37,7 @@ public:
         QMap<QString, qlonglong> createdSongs;
 
         for (const auto &task : tasks) {
+            count++;
             try {
                 // qDebug() << "executeImport task: categoryPath: " << task.categoryPath;
                 // qDebug() << "executeImport task: relativePath: " << task.relativePath;
@@ -62,22 +63,25 @@ public:
                     finalDest = task.sourcePath;
                 }
 
+                emit progressUpdated(count);
+
+                // --- Progress ---
+                if (count % 20 == 0) {
+                    QCoreApplication::processEvents();
+                }
+
                 // --- Database logic (DRY & grouping) ---
-                QString baseName = QFileInfo(task.sourcePath).baseName();
+                QString filePath = QFileInfo(task.sourcePath).fileName();
                 qlonglong songId;
 
-                if (!createdSongs.contains(baseName)) {
-                    // First, resolve (or create) the category ID from the path
-                    // task.categoryPath contains, for example, "Rock/Classic"
+                auto it = createdSongs.find(filePath);
+                if (it == createdSongs.end()) {
                     qlonglong catId = DatabaseManager::instance().getOrCreateCategoryRecursive(task.categoryPath);
-
-                    // Create a new song - ENTER THE CAT ID HERE
-                    songId = DatabaseManager::instance().createSong(baseName, catId);
-
+                    songId = DatabaseManager::instance().createSong(filePath, catId);
                     if (songId == -1) throw std::runtime_error("DB Song Error");
-                    createdSongs.insert(baseName, songId);
+                    createdSongs.insert(filePath, songId);
                 } else {
-                    songId = createdSongs[baseName];
+                    songId = it.value();
                 }
 
                 // Attach the file to the (new or existing) song
@@ -89,14 +93,7 @@ public:
                     task.fileSize
                     );
 
-                if (!ok) [[unlikely]] throw std::runtime_error("DB Media Fehler bei: " + task.itemName.toStdString());
-
-                emit progressUpdated(count);
-
-                // --- Progress ---
-                if (count % 20 == 0) {
-                    QCoreApplication::processEvents();
-                }
+                if (!ok) [[unlikely]] throw std::runtime_error("DB Media Error: " + task.itemName.toStdString());
 
             } catch (const std::exception &e) {
                 qDebug() << "Import failed:" << e.what();

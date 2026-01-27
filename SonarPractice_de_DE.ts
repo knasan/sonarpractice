@@ -277,7 +277,7 @@
     <message>
         <location filename="mappingpage.cpp" line="48"/>
         <source>&lt;b&gt;Instructions:&lt;/b&gt;&lt;br&gt;1. Create groups on the right for your structure.&lt;br&gt;2. Select files on the left and drag them into a group using &lt;b&gt;&amp;gt;&lt;/b&gt;.</source>
-        <translation>&lt;b&gt;Anleitung:&lt;/b&gt;&lt;br&gt;1.Erstelle rechts Gruppen für deine Struktur.&lt;br&gt;2. Wähle links Dateien aus und schiebe sie mit &lt;b&gt;&amp;gt;&lt;/b&gt; in eine Gruppe.</translation>
+        <translation type="unfinished">&lt;b&gt;Anleitung:&lt;/b&gt;&lt;br&gt;1.Erstelle rechts Ordber für deine Struktur.&lt;br&gt;2. Wähle links Dateien aus und schiebe sie mit &lt;b&gt;&amp;gt;&lt;/b&gt; in einen Ordner.</translation>
     </message>
     <message>
         <location filename="mappingpage.cpp" line="56"/>

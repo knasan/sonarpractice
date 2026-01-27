@@ -43,6 +43,7 @@ private:
     void showCatalogContextMenu(const QPoint &pos);
 
     [[nodiscard]] int getCurrentSongId();
+    [[nodiscard]] int getCurrentFileId();
 
     DatabaseManager *dbManager_m;
 

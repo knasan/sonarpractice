@@ -249,7 +249,7 @@ void LibraryPage::onAddRelationClicked() {
     FileSelectionDialog dlg(currentId, this);
     dlg.setWindowModality(Qt::WindowModal);
 
-    //When the user clicks "OK"
+    // When the user clicks "OK"
     if (dlg.exec() == QDialog::Accepted) {
         // IDs retrieve the files selected in the dialog
         QList<int> selectedIds = dlg.getSelectedFileIds();
@@ -307,16 +307,28 @@ int LibraryPage::getCurrentSongId() {
     return songId;
 }
 
+int LibraryPage::getCurrentFileId() {
+    QModelIndex index = catalogTreeView_m->currentIndex();
+    if (!index.isValid()) return -1;
+
+    // UNIQUE ID (enum) FileIdRole, as this is the
+    // from the table media_files.
+    int fileId = index.data(LibraryPage::FileIdRole).toInt();
+
+    qDebug() << "[LibraryPage] Current File ID selected:" << fileId;
+    return fileId;
+}
+
 void LibraryPage::refreshRelatedFilesList() {
     // UI prepare
      relatedFilesListWidget_m->clear();
 
-    // Get the current song ID
-    int songId = getCurrentSongId();
-    if (songId <= 0) return;
+    // Get the current file ID, dont use song_id here
+    int fileId = getCurrentFileId();
+    if (fileId <= 0) return;
 
     // Retrieve linked files from the database
-    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(songId);
+    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(fileId);
 
     // Fill in the list
     for (const auto &file : std::as_const(related)) {
