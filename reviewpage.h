@@ -94,9 +94,9 @@ private:
     QLabel* statusLabel_m;
 
     QCache<QString, QStringList>* pathPartsCache_m;
-    int totalDuplicatesCount_m;
-    int totalDefectsCount_m;
-    bool isConnectionsEstablished_m;
+    int totalDuplicatesCount_m{0};
+    int totalDefectsCount_m{0};
+    bool isConnectionsEstablished_m{false};
 
 };
 

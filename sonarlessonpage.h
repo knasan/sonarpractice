@@ -41,6 +41,8 @@ private:
     [[nodiscard]] bool saveTableRowsToDatabase();
     [[nodiscard]] QList<PracticeSession> collectTableData();
 
+    [[nodiscard]] int getCurrentSongId();
+
     DatabaseManager* dbManager_m;
     QSqlTableModel* model_m;
 
@@ -61,13 +63,13 @@ private:
     QHBoxLayout* resourceLayout_m;
 
     QString currentSongPath_m;
-    int currentFileId_m;
+    int currentFileId_m{0};
 
-    bool isConnectionsEstablished_m = false;
-    bool isLoading_m = true;
+    bool isConnectionsEstablished_m{false};
+    bool isLoading_m{true};
 
-    bool isDirtyNotes_m = false;
-    bool isDirtyTable_m = false;
+    bool isDirtyNotes_m{false};
+    bool isDirtyTable_m{false};
 
 protected:
     void showEvent(QShowEvent *event) override; // tab wechsel triggern

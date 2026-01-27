@@ -93,7 +93,7 @@ void SonarLessonPage::setupUI() {
     contentLayout->addWidget(notesEdit_m);
 
     // Table: Practice session (time from/to, tempo, duration, repetitions)
-    sessionTable_m = new QTableWidget(3, 5, this);
+    sessionTable_m = new QTableWidget(5, 5, this);
     sessionTable_m->setHorizontalHeaderLabels({tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("duration (Min)")});
     contentLayout->addWidget(sessionTable_m);
 
@@ -140,7 +140,6 @@ void SonarLessonPage::setupUI() {
 
         connect(notesEdit_m, &QTextEdit::textChanged, this, [this]() {
             if (isLoading_m) return;
-            // qDebug() << "QTextEdit changed isDirty true";
             isDirtyNotes_m = true;
             updateButtonState();
         });
@@ -171,7 +170,6 @@ void SonarLessonPage::setupUI() {
             }
 
             if (rowComplete) {
-                qDebug() << "Row " << row << " Completely filled. Set isDirtyTable_m = true";
                 isDirtyTable_m = true;
                 updateButtonState();
             }
@@ -193,6 +191,16 @@ void SonarLessonPage::setupUI() {
         connect(songSelector_m, QOverload<int>::of(&QComboBox::currentIndexChanged),
                 this, &SonarLessonPage::onSongChanged);
 
+        connect(sessionTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
+            if (isLoading_m) return;
+
+            if (item->row() == sessionTable_m->rowCount() - 1) {
+                if (!item->text().isEmpty()) {
+                    sessionTable_m->insertRow(sessionTable_m->rowCount());
+                }
+            }
+        });
+
         calendar_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
         // Context menu-Slot
@@ -203,7 +211,7 @@ void SonarLessonPage::setupUI() {
             if (songs.isEmpty()) return;
 
             // Retrieve currently selected song ID in the UI
-            int currentActiveSongId = songSelector_m->currentData().toInt();
+            int currentActiveSongId = getCurrentSongId();
 
             QMenu menu(this);
             menu.addSection(tr("Training sessions at %1").arg(selectedDate.toString("dd.MM.")));
@@ -225,7 +233,7 @@ void SonarLessonPage::setupUI() {
                 }
 
                 connect(action, &QAction::triggered, this, [this, songId]() {
-                    int index = songSelector_m->findData(songId);
+                    int index = songSelector_m->findData(songId, FileIdRole);
                     if (index != -1) {
                         songSelector_m->setCurrentIndex(index);
                     }
@@ -243,7 +251,7 @@ void SonarLessonPage::setupUI() {
 
 // The logic: Check files and activate icons.
 void SonarLessonPage::onSongChanged(int index) {
-    if (index < 0 || isLoading_m || !dbManager_m) {
+    if (index <= 0 || isLoading_m || !dbManager_m) {
         currentSongPath_m.clear();
         currentFileId_m = -1;
         updateButtonState();
@@ -253,9 +261,12 @@ void SonarLessonPage::onSongChanged(int index) {
     isLoading_m = true;
 
     currentFileId_m = songSelector_m->itemData(index, FileIdRole).toInt();
+    qDebug() << "currentFileId : " << currentFileId_m;
+    qDebug() << "with func getCurrentSongId: " << getCurrentSongId();
+    qDebug() << "--------------------------------------------------------";
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
 
-    qDebug() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(ID:" << currentFileId_m << ")";
+    // qDebug() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
     if (currentFileId_m > 0) {
@@ -338,7 +349,7 @@ void SonarLessonPage::loadData() {
     QSqlQuery query;
 
     QString sql = "SELECT DISTINCT "
-                  "mf.id, "
+                  "mf.song_id, "
                   "s.title, "
                   "mf.file_path, "        // Der Pfad kommt aus media_files (mf)
                   "a.name AS artist_name, "
@@ -353,14 +364,21 @@ void SonarLessonPage::loadData() {
 
     if (query.exec()) {
         while (query.next()) {
-            int songId = query.value("id").toInt();
-            QString path = query.value("file_path").toString();
-            QString fileName = QFileInfo(path).fileName();
+            int songId = query.value("song_id").toInt();
+            QString rawPath = query.value("file_path").toString();
+            QString managedPath = dbManager_m->getManagedPath();
+
+            QString path = managedPath.isEmpty() ? rawPath : QDir(managedPath).filePath(rawPath);
+            QString cleaned = QDir::cleanPath(path);
+
+            QString fileName = QFileInfo(cleaned).fileName();
             QString title = query.value("title").toString();
             QString artist = query.value("artist_name").toString();
             QString tuning = query.value("tuning_name").toString();
 
-             qDebug() << "Song:" << title << "from" << artist << "Tuning:" << tuning << " path: " << path;
+            // qDebug() << "Song:" << title << "from" << artist << "Tuning:" << tuning << " path: " << path;
+            // qDebug() << "SongId: " << songId;
+            // qDebug() << "FileName: " << fileName;
 
             // The song_id is stored in the 'UserData' of the ComboBox.
              songSelector_m->addItem(fileName, songId);
@@ -387,10 +405,11 @@ void SonarLessonPage::showEvent(QShowEvent *event) {
 
 void SonarLessonPage::onSaveClicked() {
     qDebug() << "[SonarLessonPage] onSaveClicked START";
-
-    int songId = songSelector_m->currentData().toInt();
-
-    qDebug() << "songId: " << songId;
+    int songId = getCurrentSongId();
+    if (songId <= 0) {
+        qDebug() << "[SonarLessonPage] onSaveClicked wrong songId: " << songId;
+        return;
+    }
 
     bool notesSuccess = false;
     bool tableSuccess = false;
@@ -402,7 +421,7 @@ void SonarLessonPage::onSaveClicked() {
     if (isDirtyNotes_m) {
         notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
         qDebug() << "* onSaveClicked - notesSuccess: " << notesSuccess;
-        if (notesSuccess) isDirtyNotes_m = false;
+
     }
 
     if (isDirtyTable_m) {
@@ -411,44 +430,24 @@ void SonarLessonPage::onSaveClicked() {
         if (tableSuccess) isDirtyTable_m = false;
     }
 
-    if (notesSuccess || tableSuccess) {
-        qDebug() << "* Successfully saved!";
-    }
+    qDebug() << "* isDirtyNotes_m in onSaveClicked: after saved: " << isDirtyNotes_m;
+    qDebug() << "* isDirtyTable_m in onSaveClicked: after saved: " << isDirtyTable_m;
 
     updateButtonState();
     updateCalendarHighlights();
 }
 
 bool SonarLessonPage::saveTableRowsToDatabase() {
-    int songId = songSelector_m->currentData().toInt();
+    int songId = getCurrentSongId();
     if (songId <= 0) return false;
 
     qDebug() << "[SonarLessonPage] saveTableRowsToDatabase START";
-
-    bool allOk = true;
-
-    // Wir starten eine Transaktion über den DB Manager, falls du das dort unterstützt
-    // Ansonsten iterieren wir hier über die Zeilen:
-    for (int row = 0; row < sessionTable_m->rowCount(); ++row) {
-        // Daten aus den Zellen holen
-        QString startBarStr = (sessionTable_m->item(row, 0)) ? sessionTable_m->item(row, 0)->text() : "";
-        QString endBarStr   = (sessionTable_m->item(row, 1)) ? sessionTable_m->item(row, 1)->text() : "";
-        QString bpmStr      = (sessionTable_m->item(row, 2)) ? sessionTable_m->item(row, 2)->text() : "";
-        QString durationStr = (sessionTable_m->item(row, 4)) ? sessionTable_m->item(row, 4)->text() : "";
-
-        auto sessions = collectTableData();
-        allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
-    }
-
+    auto sessions = collectTableData();
+    bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
-        // After saving, clear the table or mark rows as "saved".
-        // isLoading_m = true;
-        // sessionTable_m->clearContents(); // Optional: Clean the table afterwards.
-        // isLoading_m = false;
+        isDirtyTable_m = false;
+        updateButtonState();
     }
-    isLoading_m = !isLoading_m;
-    updateButtonState();
-
     return allOk;
 }
 
@@ -471,15 +470,12 @@ void SonarLessonPage::dailyNotePlaceholder() {
 }
 
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
-    if (songId <= 0) {
-        qDebug() << "SongId wrong";
-        return;
-    }
+    if (songId <= 0) return;
     qDebug() << "[SonarLessonPage] loadJournalForDay START";
 
     isLoading_m = true;
 
-    // 1. Notiz für diesen spezifischen Tag aus der DB holen
+    // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
     qDebug() << "dailyNote: " << dailyNote;
     notesEdit_m->setPlainText(dailyNote);
@@ -523,6 +519,11 @@ QList<PracticeSession> SonarLessonPage::collectTableData() {
     return sessions;
 }
 
+int SonarLessonPage::getCurrentSongId() {
+    int currentIndex = songSelector_m->currentIndex();
+    return songSelector_m->itemData(currentIndex, FileIdRole).toInt();
+}
+
 // Calendar update Overload
 void SonarLessonPage::updateCalendarHighlights() {
     qDebug() << "[SonarLessonPage] updateCalendarHighlights START";
@@ -548,14 +549,19 @@ void SonarLessonPage::updateCalendarHighlights() {
 }
 
 void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
-    qDebug() << "[SonarLessonPage] loadTableDataForDay START";
-
+    if (songId <= 0) return;
     isLoading_m = true;
-    sessionTable_m->clearContents();
 
+    // 1. Daten holen
     QList<PracticeSession> sessions = dbManager_m->getSessionsForDay(songId, date);
 
-    for (int i = 0; i < sessions.size() && i < sessionTable_m->rowCount(); ++i) {
+    // 2. Tabelle vorbereiten:
+    // Wir setzen die Zeilenzahl exakt auf die Anzahl der Sessions + 1 Puffer-Zeile
+    sessionTable_m->setRowCount(sessions.size() + 1);
+    sessionTable_m->clearContents();
+
+    // 3. Daten befüllen
+    for (int i = 0; i < sessions.size(); ++i) {
         const auto& s = sessions.at(i);
         sessionTable_m->setItem(i, 0, new QTableWidgetItem(QString::number(s.startBar)));
         sessionTable_m->setItem(i, 1, new QTableWidgetItem(QString::number(s.endBar)));

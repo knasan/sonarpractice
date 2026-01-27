@@ -31,7 +31,8 @@ private:
 
     enum CustomRoles {
         FileIdRole = Qt::UserRole + 1,    // 257
-        FilePathRole = Qt::UserRole + 2   // 258
+        FilePathRole,
+        SongIdRole,
     };
 
     void setupCatalog();
@@ -41,7 +42,7 @@ private:
     void loadCatalogFromDatabase();
     void showCatalogContextMenu(const QPoint &pos);
 
-    [[nodiscard]] int getCurrentSelectedFileId();
+    [[nodiscard]] int getCurrentSongId();
 
     DatabaseManager *dbManager_m;
 

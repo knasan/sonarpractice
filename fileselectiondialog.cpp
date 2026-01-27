@@ -61,6 +61,8 @@ FileSelectionDialog::FileSelectionDialog(int excludeId, QWidget *parent)
     connect(filterGroup, &QButtonGroup::idClicked, this, &FileSelectionDialog::updateFilter);
 }
 
+FileSelectionDialog::~FileSelectionDialog() {}
+
 QList<int> FileSelectionDialog::getSelectedFileIds() const {
     QList<int> ids;
     for (auto *item : listWidget_m->selectedItems()) {

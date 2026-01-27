@@ -9,6 +9,7 @@ class FileSelectionDialog : public QDialog {
     Q_OBJECT
 public:
     explicit FileSelectionDialog(int excludeId, QWidget *parent = nullptr);
+    virtual ~FileSelectionDialog();
     [[nodiscard]] QList<int> getSelectedFileIds() const;
 
 private:

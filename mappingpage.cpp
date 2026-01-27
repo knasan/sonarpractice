@@ -480,7 +480,13 @@ bool MappingPage::validatePage() {
 
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(appDataDir);
-    QString finalDbPath = QDir(appDataDir).absoluteFilePath("sonar_practice.db");
+
+    #ifdef QT_DEBUG
+        QString finalDbPath = appDataDir + "/sonar_practice_debug.db";
+    #else
+        QString finalDbPath = appDataDir + "/sonar_practice.db";
+    #endif
+
     QString tempDbPath = finalDbPath + ".tmp";
 
     // Path for the music files (chosen by the user)

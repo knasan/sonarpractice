@@ -14,7 +14,7 @@ class QWidget;
 namespace FileUtils {
 
     struct FolderCleanupReport {
-        bool isNowEmpty;
+        bool isNowEmpty{false};
         QStringList filesLeft;
         int zeroByteFiles;
     };
@@ -49,7 +49,7 @@ namespace FileUtils {
     [[nodiscard]] inline FolderCleanupReport analyzeAndCleanup(const QString &path) {
         QDir dir(path);
         FolderCleanupReport report;
-        // Nur echte Dateien zählen, . und .. ignorieren
+        // Only genuine files count, . and .. are ignored.
         QStringList allFiles = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
 
         report.filesLeft = allFiles;
@@ -62,7 +62,7 @@ namespace FileUtils {
         }
 
         if(allFiles.isEmpty()) {
-            // rmdir löscht nur, wenn der Ordner leer ist (auch keine Unterordner)
+            // rmdir only deletes if the folder is empty (not even subfolders).
             report.isNowEmpty = dir.rmdir(path);
         } else {
             report.isNowEmpty = false;
@@ -70,7 +70,7 @@ namespace FileUtils {
         return report;
     }
 
-    // Hilfreich für deinen Punkt 3 (Original löschen nach Copy & DB Save)
+    // Helpful for your point 3 (delete original after Copy & DB Save)
     [[nodiscard]] inline bool safeDeleteSource(const QString &sourcePath) {
         if (QFile::exists(sourcePath)) {
             return QFile::remove(sourcePath);

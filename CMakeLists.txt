@@ -45,6 +45,7 @@ add_library(CommonObjects OBJECT ${PREVIEW_COMMON}
 
     fileselectiondialog.h fileselectiondialog.cpp
     README_de.md
+    README.md
 
 )
 

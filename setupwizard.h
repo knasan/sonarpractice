@@ -70,7 +70,6 @@ public:
     [[nodiscard]] QList<QList<QStandardItem*>> takeFromIgnore(const QString &path);
 
 private:
-    // Die Seiten als Member-Pointer
     WelcomePage*    welcomePage_m;
     FilterPage*     filterPage_m;
     ProcessingPage* processingPage_m;

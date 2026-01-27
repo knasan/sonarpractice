@@ -191,7 +191,7 @@ void LibraryPage::loadCatalogFromDatabase() {
     catalogModel_m->setHorizontalHeaderLabels({tr("Media catalog")});
 
     // Execute query
-    QSqlQuery query("SELECT id, file_path FROM media_files ORDER BY file_path ASC", dbManager_m->database());
+    QSqlQuery query("SELECT id, file_path, song_id FROM media_files ORDER BY file_path ASC", dbManager_m->database());
 
     // Initialize the progress dialog
     int totalFiles = 0;
@@ -216,12 +216,14 @@ void LibraryPage::loadCatalogFromDatabase() {
         }
 
         int id = query.value("id").toInt();
+        int sId = query.value("song_id").toInt();
         QString path = query.value("file_path").toString();
 
         QStandardItem* item = new QStandardItem(QFileInfo(path).fileName());
         item->setData(id, LibraryPage::FileIdRole);
         item->setData(path, Qt::ToolTipRole);
         item->setData(path, LibraryPage::FilePathRole);
+        item->setData(sId, LibraryPage::SongIdRole);
         item->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
 
         catalogModel_m->appendRow(item);
@@ -236,7 +238,7 @@ void LibraryPage::loadCatalogFromDatabase() {
 
 void LibraryPage::onAddRelationClicked() {
     // Retrieve the ID of the "master file" marked on the left in the catalog.
-    int currentId = getCurrentSelectedFileId();
+    int currentId = getCurrentSongId();
     if (currentId <= 0) {
         QMessageBox::warning(this, tr("No choice"),
                              tr("Please first select a file from the catalog to be linked."));
@@ -272,7 +274,7 @@ void LibraryPage::onRemoveRelationClicked() {
 
     if (selected.isEmpty()) return;
 
-    int currentId = getCurrentSelectedFileId();
+    int currentId = getCurrentSongId();
     if (currentId <= 0) return;
 
     auto res = QMessageBox::question(this, tr("Disconnect"),
@@ -294,34 +296,15 @@ void LibraryPage::onRemoveRelationClicked() {
     }
 }
 
-int LibraryPage::getCurrentSelectedFileId() {
+int LibraryPage::getCurrentSongId() {
     QModelIndex index = catalogTreeView_m->currentIndex();
+    if (!index.isValid()) return -1;
 
-    if (!index.isValid()) {
-        qDebug() << "[LibraryPage] No valid index found";
-        return -1;
-    }
+    // retrieve SongIdRole from data
+    int songId = index.data(LibraryPage::SongIdRole).toInt();
 
-    qDebug() << "--- Index Debug Start ---";
-    qDebug() << "Zeile:" << index.row() << "Spalte:" << index.column();
-    qDebug() << "DisplayRole (Name):" << index.data(Qt::DisplayRole).toString();
-
-    // Examinations of various roles
-    qDebug() << "UserRole (Standard):" << index.data(Qt::UserRole).toInt();
-    qDebug() << "UserRole + 1 (PATH):" << index.data(Qt::UserRole + 1).toString();
-
-    // check specific ID role
-    QVariant idData = index.data(LibraryPage::FileIdRole);
-    qDebug() << "LibraryPage::FileIdRole value:" << idData.toInt()
-             << " (Typ:" << idData.typeName() << ")";
-
-    qDebug() << "FileIdRole constant is:" << static_cast<int>(LibraryPage::FileIdRole);
-    qDebug() << "--- Index Debug Ende ---";
-
-    int id = index.data(LibraryPage::FileIdRole).toInt();
-    qDebug() << "[LibraryPage] Determined ID for selection:" << id;
-
-    return id;
+    qDebug() << "[LibraryPage] Resolved SongId from Role:" << songId;
+    return songId;
 }
 
 void LibraryPage::refreshRelatedFilesList() {
@@ -329,11 +312,11 @@ void LibraryPage::refreshRelatedFilesList() {
      relatedFilesListWidget_m->clear();
 
     // Get the current song ID
-    int currentId = getCurrentSelectedFileId();
-    if (currentId <= 0) return;
+    int songId = getCurrentSongId();
+    if (songId <= 0) return;
 
     // Retrieve linked files from the database
-    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(currentId);
+    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(songId);
 
     // Fill in the list
     for (const auto &file : std::as_const(related)) {

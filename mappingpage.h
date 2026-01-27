@@ -44,7 +44,7 @@ private:
     QLineEdit *searchLineEdit_m;
     QCheckBox *collabsTree_m;
 
-    bool isConnectionsEstablished_m;
+    bool isConnectionsEstablished_m{false};
 
 private slots:
     bool eventFilter(QObject *obj, QEvent *event) override;

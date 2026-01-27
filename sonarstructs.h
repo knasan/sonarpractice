@@ -15,9 +15,9 @@ struct DuplicateGroup {
 struct ScanBatch {
     QFileInfo info;
     QString hash;
-    int groupId;
-    int status;
-    bool layoutChange;
+    int groupId{0};
+    int status{0};
+    bool layoutChange{false};
 };
 
 // TODO: mal überprüfen was hiervon noch benötigt wird. Denke vieles waren nur tests und gibt es nicht mehr!
@@ -66,13 +66,13 @@ struct SongImportData {
 
 // Pages wie songeditdialog
 struct SongData {
-    int id = -1;
-    int artistId = -1;
+    int id{-1};
+    int artistId{-1};
     QString title;
     QString artistName;
     QString tuning;
-    int bpm = 120;
-    int bars = 0;
+    int bpm{120};
+    int bars{0};
 };
 
 #endif // SONARSTRUCTS_H

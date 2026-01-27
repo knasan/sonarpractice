@@ -105,8 +105,6 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 
     if (!isConnectionsEstablished_m) {
         isConnectionsEstablished_m = true;
-        registerField("manageData", cbManageData_m);
-        registerField("targetPath", lblTargetPath_m, "text");
 
         // Connection to the slot addPath
         connect(btnAddSource_m, &QPushButton::clicked, this, &FilterPage::addSourcePath);
@@ -130,6 +128,9 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
             updateTargetPathStyle(checked);
         });
     }
+
+    registerField("manageData", cbManageData_m);
+    registerField("targetPath", lblTargetPath_m, "text");
 }
 
 void FilterPage::initializePage() {

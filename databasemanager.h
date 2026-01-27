@@ -14,8 +14,6 @@ struct PracticeSession {
     int streaks;
 };
 
-// Hilfsstruktur für die UI
-
 class DatabaseManager : public QObject {
     Q_OBJECT
 public:
@@ -98,8 +96,7 @@ public:
 private:
     [[nodiscard]] int getOrCreateUserId(const QString &name, const QString &role = "student");
 
-
-    QSqlDatabase db_m; // Die zentrale Datenbank-Instanz
+    QSqlDatabase db_m;
 };
 
 #endif // DATABASEMANAGER_H

@@ -528,30 +528,33 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getResourcesForSong(int son
             list.append(res);
         }
     } else {
-        qDebug() << "Fehler beim Laden der Ressourcen:" << q.lastError().text();
+        qDebug() << "Error loading resources:" << q.lastError().text();
     }
 
     return list;
 }
 
-QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int fileId) {
+QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int songId) {
     QList<RelatedFile> list;
     QSqlQuery q(database());
+
     q.prepare("SELECT mf.id, mf.file_path, mf.file_type "
               "FROM media_files mf "
               "JOIN file_relations fr ON (mf.id = fr.file_id_b AND fr.file_id_a = ?) "
               "OR (mf.id = fr.file_id_a AND fr.file_id_b = ?)");
-    q.addBindValue(fileId);
-    q.addBindValue(fileId);
+    q.addBindValue(songId);
+    q.addBindValue(songId);
 
     if (q.exec()) {
         while (q.next()) {
             RelatedFile rf;
-            rf.id = q.value(0).toInt();
-            rf.relativePath = q.value(1).toString();
-            rf.fileName = QFileInfo(rf.relativePath).fileName();
+            rf.id = q.value("id").toInt();
+            rf.fileName = q.value("file_path").toString();
+            rf.type = q.value("file_type").toString();
             list.append(rf);
         }
+    } else {
+        qDebug() << "getFilesBySongId Error:" << q.lastError().text();
     }
     return list;
 }
@@ -638,17 +641,31 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
  * Delete the day's old sessions and write the new ones:
  * */
 bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<PracticeSession> &sessions) {
-    db_m.transaction();
+    QSqlDatabase db = QSqlDatabase::database();
+
+    if (!db.isOpen()) {
+        qDebug() << "Database was closed! Attempts to open...";
+        if (!db.open()) {
+            qDebug() << "Error opening:" << db.lastError().text();
+            return false;
+        }
+    }
+
+    if (!db.transaction()) {
+        qDebug() << "Transaction Error:" << db.lastError().text();
+        return false;
+    }
+
     QSqlQuery q(database());
     QString dateStr = date.toString("yyyy-MM-dd");
 
-    // 1. Bestehende Übungswerte für diesen Tag/Song löschen
+    // Delete existing exercise values ​​for this day/song
     q.prepare("DELETE FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ? AND start_bar IS NOT NULL");
     q.addBindValue(songId);
     q.addBindValue(dateStr);
     q.exec();
 
-    // 2. Neue Zeilen einfügen
+    // Insert new lines
     q.prepare("INSERT INTO practice_journal (song_id, practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks) "
               "VALUES (?, ?, ?, ?, ?, ?, ?)");
 
@@ -662,7 +679,11 @@ bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<Prac
         q.addBindValue(s.streaks);
         q.exec();
     }
-    return db_m.commit();
+    if (!db.commit()) {
+        db.rollback();
+        return false;
+    }
+    return true;
 }
 
 QList<PracticeSession> DatabaseManager::getSessionsForDay(int songId, QDate date) {
@@ -734,7 +755,7 @@ bool DatabaseManager::saveOrUpdateNote(int songId, QDate date, const QString &no
     return q.exec();
 }
 
-// Speichert die allgemeine Notiz zum Song
+// Saves the general note for the song
 bool DatabaseManager::updateSongNotes(int songId, const QString &notes, QDate date) {
     QSqlQuery q(db_m);
     QString dateStr = date.toString("yyyy-MM-dd");
@@ -767,7 +788,7 @@ bool DatabaseManager::updateSongNotes(int songId, const QString &notes, QDate da
 
 QString DatabaseManager::getNoteForDay(int songId, QDate date) {
     QSqlQuery q(database());
-    // Wir wandeln das Datum in das ISO-Format yyyy-MM-dd um
+    // Convert date to ISO format yyyy-MM-dd
     QString dateStr = date.toString("yyyy-MM-dd");
 
     q.prepare("SELECT note_text FROM practice_journal "

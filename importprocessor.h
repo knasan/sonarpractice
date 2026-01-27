@@ -23,9 +23,9 @@ public:
     explicit ImportProcessor(QObject *parent = nullptr) : QObject(parent) {}
 
     [[nodiscard]] bool executeImport(const QList<ImportTask> &tasks, const QString &basePath, bool isManaged) {
-        qDebug() << "executeImport basePath: " << basePath;
-        qDebug() << "executeImport isManaged: " << isManaged;
-        qDebug() << "executeImport tasks: " << tasks.size();
+        // qDebug() << "executeImport basePath: " << basePath;
+        // qDebug() << "executeImport isManaged: " << isManaged;
+        // qDebug() << "executeImport tasks: " << tasks.size();
 
         if (!DatabaseManager::instance().beginTransaction()) {
             qDebug() << "executeImport: instance false";
@@ -38,14 +38,14 @@ public:
 
         for (const auto &task : tasks) {
             try {
-                qDebug() << "executeImport task: categoryPath: " << task.categoryPath;
-                qDebug() << "executeImport task: relativePath: " << task.relativePath;
-                qDebug() << "executeImport task: sourcePath: " << task.sourcePath;
-                qDebug() << "executeImport task: fileHash: " << task.fileHash;
-                qDebug() << "executeImport task: fileSize: " << task.fileSize;
-                qDebug() << "executeImport task: itemName: " << task.itemName;
-                qDebug() << "executeImport task: fileSuffix: " << task.fileSuffix;
-                qDebug() << "-------------------------------------------------------------";
+                // qDebug() << "executeImport task: categoryPath: " << task.categoryPath;
+                // qDebug() << "executeImport task: relativePath: " << task.relativePath;
+                // qDebug() << "executeImport task: sourcePath: " << task.sourcePath;
+                // qDebug() << "executeImport task: fileHash: " << task.fileHash;
+                // qDebug() << "executeImport task: fileSize: " << task.fileSize;
+                // qDebug() << "executeImport task: itemName: " << task.itemName;
+                // qDebug() << "executeImport task: fileSuffix: " << task.fileSuffix;
+                // qDebug() << "-------------------------------------------------------------";
 
                 // --- File system operations ---
                 QString finalDest;
@@ -54,9 +54,10 @@ public:
                     QDir().mkpath(QFileInfo(finalDest).absolutePath());
                     if (!QFile::exists(finalDest)) {
                         if (!QFile::copy(task.sourcePath, finalDest)) [[unlikely]] {
-                            throw std::runtime_error("Kopierfehler: " + task.sourcePath.toStdString());
+                            throw std::runtime_error("Copy error: " + task.sourcePath.toStdString());
                         }
                     }
+                    QCoreApplication::processEvents();
                 } else {
                     finalDest = task.sourcePath;
                 }
@@ -73,7 +74,7 @@ public:
                     // Create a new song - ENTER THE CAT ID HERE
                     songId = DatabaseManager::instance().createSong(baseName, catId);
 
-                    if (songId == -1) throw std::runtime_error("DB Song Fehler");
+                    if (songId == -1) throw std::runtime_error("DB Song Error");
                     createdSongs.insert(baseName, songId);
                 } else {
                     songId = createdSongs[baseName];
@@ -90,13 +91,15 @@ public:
 
                 if (!ok) [[unlikely]] throw std::runtime_error("DB Media Fehler bei: " + task.itemName.toStdString());
 
+                emit progressUpdated(count);
+
                 // --- Progress ---
                 if (count % 20 == 0) {
                     QCoreApplication::processEvents();
                 }
 
             } catch (const std::exception &e) {
-                qDebug() << "Import fehlgeschlagen:" << e.what();
+                qDebug() << "Import failed:" << e.what();
                 DatabaseManager::instance().rollback();
                 return false;
             }
@@ -107,16 +110,16 @@ public:
 
         if (isManaged) {
             if (!db.setSetting("managed_path", QVariant(basePath))) {
-                qCritical() << "CRITICAL: managed_path konnte nicht in DB gespeichert werden:" << basePath;
+                qCritical() << "CRITICAL: managed_path could not be saved to DB:" << basePath;
             }
         }
 
         if (!db.setSetting("is_managed", QVariant(isManaged))) {
-            qCritical() << "CRITICAL: isManaged konnte nicht in DB gespeichert werden:" << isManaged;
+            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << isManaged;
         }
 
         if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {
-            qCritical() << "CRITICAL: last_import_date konnte nicht in DB gespeichert werden:" << QDateTime::currentDateTime().toString(Qt::ISODate);
+            qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
         }
 
         return DatabaseManager::instance().commit();

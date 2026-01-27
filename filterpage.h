@@ -25,7 +25,7 @@ private slots:
     [[nodiscard]] bool validatePage() override;
 
 private:
-    bool isConnectionsEstablished_m;
+    bool isConnectionsEstablished_m = false;
     void updateTargetPathStyle(bool checked);
     void flashItem(QListWidgetItem *item);
     void removeSourcePath();

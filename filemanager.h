@@ -32,7 +32,6 @@ public:
     [[nodiscard]] QStandardItem* getFolderItem(const QString &path) const;
 
     void updateStatuses(const QList<ScanBatch> &allBatches);
-    // [[nodiscard]] bool resolveDuplicateGroup(QStandardItem* keepItem);
 
 private:
     [[nodiscard]] QStandardItem* findItemByPath(const QString& filePath);
