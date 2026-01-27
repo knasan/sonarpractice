@@ -147,7 +147,6 @@ void SonarLessonPage::setupUI() {
 
         // To make the grey text disappear when the user clicks again:
         connect(notesEdit_m, &QTextEdit::selectionChanged, this, [this]() {
-            // Wenn der Text noch eine der Fragen ist, leeren wir das Feld
             if (notesEdit_m->textColor() == Qt::gray) {
                 notesEdit_m->clear();
                 notesEdit_m->setTextColor(Qt::white);
@@ -263,7 +262,7 @@ void SonarLessonPage::onSongChanged(int index) {
 
     currentFileId_m = getCurrentSongId();
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
-    qDebug() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
+    qInfo() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
     if (currentFileId_m > 0) {
@@ -397,12 +396,10 @@ void SonarLessonPage::loadData() {
 
 // Triggers when changes have been made.
 void SonarLessonPage::showEvent(QShowEvent *event) {
-    qDebug() << "[SonarLessonPage] showEvent SART";
     QWidget::showEvent(event);
     loadData(); // Reload the ComboBox
     // Update icons if a song is selected
     if (songSelector_m->currentIndex() != -1) {
-        // onSongChanged(songSelector_m->currentIndex());
         onSongChanged(getCurrentSongId());
     }
 }
@@ -444,23 +441,22 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
     int songId = getCurrentSongId();
     if (songId <= 0) return false;
 
-    qDebug() << "[SonarLessonPage] saveTableRowsToDatabase START";
     auto sessions = collectTableData();
+
     bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
         isDirtyTable_m = false;
         updateButtonState();
     }
+
     return allOk;
 }
 
 void SonarLessonPage::updateButtonState() {
-    qDebug() << "[SonarLessonPage] updateButtonState START";
     saveBtn_m->setEnabled(isDirtyNotes_m || isDirtyTable_m);
 }
 
 void SonarLessonPage::dailyNotePlaceholder() {
-    qDebug() << "[SonarLessonPage] dailyNotePlaceholder START";
     static QString questionOne = tr("What did you achieve today?");
     static QString questionTwo = tr("What came easily to you?");
     static QString questionThree = tr("What didn't work so well?");
@@ -474,7 +470,7 @@ void SonarLessonPage::dailyNotePlaceholder() {
 
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     if (songId <= 0) return;
-    qDebug() << "[SonarLessonPage] loadJournalForDay START";
+    qInfo() << "[SonarLessonPage] loadJournalForDay START";
 
     isLoading_m = true;
 
@@ -501,7 +497,6 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 }
 
 QList<PracticeSession> SonarLessonPage::collectTableData() {
-    qDebug() << "[SonarLessonPage] collectTableData START";
     QList<PracticeSession> sessions;
     for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
         auto itemStart = sessionTable_m->item(i, 0);
@@ -528,8 +523,6 @@ int SonarLessonPage::getCurrentSongId() {
 
 // Calendar update Overload
 void SonarLessonPage::updateCalendarHighlights() {
-    qDebug() << "[SonarLessonPage] updateCalendarHighlights START";
-
     QTextCharFormat hasDataFormat;
     hasDataFormat.setBackground(QColor(60, 100, 60)); // Dark green for experienced days
     hasDataFormat.setFontWeight(QFont::Bold);
