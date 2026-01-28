@@ -95,7 +95,7 @@ void SonarLessonPage::setupUI() {
 
     // Table: Practice session (time from/to, tempo, duration, repetitions)
     sessionTable_m = new QTableWidget(5, 5, this);
-    sessionTable_m->setHorizontalHeaderLabels({tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("duration (Min)")});
+    sessionTable_m->setHorizontalHeaderLabels({tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
     contentLayout->addWidget(sessionTable_m);
 
     // --- FOOTER (Progress & Buttons) ---
@@ -236,6 +236,7 @@ void SonarLessonPage::setupUI() {
                     int index = songSelector_m->findData(songId, FileIdRole);
                     if (index != -1) {
                         songSelector_m->setCurrentIndex(index);
+                        calendar_m->setSelectedDate(QDate::currentDate());
                     }
                 });
             }
