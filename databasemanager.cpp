@@ -187,18 +187,18 @@ bool DatabaseManager::createInitialTables() {
                     "name TEXT UNIQUE NOT NULL)")) return false;
 
     // Tunings:
-    // TODO: später mit allen Tunings befüllen oder besser, mit einen GP Parser
-    // über alle GP Files gehen und dann befüllen.
-    // Standard-Tunings initial befüllen, falls Tabelle leer ist
+    // TODO: Later, fill it with all the tuning options, or better yet, use a GP Parser.
+    // Go through all the GP files and then fill them.
+    // Initially populate standard tunings if the table is empty.
     if (!q.exec("INSERT OR IGNORE INTO tunings (name) VALUES "
                "('E-Standard'), ('Eb-Standard'), ('Drop D'), ('Drop C'), ('D-Standard')")) return false;
 
-    // 10. CATEGORIES (Ordnerstruktur aus dem Import)
+    // 10. CATEGORIES (Folder structure from the import)
     if (!q.exec("CREATE TABLE IF NOT EXISTS categories ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "parent_id INTEGER, "
                 "name TEXT NOT NULL, "
-                "UNIQUE(parent_id, name), " // Verhindert doppelte Ordner im selben Parent
+                "UNIQUE(parent_id, name), " // Prevents duplicate folders in the same parent folder
                 "FOREIGN KEY(parent_id) REFERENCES categories(id) ON DELETE CASCADE)")) return false;
 
     // URL
@@ -206,16 +206,16 @@ bool DatabaseManager::createInitialTables() {
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "song_id INTEGER, "
                 "type TEXT, "          // 'gp', 'pdf', 'video', 'audio', 'url'
-                "title TEXT, "         // "Lektion 1 Video"
-                "path_or_url TEXT, "   // Pfad oder URL
-                "is_managed INTEGER, " // 1 = lokal, 0 = extern
+                "title TEXT, "         // "Lesson 1 Video"
+                "path_or_url TEXT, "   // path or URL
+                "is_managed INTEGER, " // 1 = local, 0 = external
                 "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
 
     // relation
-    if (!q.exec("CREATE TABLE IF NOT EXISTS file_relations (" // IF NOT EXISTS ist sicherer
+    if (!q.exec("CREATE TABLE IF NOT EXISTS file_relations ("
                 "file_id_a INTEGER, "
                 "file_id_b INTEGER, "
-                "relation_type TEXT, " // -- z.B. 'backingtrack', 'tutorial', 'tab'
+                "relation_type TEXT, " // -- e.g. 'backing track', 'tutorial', 'tab'
                 "PRIMARY KEY (file_id_a, file_id_b))")) return false;
 
     // N:N
@@ -285,7 +285,7 @@ bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, b
     q.addBindValue(isManaged ? 1 : 0);
     q.addBindValue(fileType);
     q.addBindValue(fileSize);
-    q.addBindValue(isPracticeTarget ? 1 : 0); // Das neue Flag
+    q.addBindValue(isPracticeTarget ? 1 : 0);
 
     if (!q.exec()) {
         qCritical() << "[DatabaseManager] Error attaching file: " << q.lastError().text();
