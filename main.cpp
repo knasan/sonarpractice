@@ -10,6 +10,36 @@
 #include <QDir>
 #include <QStandardPaths>
 
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QStandardPaths>
+#include <QDir>
+
+void myMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+    // Path in AppData/Local/SonarPractice/sonar_log.txt
+    QString logPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QDir().mkpath(logPath);
+
+    QFile outFile(logPath + "/sonar_log.txt");
+    // Append mode: New logs are appended at the bottom.
+    if (outFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        QTextStream ts(&outFile);
+        QString time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+
+        switch (type) {
+        case QtDebugMsg:    ts << time << " [DEBUG] "; break;
+        case QtInfoMsg:     ts << time << " [INFO ] "; break;
+        case QtWarningMsg:  ts << time << " [WARN ] "; break;
+        case QtCriticalMsg: ts << time << " [CRIT ] "; break;
+        case QtFatalMsg:    ts << time << " [FATAL] "; break;
+        default:            ts << time << " [MSG  ] "; break;
+        }
+
+        ts << msg << Qt::endl;
+    }
+}
+
 bool isSetupNeeded(const QString &dbPath) {
     return !QFile::exists(dbPath);
 }
@@ -18,6 +48,8 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     QCoreApplication::setApplicationName("SonarPractice");
+
+    qInstallMessageHandler(myMessageHandler);
 
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 
@@ -60,7 +92,7 @@ int main(int argc, char *argv[])
         // We'll try using the full path in the resource
         if (translator.load(":/i18n/" + baseName)) {
             a.installTranslator(&translator);
-            qDebug() << "Translation successfully loaded:" << baseName;
+            qInfo() << "Translation successfully loaded:" << baseName;
             break;
         } else {
             qDebug() << "Could not load:" << ":/i18n/" + baseName;
@@ -68,6 +100,7 @@ int main(int argc, char *argv[])
     }
 
     if (isSetupNeeded(dbPath)) {
+        qInfo() << "SonarPractice setup wizard started";
         SetupWizard wizard;
 
         QFileInfo dbInfo(dbPath);
@@ -82,6 +115,9 @@ int main(int argc, char *argv[])
         if (wizard.exec() == QDialog::Rejected) {
             return 0;
         }
+    } else {
+        qInfo()<< "------------------------------------------";
+        qInfo() << "SonarPractice launched.";
     }
 
     // Database connection
