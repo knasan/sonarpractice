@@ -11,7 +11,7 @@
 // =============================================================================
 
 DatabaseManager& DatabaseManager::instance() {
-    // Die statische lokale Variable wird beim ersten Aufruf initialisiert
+    // The static local variable is initialized on the first call.
     static DatabaseManager _instance;
     return _instance;
 }
@@ -19,36 +19,35 @@ DatabaseManager& DatabaseManager::instance() {
 bool DatabaseManager::initDatabase(const QString &dbPath) {
     const QString connectionName = QSqlDatabase::defaultConnection;
 
-    // 1. Wenn die Verbindung schon existiert
+    // If the connection already exists
     if (QSqlDatabase::contains(connectionName)) {
         {
-            // Wir nutzen einen Scope {}, damit das 'db' Objekt zerstört wird,
-            // bevor wir removeDatabase aufrufen!
+            // Use Scope {} so that the 'db' object is destroyed before calling removeDatabase!
             QSqlDatabase db = QSqlDatabase::database(connectionName);
             if (db.isOpen() && db.databaseName() == dbPath) {
-                db_m = db; // Bestehende Verbindung übernehmen
+                db_m = db;
                 db_m = QSqlDatabase::database(db_m.connectionName());
                 return true;
             }
         }
-        // Wenn Name falsch oder zu: Alte Verbindung sauber entfernen
+        // If name is incorrect or too long: Remove old connection cleanly
         QSqlDatabase::removeDatabase(connectionName);
     }
 
-    // 2. Jetzt frisch anlegen und der Member-Variable zuweisen
+    // Create a new one now and assign it to the member variable.
     db_m = QSqlDatabase::addDatabase("QSQLITE");
     db_m.setDatabaseName(dbPath);
 
     if (!db_m.open()) {
-        qCritical() << "Verbindung fehlgeschlagen:" << db_m.lastError().text();
+        qCritical() << "Connection failed:" << db_m.lastError().text();
         return false;
     }
 
-    // Fremdschlüssel für diese Verbindung aktivieren (wichtig für ON DELETE CASCADE)
+    // Enable foreign keys for this connection (important for ON DELETE CASCADE)
     QSqlQuery q(db_m);
     q.exec("PRAGMA foreign_keys = ON");
 
-    // Versionierung prüfen
+    // Check versioning
     int currentVersion = getDatabaseVersion();
     int targetVersion = 1;
 
@@ -61,7 +60,7 @@ bool DatabaseManager::initDatabase(const QString &dbPath) {
         if (currentVersion < 2) {
             if (upgradeToVersion2()) {
                 if (!setDatabaseVersion(2)) {
-                    return false; // Abbruch, wenn Version nicht gespeichert werden konnte
+                    return false; // Abort if version could not be saved
                 }
             } else {
                 return false;
@@ -73,10 +72,10 @@ bool DatabaseManager::initDatabase(const QString &dbPath) {
 }
 
 void DatabaseManager::closeDatabase() {
-    // 1. Namen merken
+    // Remember names
     QString connectionName = db_m.connectionName();
 
-    // 2. Datenbank schließen
+    // Close database
     if (db_m.isOpen()) {
         db_m.close();
     }
@@ -100,14 +99,14 @@ bool DatabaseManager::createInitialTables() {
     QSqlQuery q(database());
     if (!q.exec("PRAGMA foreign_keys = ON")) return false;
 
-    // 1. BENUTZER (Lehrer / Studenten)
+    // 1. USER (Teacher / Student)
     if (!q.exec("CREATE TABLE IF NOT EXISTS users ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "name TEXT UNIQUE, "
                     "role TEXT, " // 'teacher' oder 'student'
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) return false;
 
-    // 2. SONGS (Die logische Einheit)
+    // 2. SONGS (The logical unit)
     if (!q.exec("CREATE TABLE IF NOT EXISTS songs ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "user_id INTEGER, "
@@ -126,8 +125,8 @@ bool DatabaseManager::createInitialTables() {
                 "FOREIGN KEY(artist_id) REFERENCES artists(id), "
                 "FOREIGN KEY(tuning_id) REFERENCES tunings(id))")) return false;
 
-    // 3. MEDIA FILES (Physische Dateien auf der Platte)
-    // Verknüpft eine Datei mit einem Song (N:1 - Ein Song kann mehrere Dateien haben)
+    // 3. MEDIA FILES (Physical files on the disk)
+    // Link a file to a song (N:1 - A song can have multiple files)
     if (!q.exec("CREATE TABLE IF NOT EXISTS media_files ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "song_id INTEGER, "
@@ -138,7 +137,7 @@ bool DatabaseManager::createInitialTables() {
                     "can_be_practiced BOOL, "
                     "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
 
-    // 4. ÜBUNGS-JOURNAL (Fortschrittstracking)
+    // 4. EXERCISE JOURNAL (Progress Tracking)
     if (!q.exec("CREATE TABLE IF NOT EXISTS practice_journal ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "user_id INTEGER, "
@@ -236,7 +235,7 @@ bool DatabaseManager::createInitialTables() {
     return true;
 }
 
-// Hilfsfunktion für den Wizard/Main-Check
+// Helper function for the Wizard/Main Check
 bool DatabaseManager::hasData() {
     QSqlQuery q(database());
     q.prepare("SELECT id FROM songs LIMIT 1");
@@ -256,10 +255,10 @@ int DatabaseManager::getDatabaseVersion() {
 // --- Schema Versioning ---
 bool DatabaseManager::setDatabaseVersion(int version) {
     QSqlQuery q(database());
-    // PRAGMA user_version kann nicht mit Bind-Werten (?) genutzt werden.
-    // Daher ist .arg() hier der korrekte Weg.
+    // PRAGMA user_version cannot be used with bind values ​​(?).
+    // Therefore, .arg() is the correct way to go here.
     if (!q.exec(QString("PRAGMA user_version = %1").arg(version))) {
-        qDebug() << "Fehler beim Setzen der DB-Version:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error setting DB version: " << q.lastError().text();
         return false;
     }
     return true;
@@ -272,9 +271,9 @@ bool DatabaseManager::setDatabaseVersion(int version) {
 bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize) {
     QSqlQuery q(database());
 
-    // 1. Logik: Ist es eine Guitar Pro Datei?
-    // Wir nehmen die Endung (z.B. "gp5") und hängen "*." davor,
-    // damit es exakt zu deinen QStringLists in FileUtils passt.
+    // Logic: Is it a Guitar Pro file?
+    // Take the ending (e.g., "gp5") and add "*." before it.
+    // so that it matches QStringLists in FileUtils exactly.
     QString suffix = "*." + QFileInfo(filePath).suffix().toLower();
     bool isPracticeTarget = FileUtils::getGuitarProFormats().contains(suffix);
 
@@ -289,7 +288,7 @@ bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, b
     q.addBindValue(isPracticeTarget ? 1 : 0); // Das neue Flag
 
     if (!q.exec()) {
-        qDebug() << "Fehler beim Anhängen der Datei:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error attaching file: " << q.lastError().text();
         return false;
     }
     return true;
@@ -330,17 +329,17 @@ qlonglong DatabaseManager::createSong(const QString &title, const qlonglong &cat
     q.addBindValue(artistId);
     q.addBindValue(tuningId);
 
-    // NULL-Handling für SQLite
+    // NULL handling for SQLite
     if (categoryId != -1) {
         q.addBindValue(categoryId);
     } else {
-        q.addBindValue(QVariant(QMetaType::fromType<qlonglong>())); // Schreibt NULL
+        q.addBindValue(QVariant(QMetaType::fromType<qlonglong>())); // Writes NULL
     }
 
     if (q.exec()) {
         return q.lastInsertId().toLongLong();
     } else {
-        qDebug() << "Fehler beim Erstellen des Songs:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error creating the song:" << q.lastError().text();
         return -1;
     }
 }
@@ -382,7 +381,7 @@ qlonglong DatabaseManager::getOrCreateCategoryRecursive(const QString &categoryP
     qlonglong currentParentId = -1;
 
     for (const QString &name : std::as_const(parts)) {
-        // 1. Prüfen, ob Kategorie auf dieser Ebene existiert
+        // Check if a category exists at this level
         QSqlQuery query(database());
         query.prepare("SELECT id FROM Categories WHERE name = :name AND parent_id = :pId");
         query.bindValue(":name", name);
@@ -391,7 +390,7 @@ qlonglong DatabaseManager::getOrCreateCategoryRecursive(const QString &categoryP
         if (query.exec() && query.next()) {
             currentParentId = query.value(0).toLongLong();
         } else {
-            // 2. Wenn nicht, neu anlegen
+            // If not, create a new one.
             QSqlQuery insert;
             insert.prepare("INSERT INTO Categories (name, parent_id) VALUES (:name, :pId)");
             insert.bindValue(":name", name);
@@ -400,7 +399,7 @@ qlonglong DatabaseManager::getOrCreateCategoryRecursive(const QString &categoryP
             if (insert.exec()) {
                 currentParentId = insert.lastInsertId().toLongLong();
             } else {
-                qDebug() << "Fehler beim Erstellen der Kategorie:" << name;
+                qCritical() << "[DatabaseManager] Error creating category: " << name;
                 return -1;
             }
         }
@@ -418,7 +417,7 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
 
     int finalSongId = -1;
 
-    // SCHRITT 1: Existierende song_id finden
+    // Find existing song_id
     for (int id : fileIds) {
         QSqlQuery songIdQuery(database());
         songIdQuery.prepare("SELECT song_id FROM media_files WHERE id = ?");
@@ -432,13 +431,13 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
         }
     }
 
-    // SCHRITT 2: Falls keine ID gefunden, neuen Song anlegen
+    // If no ID is found, create a new song.
     if (finalSongId <= 0) {
-        // Wir holen uns den Namen der ersten Datei für den Default-Titel
+        // Get the name of the first file for the default title.
         QSqlQuery nameQuery(database());
         nameQuery.prepare("SELECT file_path FROM media_files WHERE id = ?");
         nameQuery.addBindValue(fileIds.first());
-        QString title = "Neuer Song";
+        QString title = "New song";
         if (nameQuery.exec() && nameQuery.next()) {
             title = QFileInfo(nameQuery.value(0).toString()).baseName();
         }
@@ -453,7 +452,7 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
         finalSongId = insertQuery.lastInsertId().toInt();
     }
 
-    // SCHRITT 3: Alle verknüpfen
+    // link them all
     for (int id : fileIds) {
         QSqlQuery updateQuery(database());
         updateQuery.prepare("UPDATE media_files SET song_id = ? WHERE id = ?");
@@ -480,14 +479,14 @@ bool DatabaseManager::addFileRelation(int idA, int idB) {
     if (idA == idB) return false;
     QSqlQuery q(database());
     q.prepare("INSERT OR IGNORE INTO file_relations (file_id_a, file_id_b) VALUES (?, ?)");
-    q.addBindValue(qMin(idA, idB)); // Sortierung verhindert doppelte Paare (1,2 und 2,1)
+    q.addBindValue(qMin(idA, idB)); // Sorting prevents duplicate pairs (1,2 and 2,1)
     q.addBindValue(qMax(idA, idB));
     return q.exec();
 }
 
 bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
     QSqlQuery query;
-    // Wir löschen die Zeile, egal ob die IDs als (A, B) oder (B, A) gespeichert wurden
+    // Delete the line, regardless of whether the IDs were stored as (A, B) or (B, A).
     query.prepare("DELETE FROM file_relations WHERE "
                   "(file_id_a = :idA AND file_id_b = :idB) OR "
                   "(file_id_a = :idB AND file_id_b = :idA)");
@@ -496,7 +495,7 @@ bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
     query.bindValue(":idB", fileIdB);
 
     if (!query.exec()) {
-        qWarning() << "[DatabaseManager] Fehler beim Löschen der Relation:"
+        qWarning() << "[DatabaseManager] Error deleting the relation: "
                    << query.lastError().text();
         return false;
     }
@@ -511,7 +510,7 @@ bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
 QList<DatabaseManager::RelatedFile> DatabaseManager::getResourcesForSong(int songId) {
     QList<RelatedFile> list;
 
-    // Wir nutzen die interne db_m - das ist der sichere Weg!
+    // Use the internal db_m - that's the safe way!
     QSqlQuery q(database());
     q.prepare("SELECT id, type, title, path_or_url FROM resources WHERE song_id = ?");
     q.addBindValue(songId);
@@ -528,7 +527,7 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getResourcesForSong(int son
             list.append(res);
         }
     } else {
-        qDebug() << "Error loading resources:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error loading resources: " << q.lastError().text();
     }
 
     return list;
@@ -554,7 +553,7 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int song
             list.append(rf);
         }
     } else {
-        qDebug() << "getFilesBySongId Error:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] getFilesBySongId Error: " << q.lastError().text();
     }
     return list;
 }
@@ -574,17 +573,16 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getRelatedFiles(const int s
     if (q.exec()) {
         while (q.next()) {
             RelatedFile res;
-            res.id           = q.value(0).toInt();    // Korrekt (id)
-            res.relativePath = q.value(1).toString(); // Korrekt (file_path)
+            res.id           = q.value(0).toInt();    // Correctly (id)
+            res.relativePath = q.value(1).toString(); // Correctly (file_path)
             res.songId       = songId;
 
-            // FEHLER-QUELLE: Du hast kein 'title' oder 'type' im SELECT!
-            // Wir nehmen den Dateinamen als Titel, wenn kein Titel in der DB ist.
+            // Use the filename as the title if there is no title in the database.
             QFileInfo fi(res.relativePath);
             res.fileName = fi.fileName();
-            res.title    = res.fileName; // Fallback, da 'title' nicht im SELECT steht
+            res.title    = res.fileName; //Fallback, since 'title' is not in the SELECT statement
 
-            // Den Typ bestimmen wir einfach aus der Endung
+            // We determine the type simply from the ending.
             res.type     = fi.suffix().toLower();
 
             list.append(res);
@@ -602,7 +600,7 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
 
     QSqlQuery q(database());
 
-    // 1. Eintrag ins Journal / History
+    // Journal entry / History
     q.prepare("INSERT INTO practice_history (song_id, bpm_start, total_reps, successful_streaks) "
               "VALUES (:sid, :bpm, :total, :clean)");
     q.bindValue(":sid", songId);
@@ -612,10 +610,11 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
 
     if (!q.exec()) {
         db_m.rollback();
+        qDebug() << "[DatabaseManager] addPracticeSession: rollback - return false";
         return false;
     }
 
-    // 2. Song-Stammdaten aktualisieren (Wichtig für Dashboard!)
+    // Update song master data (Important for dashboard!)
     q.prepare("UPDATE songs SET last_practiced = CURRENT_TIMESTAMP, current_bpm = :bpm WHERE id = :sid");
     q.bindValue(":bpm", bpm);
     q.bindValue(":sid", songId);
@@ -625,7 +624,7 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
         return false;
     }
 
-    // 3. Notiz speichern (falls vorhanden)
+    // Save note (if available)
     if (!note.trimmed().isEmpty()) {
         q.prepare("INSERT INTO practice_journal (song_id, practiced_bpm, note_text) VALUES (?, ?, ?)");
         q.addBindValue(songId);
@@ -644,15 +643,15 @@ bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<Prac
     QSqlDatabase db = QSqlDatabase::database();
 
     if (!db.isOpen()) {
-        qDebug() << "Database was closed! Attempts to open...";
+        qDebug() << "[DatabaseManager] Database was closed! Attempts to open...";
         if (!db.open()) {
-            qDebug() << "Error opening:" << db.lastError().text();
+            qCritical() << "[DatabaseManager] Error opening:" << db.lastError().text();
             return false;
         }
     }
 
     if (!db.transaction()) {
-        qDebug() << "Transaction Error:" << db.lastError().text();
+        qCritical() << "[DatabaseManager] Transaction Error:" << db.lastError().text();
         return false;
     }
 
@@ -681,8 +680,10 @@ bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<Prac
     }
     if (!db.commit()) {
         db.rollback();
+        qDebug() << "[DatabaseManager] saveTableSessions: db.commit is fase - use rollback and return false";
         return false;
     }
+
     return true;
 }
 
@@ -717,14 +718,14 @@ QList<PracticeSession> DatabaseManager::getSessionsForDay(int songId, QDate date
 
 bool DatabaseManager::addJournalNote(int songId, const QString &note) {
     QSqlQuery q(database());
-    // Wir erstellen einen neuen historischen Eintrag
+    // Create a new historical entry
     q.prepare("INSERT INTO practice_journal (song_id, note_text, practice_date) "
               "VALUES (?, ?, CURRENT_TIMESTAMP)");
     q.addBindValue(songId);
     q.addBindValue(note);
 
     if (!q.exec()) {
-        qDebug() << "Journal Error:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Journal Error:" << q.lastError().text();
         return false;
     }
     return true;
@@ -734,23 +735,23 @@ bool DatabaseManager::saveOrUpdateNote(int songId, QDate date, const QString &no
     QSqlQuery q(database());
     QString dateStr = date.toString("yyyy-MM-dd");
 
-    // 1. Prüfen, ob für diesen Tag bereits ein Eintrag existiert
+    // Check if an entry already exists for this day.
     q.prepare("SELECT id FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ?");
     q.addBindValue(songId);
     q.addBindValue(dateStr);
 
     if (q.exec() && q.next()) {
-        // 2. Vorhandenen Eintrag aktualisieren
+        // Update existing entry
         int entryId = q.value(0).toInt();
         q.prepare("UPDATE practice_journal SET note_text = ? WHERE id = ?");
         q.addBindValue(note);
         q.addBindValue(entryId);
     } else {
-        // 3. Neuen Eintrag anlegen
+        // Create new entry
         q.prepare("INSERT INTO practice_journal (song_id, note_text, practice_date) VALUES (?, ?, ?)");
         q.addBindValue(songId);
         q.addBindValue(note);
-        q.addBindValue(dateStr); // Hier das Datum vom Kalender nutzen!
+        q.addBindValue(dateStr); // Use the date from the calendar here!
     }
     return q.exec();
 }
@@ -760,19 +761,19 @@ bool DatabaseManager::updateSongNotes(int songId, const QString &notes, QDate da
     QSqlQuery q(db_m);
     QString dateStr = date.toString("yyyy-MM-dd");
 
-    // 1. Prüfen, ob für diesen Song an diesem Tag bereits ein Eintrag existiert
+    // Check if an entry already exists for this song on this day.
     q.prepare("SELECT id FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ?");
     q.addBindValue(songId);
     q.addBindValue(dateStr);
 
     if (q.exec() && q.next()) {
-        // 2. Vorhandenen Eintrag aktualisieren
+        // Update existing entry
         int entryId = q.value(0).toInt();
         q.prepare("UPDATE practice_journal SET note_text = ? WHERE id = ?");
         q.addBindValue(notes);
         q.addBindValue(entryId);
     } else {
-        // 3. Neuen Eintrag für diesen Tag anlegen
+        // Create a new entry for this day
         q.prepare("INSERT INTO practice_journal (song_id, note_text, practice_date) VALUES (?, ?, ?)");
         q.addBindValue(songId);
         q.addBindValue(notes);
@@ -801,7 +802,7 @@ QString DatabaseManager::getNoteForDay(int songId, QDate date) {
         return q.value(0).toString();
     }
 
-    return ""; // Falls für diesen Tag noch kein Eintrag existiert
+    return ""; // If no entry exists for this day
 }
 
 // =============================================================================
@@ -811,7 +812,7 @@ QString DatabaseManager::getNoteForDay(int songId, QDate date) {
 QMap<int, QString> DatabaseManager::getPracticedSongsForDay(QDate date) {
     QMap<int, QString> songMap;
     QSqlQuery q(database());
-    // Wir holen Song-ID und Titel für alle Einträge dieses Tages
+    // Get song ID and title for all entries this day
     q.prepare("SELECT s.id, s.title FROM songs s "
               "JOIN practice_journal pj ON s.id = pj.song_id "
               "WHERE DATE(pj.practice_date) = ? "
@@ -864,7 +865,7 @@ bool DatabaseManager::setSetting(const QString &key, const QVariant &value) {
     QSqlQuery q(database());
     q.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
     q.addBindValue(key);
-    q.addBindValue(value.toString()); // QVariant wandelt bool automatisch in "true"/"false" um
+    q.addBindValue(value.toString()); // QVariant automatically converts boolean values ​​to "true"/"false".
     return q.exec();
 }
 
@@ -893,7 +894,7 @@ QVariant DatabaseManager::getSetting(const QString &key, const QVariant &default
 // Privat
 int DatabaseManager::getOrCreateUserId(const QString &name, const QString &role) {
     QSqlQuery q(database());
-    // Tabelle muss 'users' sein, nicht 'groups'
+    // The table must be 'users', not 'groups'.
     q.prepare("SELECT id FROM users WHERE name = :name");
     q.bindValue(":name", name);
 
