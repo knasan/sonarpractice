@@ -49,13 +49,14 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     QCoreApplication::setApplicationName("SonarPractice");
 
-    qInstallMessageHandler(myMessageHandler);
-
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 
     #ifdef QT_DEBUG
+        qDebug() << "in debug";
         QString dbPath = appDataDir + "/sonar_practice_debug.db";
     #else
+        qDebug() << "in release";
+        qInstallMessageHandler(myMessageHandler);
         QString dbPath = appDataDir + "/sonar_practice.db";
     #endif
 
@@ -70,16 +71,17 @@ int main(int argc, char *argv[])
 
         "QLineEdit, QListWidget, QTreeWidget { background-color: #252525; border: 1px solid #777777; color: #ffffff; }"
 
-        // --- STANDARDBUTTONS (Wenn bereit / Aktiv) ---
+        // --- STANDARDBUTTONS ---
         "QPushButton { background-color: #555555; color: white; border: 1px solid #777777; padding: 5px 15px; border-radius: 2px; }"
         "QPushButton:hover { background-color: #666666; }"
-        // "QPushButton:pressed { background-color: #2a82da; }" // Blau beim Drücken für Feedback
 
-        // --- DEAKTIVIERTER STATUS (Dein Wunsch: Dunkelgrau) ---
+        // "QPushButton:pressed { background-color: #2a82da; }" // Blue when pressed for feedback
+        // --- DEAKTIVIERTER STATUS ---
+
         "QPushButton:disabled { "
-        "  background-color: #222222; " // Sehr dunkles Grau (fast schwarz)
-        "  color: #555555; "            // Dunkelgrauer Text (kaum lesbar)
-        "  border: 1px solid #333333; " // Kaum sichtbarer Rahmen
+        "  background-color: #222222; " // Very dark grey (almost black)
+        "  color: #555555; "            // Dark grey text (barely legible)
+        "  border: 1px solid #333333; " // Barely visible frame
         "}"
         );
 

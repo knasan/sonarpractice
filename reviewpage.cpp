@@ -690,7 +690,7 @@ bool ReviewPage::finishDialog() {
     msgBox.setIcon(QMessageBox::Question);
 
     QPushButton *confirmBtn = msgBox.addButton(tr("Take over"), QMessageBox::AcceptRole);
-    msgBox.addButton(tr("Korrigieren"), QMessageBox::RejectRole);
+    msgBox.addButton(tr("Correct"), QMessageBox::RejectRole);
 
 
     msgBox.exec();

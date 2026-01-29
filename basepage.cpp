@@ -24,8 +24,8 @@ void BasePage::styleInfoLabel(QLabel* label) const
     label->setWordWrap(true);
     label->setStyleSheet(
         "font-size: 16px; "
-        "color: #aaccff; "       // Ein sanftes Blau-Grau
-        "line-height: 140%; "   // Mehr Zeilenabstand für bessere Lesbarkeit "line-height: 1.4;"
+        "color: #aaccff; "       // A soft blue-grey
+        "line-height: 140%; "   // Increased line spacing for better readability "line-height: 1.4;"
         "margin-bottom: 15px;"
     );
 }
@@ -97,7 +97,7 @@ void BasePage::applyFilterToTree(QTreeWidget* tree, const QString& text, CustomF
     tree->setUpdatesEnabled(false);
 
     for (int i = 0; i < tree->topLevelItemCount(); ++i) {
-        // Wir rufen eine rekursive Hilfsfunktion für jedes Top-Level-Element auf
+        // recursive helper function for each top-level element on
         if (!filterItemRecursive(tree->topLevelItem(i), text, extraCriteria)) {
             qWarning() << "FilterItemRecursive error";
         }
@@ -109,27 +109,25 @@ void BasePage::applyFilterToTree(QTreeWidget* tree, const QString& text, CustomF
 bool BasePage::filterItemRecursive(QTreeWidgetItem* item, const QString& text, CustomFilterCriteria extraCriteria) {
     bool hasVisibleChild = false;
 
-    // 1. Gehe rekursiv durch alle Kinder
+    // Go through all children recursively
     for (int i = 0; i < item->childCount(); ++i) {
         if (filterItemRecursive(item->child(i), text, extraCriteria)) {
             hasVisibleChild = true;
         }
     }
 
-    // 2. Prüfe, ob dieses Item selbst zum Text passt
+    // Check if this item itself fits the text.
     bool matchesText = text.isEmpty() || item->text(0).contains(text, Qt::CaseInsensitive);
 
-    // 3. Prüfe Extra-Kriterien (falls vorhanden)
+    // Check extra criteria (if any)
     bool matchesExtra = !extraCriteria || extraCriteria(item);
 
-    // Ein Item ist sichtbar, wenn:
-    // (Es den Text matcht UND das Extra-Kriterium erfüllt) ODER es ein sichtbares Kind hat
+    // An item is visible if: (It matches the text AND meets the extra criterion) OR it has a visible child.
     bool shouldBeVisible = (matchesText && matchesExtra) || hasVisibleChild;
 
     item->setHidden(!shouldBeVisible);
 
-    // Wenn ein Item sichtbar ist, klappen wir den Baum automatisch auf,
-    // damit der User den Treffer auch sieht
+    // When an item is visible, we automatically expand the tree so that the user can see the match.
     if (shouldBeVisible && !text.isEmpty() && item->childCount() > 0) {
         item->setExpanded(true);
     }
@@ -140,10 +138,10 @@ bool BasePage::filterItemRecursive(QTreeWidgetItem* item, const QString& text, C
 void BasePage::addHeaderLogo(QLayout* layout, const QString& title) {
     if (!layout) return;
 
-    // Der QTextBrowser für den Erklärtext
+    // The QTextBrowser for explanatory text
     QTextBrowser *browser = new QTextBrowser(this);
 
-    // Optisches Tuning (dein Original-Code)
+    // Visual tuning
     browser->setFrameStyle(QFrame::NoFrame);
     QPalette p = browser->palette();
     p.setColor(QPalette::Base, Qt::transparent);
@@ -152,11 +150,9 @@ void BasePage::addHeaderLogo(QLayout* layout, const QString& title) {
     browser->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     browser->setFixedHeight(50);
 
-    // Nutzt die bereits existierende createHeader Funktion der BasePage
     QString headerLogo = createHeader(title);
     browser->setHtml(headerLogo);
 
-    // Ins Layout einfügen
     layout->addWidget(browser);
 }
 
