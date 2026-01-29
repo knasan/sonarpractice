@@ -5,8 +5,10 @@
 #include <QString>
 #include <QObject>
 #include <QVariant>
+#include <QDate>
 
 struct PracticeSession {
+    QDate date;
     int startBar;
     int endBar;
     int bpm;
@@ -49,8 +51,8 @@ public:
     [[nodiscard]] QString getManagedPath();
     [[nodiscard]] qlonglong createSong(const QString &title,
                                        const qlonglong &categoryId = -1,
-                                       const QString &artist = "Unbekannt",
-                                       const QString &tuning = "Unbekannt");
+                                       const QString &artist = "Unknown",
+                                       const QString &tuning = "Unknown");
 
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
@@ -71,6 +73,7 @@ public:
     [[nodiscard]] bool addPracticeSession(int songId, int bpm, int totalReps, int cleanReps, const QString &note);
     [[nodiscard]] bool saveTableSessions(int songId, QDate date, const QList<PracticeSession> &sessions);
     [[nodiscard]] QList<PracticeSession> getSessionsForDay(int songId, QDate date);
+    [[nodiscard]] QList<PracticeSession> getLastSessions(int songId, int limit);
 
     // Journal & Notice
     [[nodiscard]] bool addJournalNote(int songId, const QString &note);

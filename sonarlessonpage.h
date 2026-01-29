@@ -3,6 +3,7 @@
 
 #include "databasemanager.h"
 
+#include <QCheckBox>
 #include <QHBoxLayout>
 #include <QWidget>
 
@@ -30,11 +31,14 @@ public:
 
 private:
     void setupUI();
+    void sitesConnects();
     void loadData();
     void setupResourceButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files);
     void updateButtonState();
     void loadJournalForDay(int songId, QDate date);
     void loadTableDataForDay(int songId, QDate date);
+    void refreshTableDisplay(QDate date);
+    void addSessionToTable(const PracticeSession &s, bool isReadOnly);
     void dailyNotePlaceholder();
     void updateCalendarHighlights();
 
@@ -60,6 +64,8 @@ private:
     QPushButton* gpIcon_m;
     QPushButton* saveBtn_m;
 
+    QCheckBox* showAllSessions_m;
+
     QHBoxLayout* resourceLayout_m;
 
     QString currentSongPath_m;
@@ -71,8 +77,11 @@ private:
     bool isDirtyNotes_m{false};
     bool isDirtyTable_m{false};
 
+    QList<PracticeSession> currentSessions_m; // Buffering the loaded data
+    QList<PracticeSession> referenceSessions_m; // Buffering the last sessions data
+
 protected:
-    void showEvent(QShowEvent *event) override; // tab wechsel triggern
+    void showEvent(QShowEvent *event) override; // trigger tab switch
 
 private slots:
     void onSongChanged(int index);

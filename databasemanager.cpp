@@ -640,74 +640,105 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
  * Delete the day's old sessions and write the new ones:
  * */
 bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<PracticeSession> &sessions) {
-    QSqlDatabase db = QSqlDatabase::database();
+    QSqlDatabase db = database(); // Hole die aktive Verbindung
 
-    if (!db.isOpen()) {
-        qDebug() << "[DatabaseManager] Database was closed! Attempts to open...";
-        if (!db.open()) {
-            qCritical() << "[DatabaseManager] Error opening:" << db.lastError().text();
+    if (!db.transaction()) {
+        qCritical() << "[DatabaseManager] Could not start transaction:" << db.lastError().text();
+        return false;
+    }
+
+    QSqlQuery q(db);
+    QString dateStr = date.toString("yyyy-MM-dd");
+
+    q.prepare("DELETE FROM practice_journal WHERE song_id = :sId AND practice_date = :pDate");
+    q.bindValue(":sId", songId);
+    q.bindValue(":pDate", dateStr);
+
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] Delete Error:" << q.lastError().text();
+        db.rollback();
+        return false;
+    }
+
+    q.prepare("INSERT INTO practice_journal (song_id, practice_date, start_bar, end_bar, "
+              "practiced_bpm, total_reps, successful_streaks) "
+              "VALUES (:songId, :date, :start, :end, :bpm, :reps, :streaks)");
+
+    for (const auto &s : sessions) {
+        q.bindValue(":songId", songId);
+        q.bindValue(":date", dateStr);
+        q.bindValue(":start", s.startBar);
+        q.bindValue(":end", s.endBar);
+        q.bindValue(":bpm", s.bpm);
+        q.bindValue(":reps", s.reps);
+        q.bindValue(":streaks", s.streaks);
+
+        if (!q.exec()) {
+            qCritical() << "[DatabaseManager] Insert Error:" << q.lastError().text();
+            db.rollback();
             return false;
         }
     }
 
-    if (!db.transaction()) {
-        qCritical() << "[DatabaseManager] Transaction Error:" << db.lastError().text();
-        return false;
-    }
-
-    QSqlQuery q(database());
-    QString dateStr = date.toString("yyyy-MM-dd");
-
-    // Delete existing exercise values ​​for this day/song
-    q.prepare("DELETE FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ? AND start_bar IS NOT NULL");
-    q.addBindValue(songId);
-    q.addBindValue(dateStr);
-    q.exec();
-
-    // Insert new lines
-    q.prepare("INSERT INTO practice_journal (song_id, practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks) "
-              "VALUES (?, ?, ?, ?, ?, ?, ?)");
-
-    for (const auto &s : sessions) {
-        q.addBindValue(songId);
-        q.addBindValue(dateStr);
-        q.addBindValue(s.startBar);
-        q.addBindValue(s.endBar);
-        q.addBindValue(s.bpm);
-        q.addBindValue(s.reps);
-        q.addBindValue(s.streaks);
-        q.exec();
-    }
-    if (!db.commit()) {
-        db.rollback();
-        qDebug() << "[DatabaseManager] saveTableSessions: db.commit is fase - use rollback and return false";
-        return false;
-    }
-
-    return true;
+    return db.commit();
 }
 
 QList<PracticeSession> DatabaseManager::getSessionsForDay(int songId, QDate date) {
     QList<PracticeSession> sessions;
     QSqlQuery q(database());
 
-    q.prepare("SELECT start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
+    q.prepare("SELECT practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
               "FROM practice_journal "
               "WHERE song_id = ? AND DATE(practice_date) = ? "
-              "AND start_bar IS NOT NULL"); // Nur Einträge mit Tabellendaten
+              "AND start_bar IS NOT NULL"); // Only entries with table data
     q.addBindValue(songId);
     q.addBindValue(date.toString("yyyy-MM-dd"));
 
     if (q.exec()) {
         while (q.next()) {
             sessions.append({
-                q.value(0).toInt(),
+                q.value(0).toDate(),
                 q.value(1).toInt(),
                 q.value(2).toInt(),
                 q.value(3).toInt(),
-                q.value(4).toInt()
+                q.value(4).toInt(),
+                q.value(5).toInt()
             });
         }
+    }
+    return sessions;
+}
+
+QList<PracticeSession> DatabaseManager::getLastSessions(int songId, int limit) {
+    QList<PracticeSession> sessions;
+    QSqlQuery query;
+
+    // Sort by date and ID in descending order to get the very latest entries.
+    query.prepare("SELECT practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
+                  "FROM practice_journal " // Heißt deine Tabelle practice_journal oder practice_sessions? Prüfen!
+                  "WHERE song_id = :songId "
+                  "ORDER BY practice_date DESC, id DESC "
+                  "LIMIT :limit");
+
+    // 2. BEIDE Parameter binden (Wichtig!)
+    query.bindValue(":songId", songId);
+    query.bindValue(":limit", limit);
+
+    if (query.exec()) {
+        while (query.next()) {
+            PracticeSession s;
+            s.date = query.value("practice_date").toDate();
+            s.startBar = query.value("start_bar").toInt();
+            s.endBar = query.value("end_bar").toInt();
+            s.bpm = query.value("practiced_bpm").toInt();
+            s.reps = query.value("total_reps").toInt();
+            s.streaks = query.value("successful_streaks").toInt();
+
+            sessions.prepend(s);
+        }
+    } else {
+        qCritical() << "[DatabaseManager] getLastSessions SQL Error:" << query.lastError().text();
+        qDebug() << "[DatabaseManager] getLastSessions Full Query:" << query.executedQuery();
     }
     return sessions;
 }

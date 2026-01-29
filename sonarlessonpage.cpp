@@ -36,7 +36,7 @@ SonarLessonPage::SonarLessonPage(QWidget * parent, DatabaseManager *dbManager) :
 
     // Initials Stand load (first song, today)
     if (songSelector_m->count() > 0) {
-        qDebug() << "SonarLessionPage load firstSongId: " << songSelector_m->currentData(FileIdRole);
+        // qDebug() << "SonarLessionPage load firstSongId: " << songSelector_m->currentData(FileIdRole);
         int firstSongId = songSelector_m->currentData(FileIdRole).toInt();
         loadJournalForDay(firstSongId, calendar_m->selectedDate());
         loadTableDataForDay(firstSongId, calendar_m->selectedDate());
@@ -94,9 +94,14 @@ void SonarLessonPage::setupUI() {
     contentLayout->addWidget(notesEdit_m);
 
     // Table: Practice session (time from/to, tempo, duration, repetitions)
-    sessionTable_m = new QTableWidget(5, 5, this);
-    sessionTable_m->setHorizontalHeaderLabels({tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
+    sessionTable_m = new QTableWidget(5, 6, this);
+    sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
     contentLayout->addWidget(sessionTable_m);
+
+    showAllSessions_m = new QCheckBox(tr("Show all entries"), this);
+    showAllSessions_m->setCheckState(Qt::Unchecked);
+    showAllSessions_m->hide(); // TODO: Hide it until properly integrated, or check if this makes sense. It's rather optional anyway – you'd have to test it once in a weekly session.
+    contentLayout->addWidget(showAllSessions_m);
 
     // --- FOOTER (Progress & Buttons) ---
     auto *footerLayout = new QHBoxLayout();
@@ -126,6 +131,15 @@ void SonarLessonPage::setupUI() {
     footerLayout->addWidget(saveBtn_m);
     saveBtn_m->setEnabled(false);
 
+    contentLayout->addLayout(footerLayout);
+    layout->addLayout(contentLayout, 3);
+
+    sitesConnects();
+
+    updateButtonState();
+}
+
+void SonarLessonPage::sitesConnects() {
     // Establish connection: When a song is changed in the ComboBox
     if (!isConnectionsEstablished_m) {
         isConnectionsEstablished_m = true;
@@ -188,9 +202,6 @@ void SonarLessonPage::setupUI() {
             loadJournalForDay(songId, selectedDate);
         });
 
-        connect(songSelector_m, QOverload<int>::of(&QComboBox::currentIndexChanged),
-                this, &SonarLessonPage::onSongChanged);
-
         connect(sessionTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
             if (isLoading_m) return;
 
@@ -200,6 +211,12 @@ void SonarLessonPage::setupUI() {
                 }
             }
         });
+
+        // Show alle entries
+        connect(showAllSessions_m, &QCheckBox::toggled, this, [this]() {
+            refreshTableDisplay(calendar_m->selectedDate());
+        });
+
 
         calendar_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -244,10 +261,6 @@ void SonarLessonPage::setupUI() {
         });
     }
 
-    contentLayout->addLayout(footerLayout);
-    layout->addLayout(contentLayout, 3);
-
-    updateButtonState();
 }
 
 // The logic: Check files and activate icons.
@@ -422,6 +435,7 @@ void SonarLessonPage::onSaveClicked() {
     if (isDirtyNotes_m) {
         notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
         qDebug() << "* onSaveClicked - notesSuccess: " << notesSuccess;
+        if (notesSuccess) isDirtyNotes_m = false;
 
     }
 
@@ -497,20 +511,28 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     isLoading_m = false;
 }
 
+/* Logic of collectTableData
+ * This function reads the current values ​​from the QTableWidget and converts them into a list of PracticeSession objects.
+ * This list is then passed to the DatabaseManager for permanent storage.
+ */
 QList<PracticeSession> SonarLessonPage::collectTableData() {
     QList<PracticeSession> sessions;
     for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
-        auto itemStart = sessionTable_m->item(i, 0);
-        auto itemEnd = sessionTable_m->item(i, 1);
+        // Spalte 0 ist "Day" -> Wir starten bei 1
+        auto itemStart   = sessionTable_m->item(i, 1); // beat of
+        auto itemEnd     = sessionTable_m->item(i, 2); // beat until
+        auto itemBpm     = sessionTable_m->item(i, 3); // BPM
+        auto itemReps    = sessionTable_m->item(i, 4); // Repetitions
+        auto itemStreaks = sessionTable_m->item(i, 5); // Length of time
 
-        // Copy only lines with content
         if (itemStart && !itemStart->text().isEmpty() && itemEnd && !itemEnd->text().isEmpty()) {
             PracticeSession s;
+            s.date = calendar_m->selectedDate();
             s.startBar = itemStart->text().toInt();
-            s.endBar = itemEnd->text().toInt();
-            s.bpm = sessionTable_m->item(i, 2) ? sessionTable_m->item(i, 2)->text().toInt() : 0;
-            s.reps = sessionTable_m->item(i, 3) ? sessionTable_m->item(i, 3)->text().toInt() : 0;
-            s.streaks = sessionTable_m->item(i, 4) ? sessionTable_m->item(i, 4)->text().toInt() : 0;
+            s.endBar   = itemEnd->text().toInt();
+            s.bpm      = itemBpm ? itemBpm->text().toInt() : 0;
+            s.reps     = itemReps ? itemReps->text().toInt() : 0;
+            s.streaks  = itemStreaks ? itemStreaks->text().toInt() : 0;
             sessions.append(s);
         }
     }
@@ -548,24 +570,72 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
     if (songId <= 0) return;
     isLoading_m = true;
 
-    // Retrieve data
-    QList<PracticeSession> sessions = dbManager_m->getSessionsForDay(songId, date);
+    currentSessions_m = dbManager_m->getSessionsForDay(songId, date);
+    // qDebug() << "[SonarLessonPage] loadTableDataForDay currentSessions_m.size : " << currentSessions_m.size();
 
-    // Prepare table:
-    // Set the number of rows exactly to the number of sessions + 1 buffer row.
-    sessionTable_m->setRowCount(sessions.size() + 1);
-    sessionTable_m->clearContents();
+    // Logic: If it's not today and "Show All" is off, only show the last 2 entries for reference.
+    referenceSessions_m = dbManager_m->getLastSessions(songId, 2);
+    // qDebug() << "[SonarLessonPage] loadTableDataForDay referenceSessions_m.size : " << referenceSessions_m.size();
 
-    // Fill in data
-    for (int i = 0; i < sessions.size(); ++i) {
-        const auto& s = sessions.at(i);
-        sessionTable_m->setItem(i, 0, new QTableWidgetItem(QString::number(s.startBar)));
-        sessionTable_m->setItem(i, 1, new QTableWidgetItem(QString::number(s.endBar)));
-        sessionTable_m->setItem(i, 2, new QTableWidgetItem(QString::number(s.bpm)));
-        sessionTable_m->setItem(i, 3, new QTableWidgetItem(QString::number(s.reps)));
-        sessionTable_m->setItem(i, 4, new QTableWidgetItem(QString::number(s.streaks)));
+    refreshTableDisplay(date);
+
+    isLoading_m = false;
+}
+
+void SonarLessonPage::refreshTableDisplay(QDate date) {
+    sessionTable_m->setRowCount(0);
+    bool isToday = (date == QDate::currentDate());
+
+    // First, the references (the last two, if they are not from today)
+    for (const auto& s : std::as_const(referenceSessions_m)) {
+        qDebug() << "referenzen s.date: " << s.date << ", date: " << date;
+        if (s.date < date) {
+            addSessionToTable(s, true); // Schreibgeschützt
+        }
     }
 
-    isDirtyTable_m = false;
-    isLoading_m = false;
+    // Then the current sessions for that day
+    for (const auto& s : std::as_const(currentSessions_m)) {
+        addSessionToTable(s, false); // Editierbar
+    }
+
+    // If selected today: The empty input line
+    if (isToday) {
+        int lastRow = sessionTable_m->rowCount();
+        sessionTable_m->insertRow(lastRow);
+
+        auto* itemDate = new QTableWidgetItem(date.toString("dd.MM.yyyy"));
+        itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable);
+        sessionTable_m->setItem(lastRow, 0, itemDate);
+    }
+}
+
+void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnly) {
+    int row = sessionTable_m->rowCount();
+    sessionTable_m->insertRow(row);
+
+    auto* itemDate = new QTableWidgetItem(s.date.toString("dd.MM.yyyy"));
+    itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable); // Datum nie editierbar
+
+    if (isReadOnly) {
+        itemDate->setForeground(Qt::gray);
+    }
+    sessionTable_m->setItem(row, 0, itemDate);
+
+    QList<QString> values = {
+        QString::number(s.startBar),
+        QString::number(s.endBar),
+        QString::number(s.bpm),
+        QString::number(s.reps),
+        QString::number(s.streaks)
+    };
+
+    for (int i = 0; i < values.size(); ++i) {
+        auto* item = new QTableWidgetItem(values[i]);
+        if (isReadOnly) {
+            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+            item->setForeground(Qt::gray);
+        }
+        sessionTable_m->setItem(row, i + 1, item); // i+1 because of the date in column 0
+    }
 }

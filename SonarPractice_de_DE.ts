@@ -469,6 +469,11 @@ Pfad: %1</translation>
         <translation>Übernehmen</translation>
     </message>
     <message>
+        <location filename="reviewpage.cpp" line="693"/>
+        <source>Correct</source>
+        <translation>Korrigieren</translation>
+    </message>
+    <message>
         <location filename="reviewpage.cpp" line="731"/>
         <source>Jump to duplicate...</source>
         <translation>Springe zu Duplikat...</translation>
@@ -605,9 +610,8 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation>Import bestätigen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="693"/>
         <source>Korrigieren</source>
-        <translation>Korrigieren</translation>
+        <translation type="vanished">Korrigieren</translation>
     </message>
 </context>
 <context>
@@ -699,9 +703,8 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation>Wiederholungen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="98"/>
         <source>duration (Min)</source>
-        <translation>Dauer (Min.)</translation>
+        <translation type="vanished">Dauer (Min.)</translation>
     </message>
     <message>
         <location filename="sonarlessonpage.cpp" line="98"/>
@@ -709,53 +712,68 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation>Takt bis</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="125"/>
+        <location filename="sonarlessonpage.cpp" line="98"/>
+        <source>Day</source>
+        <translation>Tag</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="98"/>
+        <source>Duration (Min)</source>
+        <translation>Dauer (Min.)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="101"/>
+        <source>Show all entries</source>
+        <translation>Zeige alle einträge</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="129"/>
         <source>Save</source>
         <translation>Speichern</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="218"/>
+        <location filename="sonarlessonpage.cpp" line="233"/>
         <source>Training sessions at %1</source>
         <translation>Trainingseinheiten bei %1</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="464"/>
+        <location filename="sonarlessonpage.cpp" line="474"/>
         <source>What did you achieve today?</source>
         <translation>Was hast du heute erreicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="465"/>
+        <location filename="sonarlessonpage.cpp" line="475"/>
         <source>What came easily to you?</source>
         <translation>Was fiel dir leicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="466"/>
+        <location filename="sonarlessonpage.cpp" line="476"/>
         <source>What didn&apos;t work so well?</source>
         <translation>Was hat nicht so gut funktioniert?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="467"/>
+        <location filename="sonarlessonpage.cpp" line="477"/>
         <source>What will you pay attention to tomorrow?</source>
         <translation>Worauf wirst du morgen erreichen?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="104"/>
+        <location filename="sonarlessonpage.cpp" line="108"/>
         <source>Daily goal: %v / %m Min</source>
         <oldsource>Tagesziel: %v / %m Min</oldsource>
         <translation>Tagesziel: %v / %m Min</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="109"/>
+        <location filename="sonarlessonpage.cpp" line="113"/>
         <source>PDF</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="110"/>
+        <location filename="sonarlessonpage.cpp" line="114"/>
         <source>Video</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="115"/>
         <source>Audio</source>
         <translation></translation>
     </message>
