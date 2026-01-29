@@ -52,10 +52,10 @@ WelcomePage::WelcomePage(QWidget *parent) : BasePage(parent) {
         "<ul>"
         "<li><b>%7</b> %8</li>"
         "<li><b>%9</b> %10</li>"
-        "<li><b>%11</b> %11</li>"
+        "<li><b>%11</b> %12</li>"
         "</ul>"
 
-        "<p><i>%12</i></p>"
+        "<p><i>%13</i></p>"
         ).arg(title, headline, paragraph1, subheading, paragraph2, subheading2, listItem1a, listItem1b, listItem2a, listItem2b, listItem3a, listItem3b, endParagraph);
 
 
