@@ -100,6 +100,7 @@ bool DatabaseManager::createInitialTables() {
     if (!q.exec("PRAGMA foreign_keys = ON")) return false;
 
     // 1. USER (Teacher / Student)
+    // TODO: sollte stärker verwendet werden, diente als vorbereitung aber wurde nicht intensiv genutzt.
     if (!q.exec("CREATE TABLE IF NOT EXISTS users ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "name TEXT UNIQUE, "
@@ -107,21 +108,19 @@ bool DatabaseManager::createInitialTables() {
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) return false;
 
     // 2. SONGS (The logical unit)
+    // TODO: sollte umbennant werden, das ist der nächste schritt nach einem Cleanup
     if (!q.exec("CREATE TABLE IF NOT EXISTS songs ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "user_id INTEGER, "
-                "category_id INTEGER, " // NEU: Verknüpfung zur Kategorie
                 "title TEXT, "
                 "artist_id INTEGER, "
                 "tuning_id INTEGER, "
                 "base_bpm INTEGER, "
                 "total_bars INTEGER, "
-                "last_practiced DATETIME, "
                 "current_bpm INTEGER DEFAULT 0, "
-                "target_bpm INTEGER DEFAULT 0, " // Für die %-Berechnung
+                "target_bpm INTEGER DEFAULT 0, " // for the % calculation, for later by gp parser.
                 "is_favorite INTEGER DEFAULT 0, "
                 "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE SET NULL, " // NEU
                 "FOREIGN KEY(artist_id) REFERENCES artists(id), "
                 "FOREIGN KEY(tuning_id) REFERENCES tunings(id))")) return false;
 
@@ -153,23 +152,6 @@ bool DatabaseManager::createInitialTables() {
                 "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, "
                 "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
 
-    // 5. PLAYLISTEN / SETLISTS
-    if (!q.exec("CREATE TABLE IF NOT EXISTS playlists ("
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    "user_id INTEGER, "
-                    "name TEXT, "
-                    "description TEXT, "
-                    "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)")) return false;
-
-    // 6. PLAYLIST-SONGS (N:M Beziehung)
-    if (!q.exec("CREATE TABLE IF NOT EXISTS playlist_items ("
-                    "playlist_id INTEGER, "
-                    "song_id INTEGER, "
-                    "position INTEGER, " // Reihenfolge in der Playlist
-                    "PRIMARY KEY (playlist_id, song_id), "
-                    "FOREIGN KEY(playlist_id) REFERENCES playlists(id) ON DELETE CASCADE, "
-                    "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
-
     // 7. EINSTELLUNGEN (Key-Value-Store für Pfade, Flags etc.)
     if (!q.exec("CREATE TABLE IF NOT EXISTS settings ("
                     "key TEXT PRIMARY KEY, "
@@ -192,41 +174,14 @@ bool DatabaseManager::createInitialTables() {
     // Initially populate standard tunings if the table is empty.
     if (!q.exec("INSERT OR IGNORE INTO tunings (name) VALUES "
                "('E-Standard'), ('Eb-Standard'), ('Drop D'), ('Drop C'), ('D-Standard')")) return false;
-
-    // 10. CATEGORIES (Folder structure from the import)
-    if (!q.exec("CREATE TABLE IF NOT EXISTS categories ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "parent_id INTEGER, "
-                "name TEXT NOT NULL, "
-                "UNIQUE(parent_id, name), " // Prevents duplicate folders in the same parent folder
-                "FOREIGN KEY(parent_id) REFERENCES categories(id) ON DELETE CASCADE)")) return false;
-
-    // URL
-    if (!q.exec("CREATE TABLE IF NOT EXISTS resources ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "song_id INTEGER, "
-                "type TEXT, "          // 'gp', 'pdf', 'video', 'audio', 'url'
-                "title TEXT, "         // "Lesson 1 Video"
-                "path_or_url TEXT, "   // path or URL
-                "is_managed INTEGER, " // 1 = local, 0 = external
-                "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
-
     // relation
+    // TODO: prüfen ob und wo diese verwendet wird.
     if (!q.exec("CREATE TABLE IF NOT EXISTS file_relations ("
                 "file_id_a INTEGER, "
                 "file_id_b INTEGER, "
-                "relation_type TEXT, " // -- e.g. 'backing track', 'tutorial', 'tab'
+                // "relation_type TEXT, " // -- e.g. 'backing track', 'tutorial', 'tab'
                 "PRIMARY KEY (file_id_a, file_id_b))")) return false;
 
-    // N:N
-    if (!q.exec("CREATE TABLE IF NOT EXISTS file_category_link ("
-        "file_id INTEGER, "
-        "category_id INTEGER, "
-        "PRIMARY KEY(file_id, category_id), "
-        "FOREIGN KEY(file_id) REFERENCES media_files(id) ON DELETE CASCADE, "
-        "FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE)")) return false;
-
-    // Standardwerte setzen, falls sie noch nicht existieren
     if (!q.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('managed_path', '')")) return false;
     if (!q.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('is_managed', 'false')")) return false;
     if (!q.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('last_import_date', '')")) return false;
@@ -288,7 +243,7 @@ bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, b
     q.addBindValue(isPracticeTarget ? 1 : 0);
 
     if (!q.exec()) {
-        qCritical() << "[DatabaseManager] Error attaching file: " << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error addFileToSong: " << q.lastError().text();
         return false;
     }
     return true;
@@ -299,7 +254,11 @@ bool DatabaseManager::updatePracticeFlag(int fileId, bool canPractice) {
     q.prepare("UPDATE media_files SET can_be_practiced = ? WHERE id = ?");
     q.addBindValue(canPractice ? 1 : 0);
     q.addBindValue(fileId);
-    return q.exec();
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] Error updatePracticeFlag: " << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 QString DatabaseManager::getManagedPath() {
@@ -307,39 +266,20 @@ QString DatabaseManager::getManagedPath() {
     return val.toString();
 }
 
-qlonglong DatabaseManager::createSong(const QString &title, const qlonglong &categoryId, const QString &artist, const QString &tuning) {
-    qDebug() << "[DatabaseManager] createSong";
-
-    qDebug() << "title: " << title;
-    qDebug() << "categoryId: " << categoryId;
-    qDebug() << "artist: " << artist;
-    qDebug() << "tuning: " << tuning;
-
+qlonglong DatabaseManager::createSong(const QString &title, const QString &artist, const QString &tuning) {
     int artistId = getOrCreateArtist(artist);
     int tuningId = getOrCreateTuning(tuning);
 
-    qDebug() << "artistId: " << artistId;
-    qDebug() << "tuningId: " << tuningId;
-    qDebug() << "-----------------------------";
-
     QSqlQuery q(database());
-    // q.prepare("INSERT INTO songs (title, artist_id, tuning_id) VALUES (?, ?, ?)");
-    q.prepare("INSERT INTO songs (title, artist_id, tuning_id, category_id) VALUES (?, ?, ?, ?)");
+    q.prepare("INSERT INTO songs (title, artist_id, tuning_id) VALUES (?, ?, ?)");
     q.addBindValue(title);
     q.addBindValue(artistId);
     q.addBindValue(tuningId);
 
-    // NULL handling for SQLite
-    if (categoryId != -1) {
-        q.addBindValue(categoryId);
-    } else {
-        q.addBindValue(QVariant(QMetaType::fromType<qlonglong>())); // Writes NULL
-    }
-
     if (q.exec()) {
         return q.lastInsertId().toLongLong();
     } else {
-        qCritical() << "[DatabaseManager] Error creating the song:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Error createSong:" << q.lastError().text();
         return -1;
     }
 }
@@ -374,39 +314,6 @@ int DatabaseManager::getOrCreateTuning(const QString &name) {
     }
 }
 
-qlonglong DatabaseManager::getOrCreateCategoryRecursive(const QString &categoryPath) {
-    if (categoryPath.isEmpty()) return -1; // Root-Ebene
-
-    QStringList parts = categoryPath.split('/', Qt::SkipEmptyParts);
-    qlonglong currentParentId = -1;
-
-    for (const QString &name : std::as_const(parts)) {
-        // Check if a category exists at this level
-        QSqlQuery query(database());
-        query.prepare("SELECT id FROM Categories WHERE name = :name AND parent_id = :pId");
-        query.bindValue(":name", name);
-        query.bindValue(":pId", currentParentId == -1 ? QVariant(QMetaType::fromType<qlonglong>()) : currentParentId);
-
-        if (query.exec() && query.next()) {
-            currentParentId = query.value(0).toLongLong();
-        } else {
-            // If not, create a new one.
-            QSqlQuery insert;
-            insert.prepare("INSERT INTO Categories (name, parent_id) VALUES (:name, :pId)");
-            insert.bindValue(":name", name);
-            insert.bindValue(":pId", currentParentId == -1 ? QVariant(QMetaType::fromType<qlonglong>()) : currentParentId);
-
-            if (insert.exec()) {
-                currentParentId = insert.lastInsertId().toLongLong();
-            } else {
-                qCritical() << "[DatabaseManager] Error creating category: " << name;
-                return -1;
-            }
-        }
-    }
-    return currentParentId;
-}
-
 // =============================================================================
 // --- Linking
 // =============================================================================
@@ -434,12 +341,12 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
     // If no ID is found, create a new song.
     if (finalSongId <= 0) {
         // Get the name of the first file for the default title.
-        QSqlQuery nameQuery(database());
-        nameQuery.prepare("SELECT file_path FROM media_files WHERE id = ?");
-        nameQuery.addBindValue(fileIds.first());
+        QSqlQuery q(database());
+        q.prepare("SELECT file_path FROM media_files WHERE id = ?");
+        q.addBindValue(fileIds.first());
         QString title = "New song";
-        if (nameQuery.exec() && nameQuery.next()) {
-            title = QFileInfo(nameQuery.value(0).toString()).baseName();
+        if (q.exec() && q.next()) {
+            title = QFileInfo(q.value(0).toString()).baseName();
         }
 
         QSqlQuery insertQuery(database());
@@ -447,6 +354,7 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
         insertQuery.addBindValue(title);
         if (!insertQuery.exec()) {
             db_m.rollback();
+            qCritical() << "[DatabaseManager] Error insertQuery: " << insertQuery.lastError().text();
             return -1;
         }
         finalSongId = insertQuery.lastInsertId().toInt();
@@ -460,6 +368,7 @@ int DatabaseManager::linkFiles(const QList<int> &fileIds) {
         updateQuery.addBindValue(id);
         if (!updateQuery.exec()) {
             db_m.rollback();
+            qCritical() << "[DatabaseManager] Error linkFiles: " << updateQuery.lastError().text();
             return -1;
         }
     }
@@ -472,7 +381,11 @@ bool DatabaseManager::unlinkFile(int fileId) {
     QSqlQuery q(database());
     q.prepare("UPDATE media_files SET song_id = NULL WHERE id = ?");
     q.addBindValue(fileId);
-    return q.exec();
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] Error unlinkFile: " << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 bool DatabaseManager::addFileRelation(int idA, int idB) {
@@ -481,7 +394,11 @@ bool DatabaseManager::addFileRelation(int idA, int idB) {
     q.prepare("INSERT OR IGNORE INTO file_relations (file_id_a, file_id_b) VALUES (?, ?)");
     q.addBindValue(qMin(idA, idB)); // Sorting prevents duplicate pairs (1,2 and 2,1)
     q.addBindValue(qMax(idA, idB));
-    return q.exec();
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] Error addFileRelation: " << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
@@ -495,8 +412,7 @@ bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
     query.bindValue(":idB", fileIdB);
 
     if (!query.exec()) {
-        qWarning() << "[DatabaseManager] Error deleting the relation: "
-                   << query.lastError().text();
+        qCritical() << "[DatabaseManager] Error deleting the relation: " << query.lastError().text();
         return false;
     }
 
@@ -610,7 +526,7 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
 
     if (!q.exec()) {
         db_m.rollback();
-        qDebug() << "[DatabaseManager] addPracticeSession: rollback - return false";
+        qDebug() << "[DatabaseManager] addPracticeSession: rollback - return false: " << q.lastError().text();
         return false;
     }
 
@@ -621,6 +537,7 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
 
     if (!q.exec()) {
         db_m.rollback();
+        qDebug() << "[DatabaseManager] addPracticeSession: rollback - return false: " << q.lastError().text();
         return false;
     }
 
@@ -630,7 +547,10 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
         q.addBindValue(songId);
         q.addBindValue(bpm);
         q.addBindValue(note);
-        q.exec();
+        if (!q.exec()) {
+            qDebug() << "[DatabaseManager] addPracticeSession: save note: " << q.lastError().text();
+            return false;
+        }
     }
 
     return db_m.commit();
@@ -655,7 +575,7 @@ bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<Prac
     q.bindValue(":pDate", dateStr);
 
     if (!q.exec()) {
-        qCritical() << "[DatabaseManager] Delete Error:" << q.lastError().text();
+        qCritical() << "[DatabaseManager] Delete Error saveTableSessions:" << q.lastError().text();
         db.rollback();
         return false;
     }
@@ -705,6 +625,8 @@ QList<PracticeSession> DatabaseManager::getSessionsForDay(int songId, QDate date
                 q.value(5).toInt()
             });
         }
+    } else {
+        qCritical() << "[DatabaseManager] getSessionsForDay Error:" << q.lastError().text();
     }
     return sessions;
 }
@@ -715,7 +637,7 @@ QList<PracticeSession> DatabaseManager::getLastSessions(int songId, int limit) {
 
     // Sort by date and ID in descending order to get the very latest entries.
     query.prepare("SELECT practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
-                  "FROM practice_journal " // Heißt deine Tabelle practice_journal oder practice_sessions? Prüfen!
+                  "FROM practice_journal "
                   "WHERE song_id = :songId "
                   "ORDER BY practice_date DESC, id DESC "
                   "LIMIT :limit");
@@ -784,7 +706,11 @@ bool DatabaseManager::saveOrUpdateNote(int songId, QDate date, const QString &no
         q.addBindValue(note);
         q.addBindValue(dateStr); // Use the date from the calendar here!
     }
-    return q.exec();
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] saveOrUpdateNote Error:" << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 // Saves the general note for the song
@@ -811,11 +737,12 @@ bool DatabaseManager::updateSongNotes(int songId, const QString &notes, QDate da
         q.addBindValue(dateStr);
     }
 
-    bool success = q.exec();
-    if (!success) {
-        qDebug() << "[DatabaseManager] SQL Error:" << q.lastError().text();
+    if(!q.exec()) {
+        qDebug() << "[DatabaseManager] Error updateSongNotes:" << q.lastError().text();
+        return false;
     }
-    return success;
+
+    return true;
 }
 
 QString DatabaseManager::getNoteForDay(int songId, QDate date) {
@@ -854,6 +781,8 @@ QMap<int, QString> DatabaseManager::getPracticedSongsForDay(QDate date) {
         while (q.next()) {
             songMap.insert(q.value(0).toInt(), q.value(1).toString());
         }
+    } else {
+        qDebug() << "[DatabaseManager] Error getPracticedSongsForDay: " << q.lastError().text();
     }
     return songMap;
 }
@@ -872,6 +801,8 @@ QString DatabaseManager::getPracticeSummaryForDay(QDate date) {
         while (q.next()) {
             songs << "• " + q.value(0).toString();
         }
+    } else {
+        qDebug() << "[DatabaseManager] Error getPracticeSummaryForDay: " << q.lastError().text();
     }
     return songs.isEmpty() ? "" : songs.join("\n");
 }
@@ -881,7 +812,9 @@ QList<QDate> DatabaseManager::getAllPracticeDates() {
     QList<QDate> dates;
     QSqlQuery q(database());
     // DISTINCT sorgt dafür, dass wir jedes Datum nur einmal erhalten
-    q.exec("SELECT DISTINCT DATE(practice_date) FROM practice_journal");
+    if (!q.exec("SELECT DISTINCT DATE(practice_date) FROM practice_journal")) {
+        qDebug() << "[DatabaseManager] Error getAllPracticeDates: " << q.lastError().text();
+    }
     while (q.next()) {
         dates << QDate::fromString(q.value(0).toString(), "yyyy-MM-dd");
     }
@@ -897,7 +830,11 @@ bool DatabaseManager::setSetting(const QString &key, const QVariant &value) {
     q.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
     q.addBindValue(key);
     q.addBindValue(value.toString()); // QVariant automatically converts boolean values ​​to "true"/"false".
-    return q.exec();
+    if (!q.exec()) {
+        qDebug() << "[DatabaseManager] Error setSetting: " << q.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 QString DatabaseManager::getSetting(const QString &key, const QString &defaultValue) {
@@ -906,6 +843,8 @@ QString DatabaseManager::getSetting(const QString &key, const QString &defaultVa
     q.bindValue(":key", key);
     if (q.exec() && q.next()) {
         return q.value(0).toString();
+    } else {
+        qDebug() << "[DatabaseManager] Error getSetting (String): " << q.lastError().text();
     }
     return defaultValue;
 }
@@ -917,6 +856,8 @@ QVariant DatabaseManager::getSetting(const QString &key, const QVariant &default
 
     if (q.exec() && q.next()) {
         return q.value(0);
+    } else {
+        qDebug() << "[DatabaseManager] Error getSetting (QVariant): " << q.lastError().text();
     }
     return defaultValue;
 }
@@ -931,6 +872,8 @@ int DatabaseManager::getOrCreateUserId(const QString &name, const QString &role)
 
     if (q.exec() && q.next()) {
         return q.value(0).toInt();
+    } else {
+        qDebug() << "[DatabaseManager] Error getOrCreateUserId: " << q.lastError().text();
     }
 
     q.prepare("INSERT INTO users (name, role) VALUES (:name, :role)");
@@ -939,6 +882,8 @@ int DatabaseManager::getOrCreateUserId(const QString &name, const QString &role)
 
     if (q.exec()) {
         return q.lastInsertId().toInt();
+    } else {
+        qDebug() << "[DatabaseManager] Error getOrCreateUserId: " << q.lastError().text();
     }
 
     return -1;

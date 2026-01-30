@@ -50,13 +50,11 @@ public:
     [[nodiscard]] bool updatePracticeFlag(int fileId, bool canPractice);
     [[nodiscard]] QString getManagedPath();
     [[nodiscard]] qlonglong createSong(const QString &title,
-                                       const qlonglong &categoryId = -1,
                                        const QString &artist = "Unknown",
                                        const QString &tuning = "Unknown");
 
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
-    [[nodiscard]] qlonglong getOrCreateCategoryRecursive(const QString &categoryPath);
 
     // Linking
     [[nodiscard]] int linkFiles(const QList<int> &fileIds);

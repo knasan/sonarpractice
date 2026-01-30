@@ -328,15 +328,7 @@ void SonarLessonPage::setupResourceButton(QPushButton *btn, const QList<Database
         for (const auto &file : files) {
             QString cleanName = QFileInfo(file.fileName).baseName();
             QAction *action = menu->addAction(cleanName);
-            QString fullPath = QDir::cleanPath(file.relativePath);
-
-            // qDebug() << "[SonarLessonPage] setupResourceButton - file.fileName: " << file.fileName;
-            // qDebug() << "[SonarLessonPage] setupResourceButton - file.relativePath: " << file.relativePath;
-
-            // FIX for the Windows "Drive Letter" error (removes the leading / before F:/)
-            // if (fullPath.startsWith("/") && fullPath.contains(":/")) {
-            //     fullPath.remove(0, 1);
-            // }
+            QString fullPath = QDir::cleanPath(QFileInfo(file.fileName).absoluteFilePath());
 
             connect(action, &QAction::triggered, this, [this, fullPath]() {
                 qDebug() << "[SonarLessonPage] setupResourceButton - fullPath: " << fullPath;
@@ -383,10 +375,6 @@ void SonarLessonPage::loadData() {
             QString artist = query.value("artist_name").toString();
             QString tuning = query.value("tuning_name").toString();
 
-            // qDebug() << "Song:" << title << "from" << artist << "Tuning:" << tuning << " path: " << path;
-            // qDebug() << "SongId: " << songId;
-            // qDebug() << "FileName: " << fileName;
-
             // The song_id is stored in the 'UserData' of the ComboBox.
              songSelector_m->addItem(fileName, songId);
              int index = songSelector_m->count() - 1;
@@ -420,9 +408,6 @@ void SonarLessonPage::onSaveClicked() {
     bool tableSuccess = false;
     QDate selectedDate = calendar_m->selectedDate();
 
-    qDebug() << "* isDirtyNotes_m in onSaveClicked: " << isDirtyNotes_m;
-    qDebug() << "* isDirtyTable_m in onSaveClicked: " << isDirtyTable_m;
-
     if (isDirtyNotes_m) {
         notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
         qDebug() << "* onSaveClicked - notesSuccess: " << notesSuccess;
@@ -435,9 +420,6 @@ void SonarLessonPage::onSaveClicked() {
         qDebug() << "* onSaveClicked - tableSuccess: " << tableSuccess;
         if (tableSuccess) isDirtyTable_m = false;
     }
-
-    qDebug() << "* isDirtyNotes_m in onSaveClicked: after saved: " << isDirtyNotes_m;
-    qDebug() << "* isDirtyTable_m in onSaveClicked: after saved: " << isDirtyTable_m;
 
     updateButtonState();
     updateCalendarHighlights();
@@ -562,11 +544,9 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
     isLoading_m = true;
 
     currentSessions_m = dbManager_m->getSessionsForDay(songId, date);
-    // qDebug() << "[SonarLessonPage] loadTableDataForDay currentSessions_m.size : " << currentSessions_m.size();
 
     // Logic: If it's not today and "Show All" is off, only show the last 2 entries for reference.
     referenceSessions_m = dbManager_m->getLastSessions(songId, 2);
-    // qDebug() << "[SonarLessonPage] loadTableDataForDay referenceSessions_m.size : " << referenceSessions_m.size();
 
     refreshTableDisplay(date);
 

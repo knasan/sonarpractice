@@ -76,8 +76,8 @@ public:
 
                 auto it = createdSongs.find(filePath);
                 if (it == createdSongs.end()) {
-                    qlonglong catId = DatabaseManager::instance().getOrCreateCategoryRecursive(task.categoryPath);
-                    songId = DatabaseManager::instance().createSong(filePath, catId);
+                    // qlonglong catId = DatabaseManager::instance().getOrCreateCategoryRecursive(task.categoryPath);
+                    songId = DatabaseManager::instance().createSong(filePath);
                     if (songId == -1) throw std::runtime_error("DB Song Error");
                     createdSongs.insert(filePath, songId);
                 } else {
