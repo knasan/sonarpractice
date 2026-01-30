@@ -98,10 +98,10 @@ void SonarLessonPage::setupUI() {
     sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
     contentLayout->addWidget(sessionTable_m);
 
-    showAllSessions_m = new QCheckBox(tr("Show all entries"), this);
-    showAllSessions_m->setCheckState(Qt::Unchecked);
-    showAllSessions_m->hide(); // TODO: Hide it until properly integrated, or check if this makes sense. It's rather optional anyway – you'd have to test it once in a weekly session.
-    contentLayout->addWidget(showAllSessions_m);
+    // showAllSessions_m = new QCheckBox(tr("Show all entries"), this);
+    // showAllSessions_m->setCheckState(Qt::Unchecked);
+    // showAllSessions_m->hide(); // TODO: Hide it until properly integrated, or check if this makes sense. It's rather optional anyway – you'd have to test it once in a weekly session.
+    // contentLayout->addWidget(showAllSessions_m);
 
     // --- FOOTER (Progress & Buttons) ---
     auto *footerLayout = new QHBoxLayout();
@@ -204,10 +204,10 @@ void SonarLessonPage::sitesConnects() {
         });
 
         // Show alle entries
-        connect(showAllSessions_m, &QCheckBox::toggled, this, [this]() {
-            refreshTableDisplay(calendar_m->selectedDate());
-        });
-
+        // TODO: show all entries dont work, enable this for testings and bug fixing
+        // connect(showAllSessions_m, &QCheckBox::toggled, this, [this]() {
+        //     refreshTableDisplay(calendar_m->selectedDate());
+        // });
 
         calendar_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -267,7 +267,6 @@ void SonarLessonPage::onSongChanged(int index) {
 
     currentFileId_m = getCurrentSongId();
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
-    qInfo() << "[SonarLessonPage] Song changed:" << currentSongPath_m << "(song_id: " << currentFileId_m << ")";
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
     if (currentFileId_m > 0) {
@@ -461,7 +460,6 @@ void SonarLessonPage::dailyNotePlaceholder() {
 
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     if (songId <= 0) return;
-    qInfo() << "[SonarLessonPage] loadJournalForDay START";
 
     isLoading_m = true;
 
@@ -562,7 +560,6 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
 
     // First, the references (the last two, if they are not from today)
     for (const auto& s : std::as_const(referenceSessions_m)) {
-        qDebug() << "referenzen s.date: " << s.date << ", date: " << date;
         if (s.date < date) {
             addSessionToTable(s, true); // Write-protected
         }
