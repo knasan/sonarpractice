@@ -98,9 +98,10 @@ void SonarLessonPage::setupUI() {
     sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
     contentLayout->addWidget(sessionTable_m);
 
+    // FIXIT: show empty lines
     // showAllSessions_m = new QCheckBox(tr("Show all entries"), this);
     // showAllSessions_m->setCheckState(Qt::Unchecked);
-    // showAllSessions_m->hide(); // TODO: Hide it until properly integrated, or check if this makes sense. It's rather optional anyway – you'd have to test it once in a weekly session.
+    // // showAllSessions_m->hide(); // TODO: Hide it until properly integrated, or check if this makes sense. It's rather optional anyway – you'd have to test it once in a weekly session.
     // contentLayout->addWidget(showAllSessions_m);
 
     // --- FOOTER (Progress & Buttons) ---
@@ -317,7 +318,7 @@ void SonarLessonPage::setupResourceButton(QPushButton *btn, const QList<Database
 
     if (files.size() == 1) {
         // Direct click for a file
-        QString fullPath = files.first().relativePath;
+        QString fullPath = QDir::cleanPath(files.first().relativePath);
         connect(btn, &QPushButton::clicked, this, [this, fullPath]() {
             UIHelper::openFileWithFeedback(this, fullPath);
         });
@@ -327,10 +328,11 @@ void SonarLessonPage::setupResourceButton(QPushButton *btn, const QList<Database
         for (const auto &file : files) {
             QString cleanName = QFileInfo(file.fileName).baseName();
             QAction *action = menu->addAction(cleanName);
-            QString fullPath = QDir::cleanPath(QFileInfo(file.fileName).absoluteFilePath());
+
+            QString fullPath = QDir::cleanPath(file.relativePath);
 
             connect(action, &QAction::triggered, this, [this, fullPath]() {
-                qDebug() << "[SonarLessonPage] setupResourceButton - fullPath: " << fullPath;
+                qInfo() << "[SonarLessonPage] setupResourceButton - fullPath: " << fullPath;
                 UIHelper::openFileWithFeedback(this, fullPath);
             });
         }

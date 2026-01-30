@@ -50,8 +50,16 @@ LibraryPage::LibraryPage(QWidget *parent, DatabaseManager *dbManager)
             catalogTreeView_m->setRowHidden(i, QModelIndex(), !match);
         }
     });
+}
 
-    QTimer::singleShot(100, this, &LibraryPage::setupCatalog);
+void LibraryPage::showEvent(QShowEvent *event) {
+    QWidget::showEvent(event);
+    if (!isCatalogLoaded_m)
+    {
+        qDebug() << "LibraryPage wird zum ersten Mal angezeigt. Starte setupCatalog...";
+        setupCatalog();
+        isCatalogLoaded_m = true;
+    }
 }
 
 void LibraryPage::setupUI() {
@@ -315,7 +323,7 @@ int LibraryPage::getCurrentFileId() {
     // from the table media_files.
     int fileId = index.data(LibraryPage::FileIdRole).toInt();
 
-    qDebug() << "[LibraryPage] Current File ID selected:" << fileId;
+    // qDebug() << "[LibraryPage] Current File ID selected:" << fileId;
     return fileId;
 }
 
@@ -324,11 +332,11 @@ void LibraryPage::refreshRelatedFilesList() {
      relatedFilesListWidget_m->clear();
 
     // Get the current file ID, dont use song_id here
-    int fileId = getCurrentFileId();
-    if (fileId <= 0) return;
+    int songId = getCurrentSongId();
+    if (songId <= 0) return;
 
     // Retrieve linked files from the database
-    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(fileId);
+    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(songId);
 
     // Fill in the list
     for (const auto &file : std::as_const(related)) {

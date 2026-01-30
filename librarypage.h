@@ -68,6 +68,11 @@ private:
 
     QPushButton* addBtn_m;
     QPushButton* removeBtn_m;
+
+    bool isCatalogLoaded_m = false; // load media catalog only once
+
+protected:
+    void showEvent(QShowEvent *event) override;
 };
 
 #endif // LIBRARYPAGE_H

@@ -100,7 +100,7 @@ bool DatabaseManager::createInitialTables() {
     if (!q.exec("PRAGMA foreign_keys = ON")) return false;
 
     // 1. USER (Teacher / Student)
-    // TODO: sollte stärker verwendet werden, diente als vorbereitung aber wurde nicht intensiv genutzt.
+    // TODO: Preparations are underway to manage more users.
     if (!q.exec("CREATE TABLE IF NOT EXISTS users ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "name TEXT UNIQUE, "
@@ -108,7 +108,6 @@ bool DatabaseManager::createInitialTables() {
                     "created_at DATETIME DEFAULT CURRENT_TIMESTAMP)")) return false;
 
     // 2. SONGS (The logical unit)
-    // TODO: sollte umbennant werden, das ist der nächste schritt nach einem Cleanup
     if (!q.exec("CREATE TABLE IF NOT EXISTS songs ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "user_id INTEGER, "
@@ -152,13 +151,13 @@ bool DatabaseManager::createInitialTables() {
                 "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, "
                 "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
 
-    // 7. EINSTELLUNGEN (Key-Value-Store für Pfade, Flags etc.)
+    // 7. SETTINGS (Key-Value-Store für paths, flags)
     if (!q.exec("CREATE TABLE IF NOT EXISTS settings ("
                     "key TEXT PRIMARY KEY, "
                     "value TEXT)")) return false;
 
     // 8. Artists/Bands
-    // -- Tabelle für Künstler
+    // -- Table for artists
     if (!q.exec("CREATE TABLE IF NOT EXISTS artists ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                     "name TEXT UNIQUE NOT NULL)")) return false;
@@ -174,8 +173,8 @@ bool DatabaseManager::createInitialTables() {
     // Initially populate standard tunings if the table is empty.
     if (!q.exec("INSERT OR IGNORE INTO tunings (name) VALUES "
                "('E-Standard'), ('Eb-Standard'), ('Drop D'), ('Drop C'), ('D-Standard')")) return false;
+
     // relation
-    // TODO: prüfen ob und wo diese verwendet wird.
     if (!q.exec("CREATE TABLE IF NOT EXISTS file_relations ("
                 "file_id_a INTEGER, "
                 "file_id_b INTEGER, "
@@ -452,6 +451,8 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getResourcesForSong(int son
 QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int songId) {
     QList<RelatedFile> list;
     QSqlQuery q(database());
+
+    // qDebug() << "search files for Song: " << songId;
 
     q.prepare("SELECT mf.id, mf.file_path, mf.file_type "
               "FROM media_files mf "
@@ -815,7 +816,7 @@ QString DatabaseManager::getPracticeSummaryForDay(QDate date) {
 QList<QDate> DatabaseManager::getAllPracticeDates() {
     QList<QDate> dates;
     QSqlQuery q(database());
-    // DISTINCT sorgt dafür, dass wir jedes Datum nur einmal erhalten
+    // DISTINCT ensures that we only receive each date once.
     if (!q.exec("SELECT DISTINCT DATE(practice_date) FROM practice_journal")) {
         qDebug() << "[DatabaseManager] Error getAllPracticeDates: " << q.lastError().text();
     }
