@@ -560,7 +560,7 @@ bool DatabaseManager::addPracticeSession(int songId, int bpm, int totalReps, int
  * Delete the day's old sessions and write the new ones:
  * */
 bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<PracticeSession> &sessions) {
-    QSqlDatabase db = database(); // Hole die aktive Verbindung
+    QSqlDatabase db = database(); // Get the active connection
 
     if (!db.transaction()) {
         qCritical() << "[DatabaseManager] Could not start transaction:" << db.lastError().text();
@@ -569,6 +569,9 @@ bool DatabaseManager::saveTableSessions(int songId, QDate date, const QList<Prac
 
     QSqlQuery q(db);
     QString dateStr = date.toString("yyyy-MM-dd");
+
+    // TODO: get first note_text bevor delete.
+    // INSERT now the note_text or make insert or update the practice_journal
 
     q.prepare("DELETE FROM practice_journal WHERE song_id = :sId AND practice_date = :pDate");
     q.bindValue(":sId", songId);
@@ -717,6 +720,7 @@ bool DatabaseManager::saveOrUpdateNote(int songId, QDate date, const QString &no
 bool DatabaseManager::updateSongNotes(int songId, const QString &notes, QDate date) {
     QSqlQuery q(db_m);
     QString dateStr = date.toString("yyyy-MM-dd");
+    qDebug() << "Date: " << date;
 
     // Check if an entry already exists for this song on this day.
     q.prepare("SELECT id FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ?");

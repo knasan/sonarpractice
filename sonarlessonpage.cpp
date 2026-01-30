@@ -397,6 +397,12 @@ void SonarLessonPage::showEvent(QShowEvent *event) {
     }
 }
 
+/*
+ * Important: The table must be saved first, followed by the notes.
+ * The notes are stored in the `practice_journal` table.
+ * However, to avoid a daily loop of many entries, the current row must always be deleted and a new one created.
+ * This means that if the notes were saved first, the message would be lost.
+ */
 void SonarLessonPage::onSaveClicked() {
     int songId = getCurrentSongId();
     if (songId <= 0) {
@@ -408,17 +414,14 @@ void SonarLessonPage::onSaveClicked() {
     bool tableSuccess = false;
     QDate selectedDate = calendar_m->selectedDate();
 
-    if (isDirtyNotes_m) {
-        notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
-        qDebug() << "* onSaveClicked - notesSuccess: " << notesSuccess;
-        if (notesSuccess) isDirtyNotes_m = false;
-
-    }
-
     if (isDirtyTable_m) {
         tableSuccess = saveTableRowsToDatabase();
-        qDebug() << "* onSaveClicked - tableSuccess: " << tableSuccess;
         if (tableSuccess) isDirtyTable_m = false;
+    }
+
+    if (isDirtyNotes_m) {
+        notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
+        if (notesSuccess) isDirtyNotes_m = false;
     }
 
     updateButtonState();
