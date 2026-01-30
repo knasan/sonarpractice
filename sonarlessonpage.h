@@ -38,6 +38,7 @@ private:
     void loadJournalForDay(int songId, QDate date);
     void loadTableDataForDay(int songId, QDate date);
     void refreshTableDisplay(QDate date);
+    void addEmptyRow(QDate date);
     void addSessionToTable(const PracticeSession &s, bool isReadOnly);
     void dailyNotePlaceholder();
     void updateCalendarHighlights();

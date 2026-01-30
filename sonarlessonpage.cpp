@@ -185,6 +185,7 @@ void SonarLessonPage::sitesConnects() {
 
             if (rowComplete) {
                 isDirtyTable_m = true;
+                addEmptyRow(QDate::currentDate());
                 updateButtonState();
             }
         });
@@ -200,16 +201,6 @@ void SonarLessonPage::sitesConnects() {
 
             // load the data for this combination
             loadJournalForDay(songId, selectedDate);
-        });
-
-        connect(sessionTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
-            if (isLoading_m) return;
-
-            if (item->row() == sessionTable_m->rowCount() - 1) {
-                if (!item->text().isEmpty()) {
-                    sessionTable_m->insertRow(sessionTable_m->rowCount());
-                }
-            }
         });
 
         // Show alle entries
@@ -590,7 +581,7 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
     for (const auto& s : std::as_const(referenceSessions_m)) {
         qDebug() << "referenzen s.date: " << s.date << ", date: " << date;
         if (s.date < date) {
-            addSessionToTable(s, true); // Schreibgeschützt
+            addSessionToTable(s, true); // Write-protected
         }
     }
 
@@ -610,12 +601,39 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
     }
 }
 
+void SonarLessonPage::addEmptyRow(QDate date) {
+    // Security check: If the last line is already empty, do nothing.
+    int lastRow = sessionTable_m->rowCount() - 1;
+    if (lastRow >= 0) {
+        // Check, for example, if the BPM field in the last row is still empty.
+        if (sessionTable_m->item(lastRow, 3) == nullptr ||
+            sessionTable_m->item(lastRow, 3)->text().isEmpty()) {
+            return;
+        }
+    }
+
+    int row = sessionTable_m->rowCount();
+    sessionTable_m->insertRow(row);
+
+    // set date
+    auto* dateItem = new QTableWidgetItem(date.toString("dd.MM.yyyy"));
+    dateItem->setFlags(dateItem->flags() & ~Qt::ItemIsEditable); // Read only
+    sessionTable_m->setItem(row, 0, dateItem);
+
+    // Create empty items for the remaining columns (1-5) so that the user can click directly into them and itemChanged fires correctly.
+    for (int col = 1; col <= 5; ++col) {
+        sessionTable_m->setItem(row, col, new QTableWidgetItem(""));
+    }
+
+    sessionTable_m->scrollToBottom(); // Komfort-Feature
+}
+
 void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnly) {
     int row = sessionTable_m->rowCount();
     sessionTable_m->insertRow(row);
 
     auto* itemDate = new QTableWidgetItem(s.date.toString("dd.MM.yyyy"));
-    itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable); // Datum nie editierbar
+    itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable); // Date never editable
 
     if (isReadOnly) {
         itemDate->setForeground(Qt::gray);
