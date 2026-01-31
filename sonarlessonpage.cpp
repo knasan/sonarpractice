@@ -35,13 +35,6 @@
 SonarLessonPage::SonarLessonPage(QWidget * parent, DatabaseManager *dbManager) : QWidget(parent), dbManager_m(dbManager), isLoading_m(false) {
     setupUI();
     loadData();
-
-    // Initials Stand load (first song, today)
-    if (songSelector_m->count() > 0) {
-        int firstSongId = songSelector_m->currentData(FileIdRole).toInt();
-        loadJournalForDay(firstSongId, calendar_m->selectedDate());
-        loadTableDataForDay(firstSongId, calendar_m->selectedDate());
-    }
 }
 
 void SonarLessonPage::setupUI() {
@@ -162,8 +155,7 @@ void SonarLessonPage::sitesConnects() {
         isConnectionsEstablished_m = true;
 
         connect(gpIcon_m, &QPushButton::clicked, this, [this]() {
-            if (currentSongPath_m.isEmpty()) return;
-
+            currentSongPath_m = songSelector_m->itemData(songSelector_m->currentIndex(), PathRole).toString();
             QString fullPath = QDir::cleanPath(currentSongPath_m);
             UIHelper::openFileWithFeedback(this, fullPath);
         });
@@ -318,7 +310,7 @@ void SonarLessonPage::updateTimerDisplay() {
 
 // The logic: Check files and activate icons.
 void SonarLessonPage::onSongChanged(int index) {
-    if (index < 0 || isLoading_m || !dbManager_m) {
+    if (index < 0 << isLoading_m || !dbManager_m) {
         currentSongPath_m.clear();
         currentFileId_m = -1;
         updateButtonState();
@@ -327,19 +319,18 @@ void SonarLessonPage::onSongChanged(int index) {
 
     isLoading_m = true;
 
-    currentFileId_m = getCurrentSongId();
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
+    qDebug() << "[SonarLessonPage] onSongChanged index: " << index << " currentSonPath_m : " << currentSongPath_m;
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
-    if (currentFileId_m > 0) {
-        loadJournalForDay(currentFileId_m, selectedDate);
-    }
+
+    loadJournalForDay(getCurrentSongId(), selectedDate);
 
     // Keep lists for the file types
     QList<DatabaseManager::RelatedFile> pdfFiles, videoFiles, audioFiles;
 
     // Get linked files
-    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(currentFileId_m);
+    QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(getCurrentSongId());
 
     for (const auto &file : std::as_const(related)) {
         QString ext = QFileInfo(file.fileName).suffix().toLower();
@@ -455,7 +446,7 @@ void SonarLessonPage::showEvent(QShowEvent *event) {
     loadData(); // Reload the ComboBox
     // Update icons if a song is selected
     if (songSelector_m->currentIndex() != -1) {
-        onSongChanged(getCurrentSongId());
+        onSongChanged(songSelector_m->currentIndex());
     }
 }
 
