@@ -418,6 +418,18 @@ bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
     return true;
 }
 
+bool DatabaseManager::deleteFileRecord(int fileId) {
+    QSqlQuery q(database());
+    q.prepare("DELETE FROM media_files WHERE id = ?");
+    q.addBindValue(fileId);
+
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] Delete record failed:" << q.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 // =============================================================================
 // --- File queries
 // =============================================================================

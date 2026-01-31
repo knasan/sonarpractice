@@ -61,6 +61,7 @@ public:
     [[nodiscard]] bool unlinkFile(const int fileId);
     [[nodiscard]] bool addFileRelation(int idA, int idB);
     [[nodiscard]] bool removeRelation(int fileIdA, int fileIdB);
+    [[nodiscard]] bool deleteFileRecord(int fileId);
 
     // File queries
     [[nodiscard]] QList<RelatedFile> getResourcesForSong(int songId);

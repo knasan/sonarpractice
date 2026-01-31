@@ -72,6 +72,9 @@ void LibraryPage::setupUI() {
 
     searchEdit_m = new QLineEdit(this);
     searchEdit_m->setPlaceholderText(tr("Search for songs, videos, or PDFs..."));
+
+    expertModeCheck_m = new QCheckBox(tr("Expert mode"), this);
+
     catalogTreeView_m = new QTreeView(this); // Main media list
     catalogTreeView_m->setMouseTracking(true); // Reacts faster
     catalogTreeView_m->setToolTipDuration(5000);
@@ -81,6 +84,7 @@ void LibraryPage::setupUI() {
     catalogTreeView_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
     masterLayout->addWidget(searchEdit_m);
+    masterLayout->addWidget(expertModeCheck_m);
     masterLayout->addWidget(catalogTreeView_m);
 
     // --- RIGHT SIDE ---
@@ -104,27 +108,27 @@ void LibraryPage::setupUI() {
     // Buttons directly below the list in the same GroupBox
     auto *btnLayout = new QHBoxLayout();
 
-    addBtn_m = new QPushButton("+", this);
-    addBtn_m->setToolTip(tr("Select files and link them to the currently selected medium."));
-    addBtn_m->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Plus));
+    addLinkBtn_m = new QPushButton("+", this);
+    addLinkBtn_m->setToolTip(tr("Select files and link them to the currently selected medium."));
+    addLinkBtn_m->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Plus));
 
-    removeBtn_m = new QPushButton("-", this);
-    removeBtn_m->setToolTip(tr("Remove selected links from the list."));
-    removeBtn_m->setShortcut(QKeySequence(Qt::Key_Delete));
+    remLinkBtn_m = new QPushButton("-", this);
+    remLinkBtn_m->setToolTip(tr("Remove selected links from the list."));
+    remLinkBtn_m->setShortcut(QKeySequence(Qt::Key_Delete));
 
-    addBtn_m->setEnabled(false);
-    removeBtn_m->setEnabled(false);
+    addLinkBtn_m->setEnabled(false);
+    remLinkBtn_m->setEnabled(false);
 
     QString buttonStyle =
         "QPushButton:disabled { background-color: #333333; color: #666666; border: 1px solid #444444; }"
         "QPushButton:enabled { background-color: #2c3e50; color: white; border: 1px solid #34495e; }"
                           "QPushButton:hover { background-color: #34495e; }";
 
-    addBtn_m->setStyleSheet(buttonStyle);
-    removeBtn_m->setStyleSheet(buttonStyle);
+    addLinkBtn_m->setStyleSheet(buttonStyle);
+    remLinkBtn_m->setStyleSheet(buttonStyle);
 
-    btnLayout->addWidget(addBtn_m);
-    btnLayout->addWidget(removeBtn_m);
+    btnLayout->addWidget(addLinkBtn_m);
+    btnLayout->addWidget(remLinkBtn_m);
     btnLayout->addStretch();
     vboxMedia->addLayout(btnLayout);
 
@@ -144,13 +148,13 @@ void LibraryPage::setupUI() {
     mainLayout->addWidget(splitter);
 
     // Connections for the buttons
-    connect(addBtn_m, &QPushButton::clicked, this, &LibraryPage::onAddRelationClicked);
-    connect(removeBtn_m, &QPushButton::clicked, this, &LibraryPage::onRemoveRelationClicked);
+    connect(addLinkBtn_m, &QPushButton::clicked, this, &LibraryPage::onAddRelationClicked);
+    connect(remLinkBtn_m, &QPushButton::clicked, this, &LibraryPage::onRemoveRelationClicked);
 
     connect(relatedFilesListWidget_m, &QListWidget::itemSelectionChanged, this, [this]() {
         // The delete button only becomes active if at least one item is selected on the right.
         bool hasRightSelection = !relatedFilesListWidget_m->selectedItems().isEmpty();
-        removeBtn_m->setEnabled(hasRightSelection);
+        remLinkBtn_m->setEnabled(hasRightSelection);
     });
 
     connect(catalogTreeView_m, &QTreeView::customContextMenuRequested,
@@ -183,10 +187,10 @@ void LibraryPage::onItemSelected(const QModelIndex &current) {
     detailTitleLabel_m->setText(tr("Selected: %1").arg(current.data(Qt::DisplayRole).toString()));
 
     // + Button is now ready, since we have a goal.
-    addBtn_m->setEnabled(true);
+    addLinkBtn_m->setEnabled(true);
 
     // - The button remains deactivated until something is selected on the right.
-    removeBtn_m->setEnabled(false);
+    remLinkBtn_m->setEnabled(false);
 
     refreshRelatedFilesList();
 }
@@ -353,23 +357,112 @@ void LibraryPage::refreshRelatedFilesList() {
 }
 
 void LibraryPage::showCatalogContextMenu(const QPoint &pos) {
-    QModelIndex index = catalogTreeView_m->indexAt(pos);
-    if (!index.isValid()) return;
+    // 1. Hole alle ausgewählten Indizes
+    QModelIndexList selectedIndexes = catalogTreeView_m->selectionModel()->selectedRows();
 
-    QString fullPath = index.data(LibraryPage::FilePathRole).toString();
-
-    qDebug() << "[LibraryPage] Right-click path:" << fullPath;
-
-    if (fullPath.isEmpty()) {
-        qDebug() << "[LibraryPage] Error: Path role is empty!";
-        return;
+    // Falls der Rechtsklick auf ein Element erfolgte, das noch nicht markiert war,
+    // markieren wir es manuell, um die UX zu verbessern.
+    QModelIndex clickedIndex = catalogTreeView_m->indexAt(pos);
+    if (clickedIndex.isValid() && !selectedIndexes.contains(clickedIndex)) {
+        catalogTreeView_m->selectionModel()->select(clickedIndex, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        selectedIndexes = catalogTreeView_m->selectionModel()->selectedRows();
     }
+
+    if (selectedIndexes.isEmpty()) return;
 
     QMenu menu(this);
+
+    // Text dynamisch anpassen (Singular/Plural)
+    QString deleteText = (selectedIndexes.size() > 1)
+                             ? tr("Delete %1 files (Move to Trash)").arg(selectedIndexes.size())
+                             : tr("Delete file (Move to Trash)");
+
     QAction *openAction = menu.addAction(tr("Open file in default player"));
+    if (selectedIndexes.size() > 1) openAction->setEnabled(false); // Öffnen bei Mehrfachauswahl deaktivieren
+
+    QAction *deleteAction = nullptr;
+    if (expertModeCheck_m->isChecked()) {
+        menu.addSeparator();
+        deleteAction = menu.addAction(deleteText);
+        deleteAction->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+    }
 
     QAction *selected = menu.exec(catalogTreeView_m->viewport()->mapToGlobal(pos));
-    if (selected == openAction) {
+
+    if (selected == openAction && selectedIndexes.size() == 1) {
+        QString fullPath = selectedIndexes.first().data(LibraryPage::FilePathRole).toString();
         UIHelper::openFileWithFeedback(this, fullPath);
     }
+    else if (deleteAction && selected == deleteAction) {
+        handleDeleteFiles(selectedIndexes);
+    }
+}
+
+// DELETE for Singe File
+// void LibraryPage::handleDeleteFile(const QModelIndex &index, const QString &path, int fileId) {
+//     auto res = QMessageBox::warning(this, tr("Delete File"),
+//                                     tr("Are you sure you want to move this file to the trash and remove it from the database?\n\n%1").arg(path),
+//                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+//     if (res != QMessageBox::Yes) return;
+
+//     // 1. Aus dem Dateisystem löschen (Papierkorb)
+//     if (QFile::exists(path)) {
+//         if (!QFile::moveToTrash(path)) {
+//             QMessageBox::critical(this, tr("Error"), tr("Could not move file to trash."));
+//             return;
+//         }
+//     } else {
+//         qDebug() << "File already gone from disk, proceeding with DB cleanup.";
+//     }
+
+//     // 2. Aus der Datenbank entfernen
+//     if (dbManager_m->deleteFileRecord(fileId)) {
+//         // 3. Aus dem UI-Model entfernen, ohne den ganzen Katalog neu zu laden
+//         catalogModel_m->removeRow(index.row());
+
+//         // Optional: Rechts die Details leeren, falls die gelöschte Datei ausgewählt war
+//         detailWidget_m->setEnabled(false);
+//     } else {
+//         QMessageBox::critical(this, tr("Database Error"), tr("Failed to remove file from database."));
+//     }
+// }
+
+// Delete for multi selected files
+void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes) {
+    auto res = QMessageBox::warning(this, tr("Delete Files"),
+                                    tr("Are you sure you want to move %1 files to the trash and remove them from the database?").arg(indexes.size()),
+                                    QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+
+    if (res != QMessageBox::Yes) return;
+
+    // Wir sortieren die Indizes, um sicher von unten nach oben zu löschen
+    QModelIndexList sortedIndexes = indexes;
+    std::sort(sortedIndexes.begin(), sortedIndexes.end(), [](const QModelIndex &a, const QModelIndex &b) {
+        return a.row() > b.row();
+    });
+
+    int successCount = 0;
+
+    for (const QModelIndex &index : sortedIndexes) {
+        QString path = index.data(LibraryPage::FilePathRole).toString();
+        int fileId = index.data(LibraryPage::FileIdRole).toInt();
+
+        // drive delete
+        bool fileDeleted = true;
+        if (QFile::exists(path)) {
+            fileDeleted = QFile::moveToTrash(path);
+        }
+
+        if (fileDeleted) {
+            // Database (CASCADE delete automatic entries from file_relations)
+            if (dbManager_m->deleteFileRecord(fileId)) {
+                // UI
+                catalogModel_m->removeRow(index.row());
+                successCount++;
+            }
+        }
+    }
+
+    qDebug() << "[LibraryPage] Successfully deleted" << successCount << "of" << indexes.size() << "files.";
 }

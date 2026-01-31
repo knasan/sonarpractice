@@ -4,6 +4,7 @@
 #include "fileutils.h"
 #include "databasemanager.h"
 
+#include <QCheckBox>
 #include <QListWidget>
 #include <QStandardItemModel>
 #include <QTreeView>
@@ -41,6 +42,8 @@ private:
     void refreshRelatedFilesList();
     void loadCatalogFromDatabase();
     void showCatalogContextMenu(const QPoint &pos);
+    // void handleDeleteFile(const QModelIndex &index, const QString &path, int fileId);
+    void handleDeleteFiles(const QModelIndexList &indexes);
 
     [[nodiscard]] int getCurrentSongId();
     [[nodiscard]] int getCurrentFileId();
@@ -66,8 +69,10 @@ private:
 
     QLineEdit* searchEdit_m;
 
-    QPushButton* addBtn_m;
-    QPushButton* removeBtn_m;
+    QPushButton* addLinkBtn_m;
+    QPushButton* remLinkBtn_m;
+
+    QCheckBox* expertModeCheck_m;
 
     bool isCatalogLoaded_m = false; // load media catalog only once
 
