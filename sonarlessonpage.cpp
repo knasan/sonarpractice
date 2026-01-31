@@ -29,6 +29,8 @@
 #include <QSqlQuery>
 #include <QTableWidget>
 #include <QTextEdit>
+#include <QLCDNumber>
+#include <QTimer>
 
 SonarLessonPage::SonarLessonPage(QWidget * parent, DatabaseManager *dbManager) : QWidget(parent), dbManager_m(dbManager), isLoading_m(false) {
     setupUI();
@@ -36,7 +38,6 @@ SonarLessonPage::SonarLessonPage(QWidget * parent, DatabaseManager *dbManager) :
 
     // Initials Stand load (first song, today)
     if (songSelector_m->count() > 0) {
-        // qDebug() << "SonarLessionPage load firstSongId: " << songSelector_m->currentData(FileIdRole);
         int firstSongId = songSelector_m->currentData(FileIdRole).toInt();
         loadJournalForDay(firstSongId, calendar_m->selectedDate());
         loadTableDataForDay(firstSongId, calendar_m->selectedDate());
@@ -66,8 +67,8 @@ void SonarLessonPage::setupUI() {
     contentLayout->addWidget(headerLabel);
 
     // Form: Exercise & Song Details
-    auto *formGroup = new QGroupBox(tr("Song information"));
-    auto *formLayout = new QGridLayout(formGroup);
+    auto *groupSongInformation = new QGroupBox(tr("Song information"));
+    auto *formLayout = new QGridLayout(groupSongInformation);
 
     songSelector_m = new QComboBox(this);
     tuningLabel_m = new QLabel(tr("Tuning: - "));
@@ -79,13 +80,26 @@ void SonarLessonPage::setupUI() {
 
     formLayout->addWidget(new QLabel(tr("Song (GuitarPro):")), 0, 0);
     formLayout->addWidget(songSelector_m, 0, 1);
+
     formLayout->addWidget(new QLabel(tr("Tempo:")), 0, 2);
     formLayout->addWidget(tempoSpin_m, 0, 3);
+
+    lcdNumber_m = new QLCDNumber(this);
+    lcdNumber_m->display("00:00");
+    uiRefreshTimer_m = new QTimer(this);
+
+    formLayout->addWidget(lcdNumber_m, 0, 4);
+
     formLayout->addWidget(tuningLabel_m, 1, 0, 1, 2); // Tuning under the song selector
+
+    timerBtn_m = new QPushButton(tr("Start Timer"), this);
+    timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    formLayout->addWidget(timerBtn_m, 1, 4);
 
     gpIcon_m = new QPushButton(tr("Open song"));
     formLayout->addWidget(gpIcon_m, 1, 3);
-    contentLayout->addWidget(formGroup);
+
+    contentLayout->addWidget(groupSongInformation);
 
     // Notes section
     contentLayout->addWidget(new QLabel(tr("Notes:")));
@@ -96,6 +110,7 @@ void SonarLessonPage::setupUI() {
     // Table: Practice session (time from/to, tempo, duration, repetitions)
     sessionTable_m = new QTableWidget(5, 6, this);
     sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
+
     contentLayout->addWidget(sessionTable_m);
 
     // FIXIT: show empty lines
@@ -106,9 +121,9 @@ void SonarLessonPage::setupUI() {
 
     // --- FOOTER (Progress & Buttons) ---
     auto *footerLayout = new QHBoxLayout();
-    dayProgress_m = new QProgressBar(this);
-    dayProgress_m->setFormat(tr("Daily goal: %v / %m Min"));
-    footerLayout->addWidget(dayProgress_m);
+    //dayProgress_m = new QProgressBar(this);
+    //dayProgress_m->setFormat(tr("Daily goal: %v / %m Min"));
+    //footerLayout->addWidget(dayProgress_m);
 
     // A container for the resource icons
     resourceLayout_m = new QHBoxLayout();
@@ -133,6 +148,7 @@ void SonarLessonPage::setupUI() {
     saveBtn_m->setEnabled(false);
 
     contentLayout->addLayout(footerLayout);
+
     layout->addLayout(contentLayout, 3);
 
     sitesConnects();
@@ -251,8 +267,53 @@ void SonarLessonPage::sitesConnects() {
             }
             menu.exec(calendar_m->mapToGlobal(pos));
         });
-    }
 
+        connect(timerBtn_m, &QPushButton::clicked, this, &SonarLessonPage::onTimerButtonClicked);
+
+        connect(uiRefreshTimer_m, &QTimer::timeout, this, &SonarLessonPage::updateTimerDisplay);
+    }
+}
+
+void SonarLessonPage::onTimerButtonClicked() {
+    if (!isTimerRunning_m) {
+        // --- START ---
+        elapsedTimer_m.start();
+        uiRefreshTimer_m->start(1000);
+        isTimerRunning_m = true;
+
+        timerBtn_m->setText(tr("Stop Timer"));
+        timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
+        timerBtn_m->setStyleSheet("background-color: #e74c3c; color: white; font-weight: bold;");
+    } else {
+        // --- STOP ---
+        qint64 ms = elapsedTimer_m.elapsed();
+        // Conversion to minutes (rounded up, as 0 minutes makes little sense in the table)
+        int minutes = qMax(1, static_cast<int>(std::round(ms / 60000.0)));
+
+        isTimerRunning_m = false;
+        timerBtn_m->setText(tr("Start Timer"));
+        timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        timerBtn_m->setStyleSheet("");
+
+        addTimeToTable(minutes);
+        lcdNumber_m->display("00:00");
+    }
+}
+
+void SonarLessonPage::updateTimerDisplay() {
+    if (!isTimerRunning_m) return;
+
+    qint64 ms = elapsedTimer_m.elapsed();
+    int totalSeconds = static_cast<int>(ms / 1000);
+    int minutes = totalSeconds / 60;
+    int seconds = totalSeconds % 60;
+
+    // Formatting as MM:SS
+    QString text = QString("%1:%2")
+                       .arg(minutes, 2, 10, QChar('0'))
+                       .arg(seconds, 2, 10, QChar('0'));
+
+    lcdNumber_m->display(text);
 }
 
 // The logic: Check files and activate icons.
@@ -640,4 +701,32 @@ void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnl
         }
         sessionTable_m->setItem(row, i + 1, item); // i+1 because of the date in column 0
     }
+}
+
+void SonarLessonPage::addTimeToTable(int minutes) {
+    // Find or select an empty line from the currently selected line.
+    int row = sessionTable_m->currentRow();
+    if (row < 0) {
+        // Find the first row where "Duration" (column 5) is still empty.
+        for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
+            if (!sessionTable_m->item(i, 5) || sessionTable_m->item(i, 5)->text().isEmpty()) {
+                row = i;
+                break;
+            }
+        }
+    }
+
+    // If the table is full, insert a new row.
+    if (row < 0) {
+        row = sessionTable_m->rowCount();
+        sessionTable_m->insertRow(row);
+    }
+
+    // Enter time (column 5: Duration (min))
+    QTableWidgetItem *item = new QTableWidgetItem(QString::number(minutes));
+    item->setTextAlignment(Qt::AlignCenter);
+    sessionTable_m->setItem(row, 5, item);
+
+    // Focus on the line so the user only has to type BPM/beats.
+    sessionTable_m->setCurrentCell(row, 1);
 }
