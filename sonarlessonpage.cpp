@@ -553,6 +553,8 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
 
     refreshTableDisplay(date);
 
+    addEmptyRow(QDate::currentDate());
+
     isLoading_m = false;
 }
 
