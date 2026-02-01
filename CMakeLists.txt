@@ -56,15 +56,18 @@ target_link_libraries(CommonObjects PUBLIC
     Qt6::Test Qt6::Widgets
 )
 
-# target_include_directories(CommonObjects PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}) [cite: 2]
-
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
+    set(RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/generated_icon.rc")
+    file(WRITE "${RC_FILE}" "IDI_ICON1 ICON DISCARDABLE \"${EXE_ICON}\"")
+    set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
+    set_source_files_properties("${RC_FILE}" PROPERTIES LANGUAGE RC)
     qt_add_executable(SonarPractice
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         lupdate.bat
         styleGuide.md
-        resources.qrc
+        resources.qrc ${RC_FILE}
     )
 
 target_link_libraries(SonarPractice PRIVATE
@@ -83,22 +86,8 @@ qt_add_translations(SonarPractice
     TS_FILES ${TS_FILES}
     RESOURCE_PREFIX "/i18n"
 )
-else()
-    if(ANDROID)
-        add_library(SonarPractice SHARED
-            ${PROJECT_SOURCES}
-        )
-    # Define properties for Android with Qt 5 after find_package() calls as:
-    #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
-else()
-    add_executable(SonarPractice
-        ${PROJECT_SOURCES}
-    )
-endif()
 
-qt5_create_translation(QM_FILES ${CMAKE_SOURCE_DIR} ${TS_FILES})
 endif()
-
 
 target_include_directories(CommonObjects PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
