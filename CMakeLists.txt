@@ -63,6 +63,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         lupdate.bat
+        styleGuide.md
     )
 
 target_link_libraries(SonarPractice PRIVATE
