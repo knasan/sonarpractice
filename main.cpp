@@ -60,6 +60,8 @@ int main(int argc, char *argv[])
         QString dbPath = appDataDir + "/sonar_practice.db";
     #endif
 
+    a.setWindowIcon(QIcon(":/icon"));
+
     a.setStyleSheet(
         "QWidget { background-color: #353535; color: #ffffff; }"
         "QCheckBox { color: #ffffff; spacing: 5px; }"
