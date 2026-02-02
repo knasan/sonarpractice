@@ -3,6 +3,7 @@
 #include "librarypage.h"
 #include "sonarlessonpage.h"
 #include "sonarmenuhelper.h"
+#include "importdialog.h"
 
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -14,6 +15,8 @@
 #include <QWidget>
 #include <QScreen>
 #include <QPushButton>
+#include <QStandardPaths>
+#include <QProgressDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -79,14 +82,120 @@ MainWindow::MainWindow(QWidget *parent)
         stackedWidget_m->setCurrentIndex(1); // page library
     });
 
-
     stackedWidget_m->addWidget(lessonPage_m);   // Index 0
     stackedWidget_m->addWidget(libraryPage_m);  // Index 1
+
+    connect(this, &MainWindow::dataChanged, lessonPage_m, &SonarLessonPage::loadData);
+
+    connect(this, &MainWindow::dataChanged, libraryPage_m, &LibraryPage::markAsDirty);
 
     layout->addWidget(stackedWidget_m);
 
     // the default setting is to show the Lesson Page (your main page).
     stackedWidget_m->setCurrentWidget(lessonPage_m);
+
+    QAction* importFile = this->findChild<QAction*>("actionImportFile");
+    if (importFile) {
+        connect(importFile, &QAction::triggered, this, &MainWindow::onImportFileTriggered);
+    }
+
+    QAction* importDirectory = this->findChild<QAction*>("actionImportDirectory");
+    if (importFile) {
+        connect(importDirectory, &QAction::triggered, this, &MainWindow::onImportDirectoryTriggered);
+    }
+
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::onImportFileTriggered() {
+
+    QString audioFilter = formatFilter(tr("Audio"), FileUtils::getAudioFormats());
+    QString gpFilter = formatFilter(tr("Guitar Pro"), FileUtils::getGuitarProFormats());
+    QString pdfFilter = formatFilter(tr("PDF"), FileUtils::getPdfFormats());
+    QString videoFilter = formatFilter(tr("Video"), FileUtils::getVideoFormats());
+    QString allFilter = tr("All files (*.*)");
+
+    QString allSupported = formatFilter(tr("All Supported"), FileUtils::getAudioFormats() + FileUtils::getGuitarProFormats() + FileUtils::getPdfFormats() + FileUtils::getVideoFormats());
+
+    // Combine everything into one complete filter string
+    QString combinedFilter = QString("%1;;%2;;%3;;%4;;%5;;%6")
+                                 .arg(allSupported, audioFilter, gpFilter, pdfFilter, videoFilter, allFilter);
+
+    QStringList selectedFiles = QFileDialog::getOpenFileNames(
+        this,
+        tr("Select files for import"),
+        QStandardPaths::writableLocation(QStandardPaths::HomeLocation),
+        combinedFilter
+        );
+
+    if (selectedFiles.isEmpty()) {
+        return; // Abort by user
+    }
+
+    // 2. Create scan batch list
+    QList<ScanBatch> batches;
+    for (const QString &filePath : std::as_const(selectedFiles)) {
+        ScanBatch batch;
+        batch.info = QFileInfo(filePath);
+        batch.status = StatusReady;
+        batches.append(batch);
+    }
+
+    // 3.Show dialog
+    ImportDialog dlg(this);
+    dlg.setImportData(batches); // This method populates sourceModel_m
+
+    if (dlg.exec() == QDialog::Accepted) {
+        emit dataChanged();
+    } else {
+        qDebug() << "Canceled";
+    }
+}
+
+void MainWindow::onImportDirectoryTriggered() {
+    QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select folder for import"));
+    if (dirPath.isEmpty()) return;
+
+    QProgressDialog progress(tr("Scanning directory..."), tr("Cancel"), 0, 0, this);
+    progress.setWindowModality(Qt::WindowModal);
+    progress.show();
+
+    QList<ScanBatch> batches;
+
+    QDirIterator it(dirPath, FileUtils::getAudioFormats() + FileUtils::getGuitarProFormats() + FileUtils::getPdfFormats() + FileUtils::getVideoFormats(), QDir::Files, QDirIterator::Subdirectories);
+
+    int foundCount = 0;
+    while (it.hasNext()) {
+        QString filePath = it.next();
+        ScanBatch batch;
+        batch.info = QFileInfo(filePath);
+        batch.status = StatusReady;
+        batches.append(batch);
+
+        foundCount++;
+
+        progress.setLabelText(tr("%1 files found...").arg(foundCount));
+
+        QCoreApplication::processEvents();
+
+        if (progress.wasCanceled()) {
+            batches.clear();
+            break;
+        }
+    }
+
+    progress.close();
+
+    if (!batches.empty()) {
+        ImportDialog dlg(this);
+        dlg.setImportData(batches);
+        dlg.exec();
+        emit dataChanged();
+    }
+}
+
+// Helper function to build a QFileDialog filter from the list
+QString MainWindow::formatFilter(const QString& description, const QStringList& extensions) {
+    return QString("%1 (%2)").arg(description, extensions.join(" "));
+}

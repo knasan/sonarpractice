@@ -11,6 +11,7 @@ class FilterPage : public BasePage {
 public:
     explicit FilterPage(QWidget *parent = nullptr);
     virtual void initializePage() override;
+    int nextId() const override;
 
     [[nodiscard]] bool isComplete() const override;
 
@@ -36,6 +37,7 @@ private:
     QCheckBox *cbAudio_m;
     QCheckBox *cbVideo_m;
     QCheckBox *cbGuitarPro_m;
+    QCheckBox *skipImport_m;
 
     QLabel *lblTargetPath_m;
     QPushButton *btnSelectTargetPath_m;

@@ -56,7 +56,6 @@ void LibraryPage::showEvent(QShowEvent *event) {
     QWidget::showEvent(event);
     if (!isCatalogLoaded_m)
     {
-        qDebug() << "LibraryPage wird zum ersten Mal angezeigt. Starte setupCatalog...";
         setupCatalog();
         isCatalogLoaded_m = true;
     }

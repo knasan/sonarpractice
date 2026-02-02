@@ -570,34 +570,19 @@ void MappingPage::collectTasksFromModel(QStandardItem* parent, QString currentCa
         return;
     }
 
-    // if (currentCategoryPath.isEmpty()) {
-    //     qDebug() << "[MappingPage] collectTasksFromModel currentCategoryPath: isEmpty";
-    // }
-
     for (int i = 0; i < parent->rowCount(); ++i) {
         QStandardItem* child = parent->child(i);
 
         if (child->data(RoleIsFolder).toBool()) {
-            // Ordner gefunden: Pfad erweitern und tiefer gehen
+            //Folder: Expand path and dig deeper
             QString nextPath = currentCategoryPath.isEmpty() ? child->text() : currentCategoryPath + "/" + child->text();
             collectTasksFromModel(child, nextPath, tasks);
         } else {
 
-            /*
-             * executeImport task: categoryPath:  ""
-             * executeImport task: relativePath:  "/Kurse"
-             * executeImport task: sourcePath:  ""
-             * executeImport task: fileHash:  ""
-             * executeImport task: fileSize:  0
-             * executeImport task: itemName:  "Kurse"
-             * executeImport task: fileSuffix:  ""
-            */
-
-
             QString sPath = child->data(RoleFilePath).toString();
-            qint64 sSize = QFileInfo(sPath).size(); // Größe ermitteln
+            qint64 sSize = QFileInfo(sPath).size(); // Determine size
 
-            // VALIDIERUNG:
+            // VALIDATION:
             // 1. Is the path empty? (Folder remnants)
             // 2.Is the file 0 bytes in size? (Corrupted/Empty)
             if (sPath.trimmed().isEmpty() || sSize == 0) {

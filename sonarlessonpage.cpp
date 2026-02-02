@@ -320,7 +320,7 @@ void SonarLessonPage::onSongChanged(int index) {
     isLoading_m = true;
 
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
-    qDebug() << "[SonarLessonPage] onSongChanged index: " << index << " currentSonPath_m : " << currentSongPath_m;
+    // qDebug() << "[SonarLessonPage] onSongChanged index: " << index << " currentSonPath_m : " << currentSongPath_m;
 
     QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
 

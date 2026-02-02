@@ -35,7 +35,6 @@ private:
     void setupUI();
     void sitesConnects();
     void onTimerButtonClicked();
-    void loadData();
     void setupResourceButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files);
     void updateButtonState();
     void loadJournalForDay(int songId, QDate date);
@@ -99,6 +98,9 @@ private slots:
     void onSongChanged(int index);
     void onSaveClicked();
     void updateTimerDisplay();
+
+public slots:
+    void loadData();
 };
 
 #endif // SONARLESSONPAGE_H
