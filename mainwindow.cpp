@@ -2,6 +2,7 @@
 #include "databasemanager.h"
 #include "librarypage.h"
 #include "sonarlessonpage.h"
+#include "sonarmenuhelper.h"
 
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget *centralWidget = new QWidget(this);
     setCentralWidget(centralWidget);
     QVBoxLayout *layout = new QVBoxLayout(centralWidget);
+    SonarMenuHelper::setupMainWindowMenu(this);
 
     // StackedWidget for page switching (Home, Library, etc.)
     stackedWidget_m = new QStackedWidget(this);
@@ -83,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     layout->addWidget(stackedWidget_m);
 
-    // SThe default setting is to show the Lesson Page (your main page).
+    // the default setting is to show the Lesson Page (your main page).
     stackedWidget_m->setCurrentWidget(lessonPage_m);
 }
 

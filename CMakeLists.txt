@@ -33,6 +33,8 @@ set(PREVIEW_COMMON
     fnv1a.h            mainwindow.cpp       setupwizard.h   welcomepage.cpp
     databasemanager.h         filescanner.h           importprocessor.h  mainwindow.h     reviewpage.cpp      sonarlessonpage.cpp       welcomepage.h
     filefilterproxymodel.cpp  fileutils.h             librarypage.cpp    mappingpage.cpp  reviewpage.h        sonarlessonpage.h
+    sonarmenuhelper.h
+    fileselectiondialog.h fileselectiondialog.cpp
     CACHE INTERNAL "Common files for main project and tests"
 )
 
@@ -43,7 +45,6 @@ add_library(CommonObjects OBJECT ${PREVIEW_COMMON}
     reviewstruct.h
     filescanner.cpp
 
-    fileselectiondialog.h fileselectiondialog.cpp
     README_de.md
     README.md
 

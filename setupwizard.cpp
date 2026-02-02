@@ -9,6 +9,7 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QAbstractButton>
+#include <QMessageBox>
 
 SetupWizard::SetupWizard(QWidget *parent)
     : QWizard(parent)
@@ -19,6 +20,14 @@ SetupWizard::SetupWizard(QWidget *parent)
                    | Qt::WindowCloseButtonHint);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     setSizeGripEnabled(true);
+
+    setOption(QWizard::HaveHelpButton, true);
+    setButtonText(QWizard::HelpButton, tr("About Qt"));
+
+    // Link to the Help dialog
+    connect(this, &QWizard::helpRequested, this, [this]() {
+        QMessageBox::aboutQt(this, tr("About Qt"));
+    });
 
     // --- Model Config ----
     filesModel_m = new QStandardItemModel(this);
