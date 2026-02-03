@@ -27,7 +27,14 @@ public:
         QObject::connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
         // ----------------------------------------------------------------------------------------------------
-        // QMenu* importMenu = fileMenu->addMenu(QObject::tr("&Import"));
+        QMenu* importMenu = fileMenu->addMenu(QObject::tr("&Import"));
+        QAction* importFileAction = importMenu->addAction(QObject::tr("&File"));
+        importFileAction->setObjectName("actionImportFile"); // A unique name for easy retrieval.
+
+        QAction* importDirectoryAction = importMenu->addAction(QObject::tr("&Directory"));
+        importDirectoryAction->setObjectName("actionImportDirectory");
+
+        // Connect direct in mainwindow class
 
         // QAction* importFileAction = importMenu->addAction(QObject::tr("File..."));
         // QAction* importDirAction = importMenu->addAction(QObject::tr("Directory..."));

@@ -21,6 +21,16 @@ private:
 
     LibraryPage *libraryPage_m;
     SonarLessonPage *lessonPage_m;
+
+    QString formatFilter(const QString& description, const QStringList& extensions);
+
+signals:
+    void dataChanged();
+
+public slots:
+    void onImportFileTriggered();
+    void onImportDirectoryTriggered();
+
 };
 
 #endif // MAINWINDOW_H

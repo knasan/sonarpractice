@@ -37,7 +37,7 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
 
             if (info.size() == 0) {
                 data.status = StatusDefect;
-                data.hash = "0"; // Eindeutiger Marker für leere Dateien
+                data.hash = "0"; // Unique marker for empty files
                 stats.addDefect();
             } else {
                 data.hash = FNV1a::calculate(info.absoluteFilePath());
@@ -45,21 +45,21 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
                     data.status = StatusDefect;
                     stats.addDefect();
                 } else {
-                    // Normaler Fall: Hash berechnet
+                    // Normal case: Hash is calculated
                     if (!groupMap.contains(data.hash)) {
                         groupMap.insert(data.hash, nextGroupId++);
                     }
                     data.groupId = groupMap.value(data.hash);
-                    countMap[data.hash]++; // WICHTIG: Hier zählen
+                    countMap[data.hash]++; // IMPORTANT: This counts
 
-                    data.status = StatusReady; // Standardmäßig erst mal Ready
+                    data.status = StatusReady; // By default, it's ready.
                 }
             }
 
             pendingBatches.append(data);
             batchCounter++;
 
-            // Nur alle 10 Dateien die UI benachrichtigen
+            // Notify the UI only every 20 files.
             if (batchCounter >= 20) {
                 emit batchesFound(pendingBatches);
                 pendingBatches.clear();
@@ -71,13 +71,13 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
     }
 
     for (ScanBatch &batch : allBatches) {
-        // Wenn die Datei bereits als Defekt markiert wurde, fassen wir sie nicht mehr an
+        // If the file has already been marked as defective, we will no longer touch it.
         if (batch.status == StatusDefect) {
             // stats.addDefect();
             continue;
         }
 
-        // Prüfen, ob der Hash mehrfach vorkommt
+        // Check if the hash occurs multiple times.
         if (countMap.value(batch.hash) > 1) {
             batch.status = StatusDuplicate;
             stats.addDuplicate();
@@ -87,7 +87,7 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
 
     if (!pendingBatches.isEmpty()) emit batchesFound(pendingBatches);
 
-    qDebug() << "Scan abgeschlossen nach:" << timer.elapsed() / 1000.0 << "s";
+    qDebug() << "Scan completed after:" << timer.elapsed() / 1000.0 << "s";
     // Finales Signal senden
     // emit batchesFound(allBatches);
     emit finishWithAllBatches(allBatches, stats);

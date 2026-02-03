@@ -1,15 +1,19 @@
 #include "filterpage.h"
 #include "fileutils.h"
 #include "setupwizard.h"
+#include "databasemanager.h"
 
 #include <QCheckBox>
 #include <QGroupBox>
 #include <QLabel>
 #include <QListWidget>
+#include <QMessageBox>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QApplication>
 
 FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     setTitle(tr("Configuration"));
@@ -38,7 +42,10 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 
     // --- Data management ---
     cbManageData_m = new QCheckBox(tr("Manage"), this);
+    skipImport_m = new QCheckBox(tr("Skip import"), this);
+    skipImport_m->setToolTip(tr("Skip the file import. An empty library will be created with your chosen path settings so you can add files manually later."));
     layout->addWidget(cbManageData_m);
+    layout->addWidget(skipImport_m);
 
     // Container for path selection
     QHBoxLayout *pathLayout = new QHBoxLayout();
@@ -55,6 +62,7 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 
     pathLayout->addWidget(lblTargetPath_m);
     pathLayout->addWidget(btnSelectTargetPath_m);
+
     layout->addLayout(pathLayout);
 
     // --- File types ---
@@ -127,6 +135,14 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
         connect(cbManageData_m, &QCheckBox::toggled, this, [this](bool checked) {
             updateTargetPathStyle(checked);
         });
+
+        connect(skipImport_m, &QCheckBox::toggled, this, [this](bool checked) {
+            if (checked) {
+                if (wiz()) wiz()->setButtonsState(true, true, true);
+            } else {
+                if (wiz()) wiz()->setButtonsState(true, false, true);
+            }
+        });
     }
 
     registerField("manageData", cbManageData_m);
@@ -136,6 +152,13 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 void FilterPage::initializePage() {
     bool managed = field("manageData").toBool();
     updateTargetPathStyle(managed);
+}
+
+int FilterPage::nextId() const {
+    if (skipImport_m->isChecked()) {
+        return -1; // -1 signals: "This is the last page"
+    }
+    return 2; // next page id
 }
 
 void FilterPage::addTargetPath() {
@@ -288,6 +311,49 @@ bool FilterPage::isComplete() const {
 }
 
 bool FilterPage::validatePage() {
+    if (this->property("isProcessing").toBool()) {
+        return true;
+    }
+
+    if (skipImport_m->isChecked()) {
+
+        this->setProperty("isProcessing", true);
+        QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+        QDir().mkpath(appDataDir);
+
+        #ifdef QT_DEBUG
+            QString finalDbPath = appDataDir + "/sonar_practice_debug.db";
+        #else
+            QString finalDbPath = appDataDir + "/sonar_practice.db";
+        #endif
+
+        if (!DatabaseManager::instance().initDatabase(finalDbPath)) {
+            QMessageBox::critical(this, "Error", "The database could not be initialized.");
+            return false;
+        }
+
+        auto &db = DatabaseManager::instance();
+
+        if (cbManageData_m->isChecked()) {
+            if (!db.setSetting("managed_path", QVariant(lblTargetPath_m->text()))) {
+                qCritical() << "CRITICAL: managed_path could not be saved to DB:" << lblTargetPath_m->text();
+            }
+
+            if (!db.setSetting("is_managed", QVariant(true))) {
+                qCritical() << "CRITICAL: isManaged could not be saved to DB:" << true;
+            }
+        }
+
+        if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {
+            qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
+        }
+
+        DatabaseManager::instance().closeDatabase();
+        wizard()->accept();
+        return true;
+
+    }
+
     if (wiz()) {
         wiz()->activeFilters_m = getActiveFilters();
         wiz()->sourcePaths_m.clear();

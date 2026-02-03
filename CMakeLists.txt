@@ -35,6 +35,7 @@ set(PREVIEW_COMMON
     filefilterproxymodel.cpp  fileutils.h             librarypage.cpp    mappingpage.cpp  reviewpage.h        sonarlessonpage.h
     sonarmenuhelper.h
     fileselectiondialog.h fileselectiondialog.cpp
+    importdialog.h importdialog.cpp
     CACHE INTERNAL "Common files for main project and tests"
 )
 
@@ -47,6 +48,7 @@ add_library(CommonObjects OBJECT ${PREVIEW_COMMON}
 
     README_de.md
     README.md
+
 
 )
 

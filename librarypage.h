@@ -28,6 +28,9 @@ private slots:
     void onItemSelected(const QModelIndex &index);
     void onAddRelationClicked();
 
+public slots:
+    void markAsDirty() { isCatalogLoaded_m = false; }
+
 private:
 
     enum CustomRoles {
