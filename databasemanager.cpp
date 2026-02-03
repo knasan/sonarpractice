@@ -129,9 +129,10 @@ bool DatabaseManager::createInitialTables() {
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                     "song_id INTEGER, "
                     "file_path TEXT UNIQUE, "
-                    "is_managed INTEGER DEFAULT 0, " // ANPASSUNG: 1 = Relativ zu SonarPath, 0 = Absolut
+                    "is_managed INTEGER DEFAULT 0, " // 1 = Relativ zu SonarPath, 0 = Absolut
                     "file_type TEXT, "
                     "file_size INTEGER, "
+                    "file_hash TEXT UNIQUE,"
                     "can_be_practiced BOOL, "
                     "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) return false;
 
@@ -222,7 +223,7 @@ bool DatabaseManager::setDatabaseVersion(int version) {
 // --- File Management & Media (Files & Relations)
 // =============================================================================
 
-bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize) {
+bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize, QString fileHash) {
     QSqlQuery q(database());
 
     // Logic: Is it a Guitar Pro file?
@@ -231,14 +232,15 @@ bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, b
     QString suffix = "*." + QFileInfo(filePath).suffix().toLower();
     bool isPracticeTarget = FileUtils::getGuitarProFormats().contains(suffix);
 
-    q.prepare("INSERT INTO media_files (song_id, file_path, is_managed, file_type, file_size, can_be_practiced) "
-              "VALUES (?, ?, ?, ?, ?, ?)");
+    q.prepare("INSERT INTO media_files (song_id, file_path, is_managed, file_type, file_size, file_hash, can_be_practiced) "
+              "VALUES (?, ?, ?, ?, ?, ?, ?)");
 
     q.addBindValue(songId);
     q.addBindValue(filePath);
     q.addBindValue(isManaged ? 1 : 0);
     q.addBindValue(fileType);
     q.addBindValue(fileSize);
+    q.addBindValue(fileHash);
     q.addBindValue(isPracticeTarget ? 1 : 0);
 
     if (!q.exec()) {
