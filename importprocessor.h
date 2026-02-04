@@ -90,7 +90,8 @@ public:
                     isManaged ? task.relativePath : finalDest,
                     isManaged,
                     task.fileSuffix,
-                    task.fileSize
+                    task.fileSize,
+                    task.fileHash
                     );
 
                 if (!ok) [[unlikely]] throw std::runtime_error("DB Media Error: " + task.itemName.toStdString());

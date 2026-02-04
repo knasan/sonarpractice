@@ -46,7 +46,7 @@ public:
     [[nodiscard]] bool setDatabaseVersion(int version);
 
     // File Management & Media (Files & Relations)
-    [[nodiscard]] bool addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize);
+    [[nodiscard]] bool addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize, QString fileHash);
     [[nodiscard]] bool updatePracticeFlag(int fileId, bool canPractice);
     [[nodiscard]] QString getManagedPath();
     [[nodiscard]] qlonglong createSong(const QString &title,
