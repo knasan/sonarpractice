@@ -60,18 +60,28 @@ target_link_libraries(CommonObjects PUBLIC
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
-    set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
-    set(RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/generated_icon.rc")
-    file(WRITE "${RC_FILE}" "IDI_ICON1 ICON DISCARDABLE \"${EXE_ICON}\"")
-    set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
-    set_source_files_properties("${RC_FILE}" PROPERTIES LANGUAGE RC)
-    qt_add_executable(SonarPractice
-        MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-        lupdate.bat
-        styleGuide.md
-        resources.qrc ${RC_FILE}
-    )
+    if(WIN32)
+        set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
+        set(RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/generated_icon.rc")
+        file(WRITE "${RC_FILE}" "IDI_ICON1 ICON DISCARDABLE \"${EXE_ICON}\"")
+        set(EXE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/logo.ico")
+        set_source_files_properties("${RC_FILE}" PROPERTIES LANGUAGE RC)
+        qt_add_executable(SonarPractice
+            MANUAL_FINALIZATION
+            ${PROJECT_SOURCES}
+            lupdate.bat
+            styleGuide.md
+            resources.qrc ${RC_FILE}
+        )
+    else()
+        qt_add_executable(SonarPractice
+            MANUAL_FINALIZATION
+            ${PROJECT_SOURCES}
+            lupdate.bat
+            styleGuide.md
+            resources.qrc
+        )
+    endif()
 
 target_link_libraries(SonarPractice PRIVATE
     CommonObjects

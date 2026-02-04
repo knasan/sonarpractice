@@ -496,15 +496,6 @@ bool MappingPage::validatePage() {
     QString musicBasePath = wiz()->field("targetPath").toString();
     bool isManaged = wiz()->field("manageData").toBool();
 
-    // Database Cleanup & Initialization
-    DatabaseManager::instance().closeDatabase();
-    if (QFile::exists(tempDbPath)) QFile::remove(tempDbPath);
-
-    if (!DatabaseManager::instance().initDatabase(tempDbPath)) {
-        QMessageBox::critical(this, "Error", "The database could not be initialized.");
-        return false;
-    }
-
     // Collect tasks
     QList<ImportTask> tasks;
     collectTasksFromModel(targetModel_m->item(ColName), "", tasks);
@@ -515,9 +506,6 @@ bool MappingPage::validatePage() {
         return QMessageBox::question(this, tr("Empty import"),
                                      tr("No files were selected for import. Continue?")) == QMessageBox::Yes;
     }
-
-    // If an old .tmp file still exists, delete it.
-    if (QFile::exists(tempDbPath)) QFile::remove(tempDbPath);
 
     // Connection to temporary database & table creation
     // initDatabase automatically calls createInitialTables() if version < 1
@@ -556,6 +544,9 @@ bool MappingPage::validatePage() {
             qApp->exit(1337);
             return true;
         }
+    } else {
+        DatabaseManager::instance().closeDatabase();
+        if (QFile::exists(tempDbPath)) QFile::remove(tempDbPath);
     }
 
     // In case of an error, also close
