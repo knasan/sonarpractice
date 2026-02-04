@@ -4,6 +4,7 @@
 #include "sonarlessonpage.h"
 #include "sonarmenuhelper.h"
 #include "importdialog.h"
+#include "fnv1a.h"
 
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -139,6 +140,7 @@ void MainWindow::onImportFileTriggered() {
         ScanBatch batch;
         batch.info = QFileInfo(filePath);
         batch.status = StatusReady;
+        batch.hash = FNV1a::calculate(filePath);
         batches.append(batch);
     }
 

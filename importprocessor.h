@@ -23,10 +23,6 @@ public:
     explicit ImportProcessor(QObject *parent = nullptr) : QObject(parent) {}
 
     [[nodiscard]] bool executeImport(const QList<ImportTask> &tasks, const QString &basePath, bool isManaged) {
-        // qDebug() << "executeImport basePath: " << basePath;
-        // qDebug() << "executeImport isManaged: " << isManaged;
-        // qDebug() << "executeImport tasks: " << tasks.size();
-
         if (!DatabaseManager::instance().beginTransaction()) {
             qDebug() << "executeImport: instance false";
             return false;
@@ -39,15 +35,6 @@ public:
         for (const auto &task : tasks) {
             count++;
             try {
-                // qDebug() << "executeImport task: categoryPath: " << task.categoryPath;
-                // qDebug() << "executeImport task: relativePath: " << task.relativePath;
-                // qDebug() << "executeImport task: sourcePath: " << task.sourcePath;
-                // qDebug() << "executeImport task: fileHash: " << task.fileHash;
-                // qDebug() << "executeImport task: fileSize: " << task.fileSize;
-                // qDebug() << "executeImport task: itemName: " << task.itemName;
-                // qDebug() << "executeImport task: fileSuffix: " << task.fileSuffix;
-                // qDebug() << "-------------------------------------------------------------";
-
                 // --- File system operations ---
                 QString finalDest;
                 if (isManaged) {
@@ -76,7 +63,6 @@ public:
 
                 auto it = createdSongs.find(filePath);
                 if (it == createdSongs.end()) {
-                    // qlonglong catId = DatabaseManager::instance().getOrCreateCategoryRecursive(task.categoryPath);
                     songId = DatabaseManager::instance().createSong(filePath);
                     if (songId == -1) throw std::runtime_error("DB Song Error");
                     createdSongs.insert(filePath, songId);

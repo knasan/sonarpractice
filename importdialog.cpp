@@ -150,6 +150,9 @@ void ImportDialog::setupTargetRoot() {
     } else {
         // Unmanaged: The user retains their files; we only organize them virtually.
         rootDisplay = "SonarPractice (Virtual)";
+        QStandardItem *rootItem = new QStandardItem(style()->standardIcon(QStyle::SP_DirHomeIcon), rootDisplay);
+        rootItem->setData(true, RoleIsFolder);
+        targetModel_m->appendRow(rootItem);
     }
 }
 

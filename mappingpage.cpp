@@ -565,7 +565,7 @@ void MappingPage::collectTasksFromModel(QStandardItem* parent, QString currentCa
         QStandardItem* child = parent->child(i);
 
         if (child->data(RoleIsFolder).toBool()) {
-            //Folder: Expand path and dig deeper
+            // Folder: Expand path and dig deeper
             QString nextPath = currentCategoryPath.isEmpty() ? child->text() : currentCategoryPath + "/" + child->text();
             collectTasksFromModel(child, nextPath, tasks);
         } else {

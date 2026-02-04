@@ -285,7 +285,7 @@ void SonarLessonPage::onTimerButtonClicked() {
         isTimerRunning_m = false;
         timerBtn_m->setText(tr("Start Timer"));
         timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-        timerBtn_m->setStyleSheet("");
+        //timerBtn_m->setStyleSheet("");
 
         addTimeToTable(minutes);
         lcdNumber_m->display("00:00");
