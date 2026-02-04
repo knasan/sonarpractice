@@ -27,6 +27,7 @@ public:
             ignoredBytes_m = other.ignoredBytes_m;
             totalBytes_m = other.totalBytes_m;
             savedBytes_m = other.savedBytes_m;
+            alreadyInDb_m = other.alreadyInDb_m;
         }
         return *this;
     }
@@ -42,7 +43,8 @@ public:
         ignoredFiles_m(other.ignoredFiles_m),
         ignoredBytes_m(other.ignoredBytes_m),
         totalBytes_m(other.totalBytes_m),
-        savedBytes_m(other.savedBytes_m)
+        savedBytes_m(other.savedBytes_m),
+        alreadyInDb_m(other.alreadyInDb_m)
     {
         // Reset the moved-from object
         other.reset();
@@ -61,6 +63,7 @@ public:
             ignoredBytes_m = other.ignoredBytes_m;
             totalBytes_m = other.totalBytes_m;
             savedBytes_m = other.savedBytes_m;
+            alreadyInDb_m  += other.alreadyInDb_m;
             other.reset();
         }
         return *this;
@@ -74,6 +77,7 @@ public:
         duplicates_m    += other.duplicates_m;
         selectedFiles_m += other.selectedFiles_m;
         savedBytes_m    += other.savedBytes_m;
+        alreadyInDb_m  += other.alreadyInDb_m;
     }
 
     // ---- Getter ----
@@ -83,6 +87,7 @@ public:
     [[nodiscard]] int duplicates() const noexcept { return duplicates_m; }
     [[nodiscard]] int managed() const noexcept { return managed_m; }
     [[nodiscard]] int ignoredFiles() const noexcept { return ignoredFiles_m; }
+    [[nodiscard]] int alreadyFilesInDb() const noexcept { return alreadyInDb_m; }
     [[nodiscard]] qlonglong ignoredBytes() const noexcept { return ignoredBytes_m; }
     [[nodiscard]] qlonglong totalBytes() const noexcept { return totalBytes_m; }
     [[nodiscard]] qlonglong savedBytes() const noexcept { return savedBytes_m; }
@@ -103,6 +108,11 @@ public:
     void addDefect() {
         QMutexLocker locker(&mutex_m);
         defects_m++;
+    }
+
+    void addAlreadyExists() {
+        QMutexLocker locker(&mutex_m);
+        alreadyInDb_m++;
     }
 
     void addDuplicate() {
@@ -133,6 +143,7 @@ public:
         ignoredBytes_m += other.ignoredBytes_m;
         totalBytes_m += other.totalBytes_m;
         savedBytes_m += other.savedBytes_m;
+        alreadyInDb_m  += other.alreadyInDb_m;
     }
 
     void reset() {
@@ -146,6 +157,7 @@ public:
         ignoredBytes_m = 0;
         totalBytes_m = 0;
         savedBytes_m = 0;
+        alreadyInDb_m  = 0;
     }
 
     // Delete move assignment operator (since it's not implemented)
@@ -156,6 +168,7 @@ public:
     int duplicates_m = 0;
     int managed_m = 0;
     int ignoredFiles_m = 0;
+    int alreadyInDb_m = 0;
     qlonglong ignoredBytes_m = 0;
     qlonglong totalBytes_m = 0;
     qlonglong savedBytes_m = 0;

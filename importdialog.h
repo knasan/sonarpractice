@@ -36,6 +36,9 @@ private:
     [[nodiscard]] QStandardItem* reconstructPathInSource(const QString &fullPath);
     [[nodiscard]] int countFiles(QStandardItem* item);
 
+    void updateImportButtonState();
+    bool hasCheckedItems(QStandardItem* item);
+
     QTreeView *sourceView_m;
     QTreeView *targetView_m;
 
@@ -45,6 +48,8 @@ private:
     QPushButton *btnMap_m;
     QPushButton *btnUnmap_m;
     QPushButton *btnNewDir_m;
+
+    QPushButton *btnImport_m;
     QLineEdit *searchLineEdit_m;
     QCheckBox *collabsTree_m;
 

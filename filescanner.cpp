@@ -1,8 +1,7 @@
 #include "filescanner.h"
 #include "fnv1a.h"
 
-void FileScanner::doScan(const QStringList &paths, const QStringList &filters, SetupWizard* wizard) {
-    qDebug() << "[FileScanner] doScan";
+void FileScanner::doScan(const QStringList &paths, const QStringList &filters) {
     QElapsedTimer timer;
     timer.start();
 
@@ -27,7 +26,7 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
             QFileInfo info = it.fileInfo();
 
             if (info.isDir()) {
-                qDebug() << "Skipping directory:" << info.absoluteFilePath();
+                qDebug() << "[FileScanner] doScan - Skipping directory:" << info.absoluteFilePath();
                 continue;
             }
 
@@ -41,7 +40,10 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
                 stats.addDefect();
             } else {
                 data.hash = FNV1a::calculate(info.absoluteFilePath());
-                if (data.hash.isEmpty()) {
+                if (existingHashes_m.contains(data.hash)) {
+                    data.status = StatusAlreadyInDatabase;
+                    stats.addAlreadyExists();
+                } else if (data.hash.isEmpty()) {
                     data.status = StatusDefect;
                     stats.addDefect();
                 } else {
@@ -77,9 +79,18 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters, S
             continue;
         }
 
+        if (batch.status == StatusAlreadyInDatabase) {
+            batch.status = StatusAlreadyInDatabase;
+            continue; // Diese Dateien dürfen NICHT als StatusDuplicate markiert werden!
+        }
+
         // Check if the hash occurs multiple times.
         if (countMap.value(batch.hash) > 1) {
-            batch.status = StatusDuplicate;
+            if (batch.status == StatusAlreadyInDatabase) {
+                batch.status = StatusAlreadyInDatabase;
+            } else {
+                batch.status = StatusDuplicate;
+            }
             stats.addDuplicate();
             continue;
         }

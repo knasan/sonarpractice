@@ -8,7 +8,6 @@
 #include <QFileInfo>
 #include <QDir>
 
-
 class FileManager : public QObject {
     Q_OBJECT
 signals:

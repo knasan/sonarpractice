@@ -4,6 +4,8 @@
 #include "sonarlessonpage.h"
 #include "sonarmenuhelper.h"
 #include "importdialog.h"
+#include "fnv1a.h"
+#include "filescanner.h"
 
 #include <QMainWindow>
 #include <QGuiApplication>
@@ -17,6 +19,7 @@
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QProgressDialog>
+#include <QThread>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -130,19 +133,25 @@ void MainWindow::onImportFileTriggered() {
         );
 
     if (selectedFiles.isEmpty()) {
-        return; // Abort by user
+        return;
     }
 
-    // 2. Create scan batch list
+    QSet<QString> dbHashes = dbManager_m->getAllFileHashes();
+
     QList<ScanBatch> batches;
     for (const QString &filePath : std::as_const(selectedFiles)) {
         ScanBatch batch;
         batch.info = QFileInfo(filePath);
-        batch.status = StatusReady;
+        batch.hash = FNV1a::calculate(filePath);
+        if (!dbHashes.contains(batch.hash)) {
+            batch.status = StatusReady;
+        } else {
+            batch.status = StatusAlreadyInDatabase;
+        }
+
         batches.append(batch);
     }
 
-    // 3.Show dialog
     ImportDialog dlg(this);
     dlg.setImportData(batches); // This method populates sourceModel_m
 
@@ -154,45 +163,64 @@ void MainWindow::onImportFileTriggered() {
 }
 
 void MainWindow::onImportDirectoryTriggered() {
+
     QString dirPath = QFileDialog::getExistingDirectory(this, tr("Select folder for import"));
     if (dirPath.isEmpty()) return;
 
-    QProgressDialog progress(tr("Scanning directory..."), tr("Cancel"), 0, 0, this);
-    progress.setWindowModality(Qt::WindowModal);
-    progress.show();
+    QProgressDialog *progress = new QProgressDialog(tr("Scanning and hashing files..."), tr("Cancel"), 0, 0, this);
+    progress->setWindowModality(Qt::WindowModal);
 
-    QList<ScanBatch> batches;
+    QSet<QString> dbHashes = dbManager_m->getAllFileHashes();
 
-    QDirIterator it(dirPath, FileUtils::getAudioFormats() + FileUtils::getGuitarProFormats() + FileUtils::getPdfFormats() + FileUtils::getVideoFormats(), QDir::Files, QDirIterator::Subdirectories);
+    FileScanner *scanner = new FileScanner();
+    scanner->setExistingHashes(dbHashes);
 
-    int foundCount = 0;
-    while (it.hasNext()) {
-        QString filePath = it.next();
-        ScanBatch batch;
-        batch.info = QFileInfo(filePath);
-        batch.status = StatusReady;
-        batches.append(batch);
+    QThread *thread = new QThread();
+    scanner->moveToThread(thread);
 
-        foundCount++;
+    QStringList filters = FileUtils::getAudioFormats() + FileUtils::getGuitarProFormats() +
+                          FileUtils::getPdfFormats() + FileUtils::getVideoFormats();
 
-        progress.setLabelText(tr("%1 files found...").arg(foundCount));
+    // ProgressDialog
+    int totalFound = 0;
+    connect(scanner, &FileScanner::batchesFound, this, [progress, totalFound](const QList<ScanBatch>& batches) mutable {
+        totalFound += batches.size();
+        progress->setLabelText(tr("%1 files processed...").arg(totalFound));
+    });
 
-        QCoreApplication::processEvents();
+    // abort logic
+    connect(progress, &QProgressDialog::canceled, this, [scanner, progress]() {
+        scanner->abort();
 
-        if (progress.wasCanceled()) {
-            batches.clear();
-            break;
+        progress->setLabelText(tr("Aborting scan... Please wait."));
+        progress->setEnabled(false);
+    });
+
+    connect(scanner, &FileScanner::finishWithAllBatches, this, [this, progress](const QList<ScanBatch>& all){
+        progress->close();
+        progress->deleteLater();
+
+        ImportDialog dlg;
+        dlg.setImportData(all);
+
+        if (dlg.exec() == QDialog::Accepted) {
+            emit dataChanged();
+        } else {
+            qDebug() << "Canceled";
         }
-    }
+    });
 
-    progress.close();
+    // Cleanup
+    connect(thread, &QThread::started, [scanner, dirPath, filters](){
+        scanner->doScan({dirPath}, filters);
+    });
 
-    if (!batches.empty()) {
-        ImportDialog dlg(this);
-        dlg.setImportData(batches);
-        dlg.exec();
-        emit dataChanged();
-    }
+    connect(scanner, &FileScanner::finished, thread, &QThread::quit);
+    connect(scanner, &FileScanner::finished, scanner, &QObject::deleteLater);
+    connect(thread, &QThread::finished, thread, &QObject::deleteLater);
+
+    thread->start();
+    progress->show();
 }
 
 // Helper function to build a QFileDialog filter from the list
