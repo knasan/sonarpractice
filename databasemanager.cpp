@@ -315,6 +315,26 @@ int DatabaseManager::getOrCreateTuning(const QString &name) {
     }
 }
 
+QSet<QString> DatabaseManager::getAllFileHashes() {
+    QSet<QString> hashSet;
+    QSqlQuery query(database());
+    query.prepare("SELECT file_hash FROM media_files");
+
+    if (!query.exec()) {
+        qWarning() << "[DatabaseManager] getAllFileHashes - Error fetching hashes:" << query.lastError().text();
+        return hashSet;
+    }
+
+    while (query.next()) {
+        QString h = query.value(0).toString().trimmed().toUpper();
+        if (!h.isEmpty()) {
+            hashSet.insert(h);
+        }
+    }
+
+    return hashSet;
+}
+
 // =============================================================================
 // --- Linking
 // =============================================================================

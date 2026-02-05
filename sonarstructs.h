@@ -51,6 +51,7 @@ enum FileStatus {
     StatusManaged,      // File is managed
     StatusFiles,
     StatusReject,
+    StatusAlreadyInDatabase
 };
 
 // Database

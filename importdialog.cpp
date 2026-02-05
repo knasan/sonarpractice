@@ -104,13 +104,17 @@ ImportDialog::ImportDialog(QWidget *parent) : QDialog(parent) {
     // Everything into the main layout of the page
     layout->addLayout(hTreeLayout);
 
-    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    auto *buttonBox = new QDialogButtonBox( QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+    btnImport_m = buttonBox->button(QDialogButtonBox::Ok);
+    if (btnImport_m) btnImport_m->setEnabled(false);
     buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Import"));
     buttonBox->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
+
     layout->addWidget(buttonBox);
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &ImportDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &ImportDialog::reject);
+    connect(sourceModel_m, &QStandardItemModel::itemChanged, this, &ImportDialog::updateImportButtonState);
 
     if (!isConnectionsEstablished_m) {
         isConnectionsEstablished_m = true;
@@ -584,26 +588,51 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
     sourceModel_m->setHorizontalHeaderLabels({tr("Source (verified)")});
 
     for (const auto& batch : batches) {
-        // Add only valid files (no duplicates/defects)
-        if (batch.status == StatusReady) {
-            QStandardItem* fileItem = new QStandardItem(batch.info.fileName());
-            fileItem->setData(batch.info.absoluteFilePath(), RoleFilePath);
-            fileItem->setData(batch.hash, RoleFileHash);
-            fileItem->setData(false, RoleIsFolder);
+        if (batch.status == StatusDefect) continue;
 
-            // Use the reconstructPathInSource method to build the folder structure on the left.
-            QStandardItem* parent = reconstructPathInSource(batch.info.path());
-            parent->appendRow(fileItem);
+        QStandardItem* fileItem = new QStandardItem(batch.info.fileName());
+        fileItem->setData(batch.info.absoluteFilePath(), RoleFilePath);
+        fileItem->setData(batch.hash, RoleFileHash);
+        fileItem->setData(batch.status, RoleFileStatus);
+        fileItem->setData(false, RoleIsFolder);
+
+        // --- Logic for duplicates and existing files ---
+
+        if (batch.status == StatusAlreadyInDatabase) {
+            // Fall: exists in db
+            fileItem->setText(tr("(In Library) ") + fileItem->text());
+            fileItem->setForeground(QBrush(Qt::gray));
+            fileItem->setCheckable(false);
+            fileItem->setEnabled(false);
+            // fileItem->setIcon(QIcon(":/icons/database_check.png")); // Optionales Icon
+            fileItem->setToolTip(tr("This file is already in your database."));
         }
+        else if (batch.status == StatusDuplicate) {
+            // Fall: Duplicate within the current scan
+            fileItem->setText(fileItem->text() + tr(" (Duplicate)"));
+            fileItem->setForeground(QBrush(Qt::red));
+            fileItem->setCheckable(false);
+            fileItem->setToolTip(tr("This file exists multiple times in your selection."));
+            // fileItem->setIcon(QIcon(":/icons/duplicate.png"));
+        }
+        else {
+            // Fall: StatusReady
+            fileItem->setCheckable(true);
+            fileItem->setCheckState(Qt::Checked);
+        }
+
+        QStandardItem* parent = reconstructPathInSource(batch.info.path());
+        parent->appendRow(fileItem);
     }
     sourceView_m->expandAll();
+    updateImportButtonState();
 }
 
 void ImportDialog::fillMappingSource() {
     targetModel_m->clear();
     targetModel_m->setHorizontalHeaderLabels({tr("Target Structure (Managed)")});
 
-    // 2.Start the recursive process
+    // Start the recursive process
     fillRecursive(sourceModel_m->invisibleRootItem(), targetModel_m->invisibleRootItem());
 }
 
@@ -636,9 +665,37 @@ void ImportDialog::fillRecursive(QStandardItem* sourceParent, QStandardItem* tar
             fileItem->setData(sourceItem->data(RoleFilePath), RoleFilePath);
             fileItem->setData(sourceItem->data(RoleFileHash), RoleFileHash);
             fileItem->setData(sourceItem->data(RoleFileSizeRaw), RoleFileSizeRaw);
-            //fileItem->setData(sourceItem->data(RoleFileSuffix), RoleFileSuffix);
             fileItem->setData(false, RoleIsFolder);
             targetParent->appendRow(fileItem);
         }
     }
+}
+
+void ImportDialog::updateImportButtonState() {
+    bool anyChecked = false;
+
+    // Iterate through the entire model and search for a checked box using findItems or a manual recursion
+    for (int i = 0; i < sourceModel_m->rowCount(); ++i) {
+        if (hasCheckedItems(sourceModel_m->item(i))) {
+            anyChecked = true;
+            break;
+        }
+    }
+
+    if (btnImport_m) {
+        btnImport_m->setEnabled(anyChecked);
+    }
+}
+
+bool ImportDialog::hasCheckedItems(QStandardItem* item) {
+    if (!item) return false;
+
+    if (item->isCheckable() && item->checkState() == Qt::Checked) {
+        return true;
+    }
+    for (int i = 0; i < item->rowCount(); ++i) {
+        if (hasCheckedItems(item->child(i))) return true;
+    }
+
+    return false;
 }

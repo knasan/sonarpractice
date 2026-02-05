@@ -55,6 +55,7 @@ public:
 
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
+    [[nodiscard]] QSet<QString> getAllFileHashes();
 
     // Linking
     [[nodiscard]] int linkFiles(const QList<int> &fileIds);
