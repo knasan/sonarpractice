@@ -73,6 +73,8 @@ private:
 
     QHBoxLayout* resourceLayout_m;
 
+    QLabel* statusLabel_m;
+
     QString currentSongPath_m;
     int currentFileId_m{0};
 

@@ -136,6 +136,9 @@ void SonarLessonPage::setupUI() {
 
     footerLayout->insertLayout(0, resourceLayout_m);
 
+    statusLabel_m = new QLabel(this);
+    footerLayout->addWidget(statusLabel_m);
+
     saveBtn_m = new QPushButton(tr("Save"));
     footerLayout->addWidget(saveBtn_m);
     saveBtn_m->setEnabled(false);
@@ -155,7 +158,7 @@ void SonarLessonPage::sitesConnects() {
         isConnectionsEstablished_m = true;
 
         connect(gpIcon_m, &QPushButton::clicked, this, [this]() {
-            currentSongPath_m = songSelector_m->itemData(songSelector_m->currentIndex(), PathRole).toString();
+            currentSongPath_m = QDir::cleanPath(songSelector_m->itemData(songSelector_m->currentIndex(), PathRole).toString());
             QString fullPath = QDir::cleanPath(currentSongPath_m);
             UIHelper::openFileWithFeedback(this, fullPath);
         });
@@ -336,7 +339,13 @@ void SonarLessonPage::onSongChanged(int index) {
         QString ext = QFileInfo(file.fileName).suffix().toLower();
 
         DatabaseManager::RelatedFile correctedFile = file;
-        correctedFile.relativePath = QDir::cleanPath(dbManager_m->getManagedPath() + "/" + file.fileName);
+        // file.fileName is the relative or absolut path to the file
+        if (dbManager_m->getManagedPath().isEmpty()) {
+            correctedFile.relativePath = QDir::cleanPath(file.fileName);
+        } else {
+            correctedFile.relativePath = QDir::cleanPath(dbManager_m->getManagedPath() + "/" + file.fileName);
+        }
+
 
         if (FileUtils::getPdfFormats().contains("*." + ext)) pdfFiles.append(correctedFile);
         else if (FileUtils::getVideoFormats().contains("*." + ext)) videoFiles.append(correctedFile);
@@ -490,6 +499,14 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
     bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
         isDirtyTable_m = false;
+
+        static QString msgSucess = tr("Successfully saved");
+        statusLabel_m->setText(msgSucess);
+        // show for 10 secons a saved message
+        QTimer::singleShot(10000, [this]() {
+            statusLabel_m->clear();
+        });
+
         updateButtonState();
     }
 

@@ -57,22 +57,22 @@ SetupWizard::SetupWizard(QWidget *parent)
     int screenWidth = screenGeometry.width();
     int screenHeight = screenGeometry.height();
 
-    // Calculate a dynamic size (e.g., 80% width, 70% height)
-    int wizardWidth = screenWidth * 0.8;
-    int wizardHeight = screenHeight * 0.7;
-
-    // Safety check: Not less than your minimum.
-    wizardWidth = qMax(wizardWidth, 1000);
-    wizardHeight = qMax(wizardHeight, 700);
-
-    // Set window size
-    resize(wizardWidth, wizardHeight);
-    setMinimumSize(950, 650);
+    int finalHeight = qMin(700, screenHeight) - 150;
+    int finalWidth = qMin(1000, screenWidth) - 150;
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
     setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
 
-    // Center the wizard on the screen
+    // Set window size
+    // resize(wizardWidth, wizardHeight);
+    setMinimumSize(600, 500);
+    // setMinimumSize(finalWidth, finalHeight);
+    resize(finalWidth , finalHeight);
     move(screenGeometry.center() - rect().center());
+    // this->showMaximized();
+
+
+    // Center the wizard on the screen
+
 
     //  Stil-Optionen setzen
     // 'IndependentPages' ensures that pages are more clearly separated.

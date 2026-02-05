@@ -226,6 +226,8 @@ bool DatabaseManager::setDatabaseVersion(int version) {
 bool DatabaseManager::addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize, QString fileHash) {
     QSqlQuery q(database());
 
+    qDebug() << "[DatabaseManager] addFileToSong - filePath: " << filePath;
+
     // Logic: Is it a Guitar Pro file?
     // Take the ending (e.g., "gp5") and add "*." before it.
     // so that it matches QStringLists in FileUtils exactly.

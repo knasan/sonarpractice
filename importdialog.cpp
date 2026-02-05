@@ -507,7 +507,7 @@ void ImportDialog::collectTasksFromModel(QStandardItem* parent, QString currentD
             t.fileSuffix = QFileInfo(t.sourcePath).suffix();
             t.categoryPath = currentDirPath; // The folder structure is contained within this.
 
-            if (isManaged_m) {
+            if (!isManaged_m) {
                 t.relativePath = QDir::cleanPath(dataBasePath_m + "/" + currentDirPath + "/" + t.itemName);
             } else {
                 t.relativePath = QDir::cleanPath(currentDirPath + "/" + t.itemName);
