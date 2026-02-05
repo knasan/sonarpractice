@@ -27,6 +27,10 @@ bool DatabaseManager::initDatabase(const QString &dbPath) {
             if (db.isOpen() && db.databaseName() == dbPath) {
                 db_m = db;
                 db_m = QSqlDatabase::database(db_m.connectionName());
+                QSqlQuery query(db_m);
+                if (!query.exec("PRAGMA foreign_keys = ON;")) {
+                    qWarning() << "Konnte Foreign Keys nicht aktivieren:" << query.lastError().text();
+                }
                 return true;
             }
         }
@@ -45,7 +49,9 @@ bool DatabaseManager::initDatabase(const QString &dbPath) {
 
     // Enable foreign keys for this connection (important for ON DELETE CASCADE)
     QSqlQuery q(db_m);
-    q.exec("PRAGMA foreign_keys = ON");
+    if (!q.exec("PRAGMA foreign_keys = ON;")) {
+        qWarning() << "Konnte Foreign Keys nicht aktivieren:" << q.lastError().text();
+    }
 
     // Check versioning
     int currentVersion = getDatabaseVersion();
@@ -442,15 +448,16 @@ bool DatabaseManager::removeRelation(int fileIdA, int fileIdB) {
     return true;
 }
 
-bool DatabaseManager::deleteFileRecord(int fileId) {
+bool DatabaseManager::deleteFileRecord(int songId) {
     QSqlQuery q(database());
-    q.prepare("DELETE FROM media_files WHERE id = ?");
-    q.addBindValue(fileId);
+    q.prepare("DELETE FROM songs WHERE id = ?");
+    q.addBindValue(songId);
 
     if (!q.exec()) {
         qCritical() << "[DatabaseManager] Delete record failed:" << q.lastError().text();
         return false;
     }
+    qDebug() << "[DatabaseManager] Song and all associated data deleted via fileId:" << songId;
     return true;
 }
 
