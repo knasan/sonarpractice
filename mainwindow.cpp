@@ -24,25 +24,12 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
+    setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
 
-    // Display Setup
-    // 1. primary screen
-    QScreen *screen = QGuiApplication::primaryScreen();
-    // Available geometry (without taskbar!)
-    QRect screenGeometry = screen->availableGeometry();
-    int screenWidth = screenGeometry.width();
-    int screenHeight = screenGeometry.height();
-    // Calculate a dynamic size (e.g., 80% width, 70% height)
-    int wizardWidth = screenWidth * 0.8;
-    int wizardHeight = screenHeight * 0.7;
-    // Safety check: Not less than your minimum.
-    wizardWidth = qMax(wizardWidth, 1000);
-    wizardHeight = qMax(wizardHeight, 700);
     // Set window size
-    resize(wizardWidth, wizardHeight);
-    setMinimumSize(950, 650);
-    // Center the wizard on the screen
-    move(screenGeometry.center() - rect().center());
+    setMinimumSize(600, 500);
+    showMaximized();
 
     // Database
     dbManager_m = new DatabaseManager(this);
@@ -106,7 +93,6 @@ MainWindow::MainWindow(QWidget *parent)
     if (importFile) {
         connect(importDirectory, &QAction::triggered, this, &MainWindow::onImportDirectoryTriggered);
     }
-
 }
 
 MainWindow::~MainWindow() {}

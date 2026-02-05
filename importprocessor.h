@@ -47,7 +47,7 @@ public:
                     }
                     QCoreApplication::processEvents();
                 } else {
-                    finalDest = task.sourcePath;
+                    finalDest = QDir::cleanPath(task.sourcePath);
                 }
 
                 emit progressUpdated(count);

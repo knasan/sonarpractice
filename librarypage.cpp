@@ -435,7 +435,7 @@ void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes) {
 
     if (res != QMessageBox::Yes) return;
 
-    // Wir sortieren die Indizes, um sicher von unten nach oben zu löschen
+    // Sort the indices to ensure safe deletion from bottom to top
     QModelIndexList sortedIndexes = indexes;
     std::sort(sortedIndexes.begin(), sortedIndexes.end(), [](const QModelIndex &a, const QModelIndex &b) {
         return a.row() > b.row();
@@ -445,7 +445,8 @@ void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes) {
 
     for (const QModelIndex &index : sortedIndexes) {
         QString path = index.data(LibraryPage::FilePathRole).toString();
-        int fileId = index.data(LibraryPage::FileIdRole).toInt();
+        // int fileId = index.data(LibraryPage::FileIdRole).toInt();
+        int songId = index.data(LibraryPage::SongIdRole).toInt();
 
         // drive delete
         bool fileDeleted = true;
@@ -455,7 +456,7 @@ void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes) {
 
         if (fileDeleted) {
             // Database (CASCADE delete automatic entries from file_relations)
-            if (dbManager_m->deleteFileRecord(fileId)) {
+            if (dbManager_m->deleteFileRecord(songId)) {
                 // UI
                 catalogModel_m->removeRow(index.row());
                 successCount++;
