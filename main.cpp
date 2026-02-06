@@ -67,10 +67,15 @@ int main(int argc, char *argv[])
         QString dbPath = appDataDir + "/sonar_practice.db";
     #endif
 
-    // Load Style
+    QString qss =
+        loadQss(":/base.qss") +
+        loadQss(":/app.qss") +
+        loadQss(":/wizard.qss"); // +   // enthält nur #setupWizard ... Regeln
+           // loadQss(userThemePath);             // app_custom.qss
+
     a.setStyle(QStyleFactory::create("Fusion"));
     a.setWindowIcon(QIcon(":/icon"));
-    a.setStyleSheet(loadQss(":/base.qss"));
+    a.setStyleSheet(qss);
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();

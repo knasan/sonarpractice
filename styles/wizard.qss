@@ -124,4 +124,46 @@ a {
 a:hover {
   text-decoration: underline;
 }
+QWizard#setupWizard QLabel#brandSonar,
+QWizard#setupWizard QLabel#brandPractice {
+    padding: 0px;
+    margin: 0px;
+}
+
+QWizard#setupWizard QLabel#brandPractice {
+    color: #FFFFFF;
+    font-size: 20px;
+    font-weight: 900;
+
+    /* DER Trick: 1–4px negativ, bis es „wie ein Wort“ aussieht */
+    /* margin-left: -2px; */
+}
+
+
+BrandLabel#brandSonar {
+    qproperty-baseColor:  #2FA8FF;                 /* Blau */
+    qproperty-pulseColor: rgba(255,255,255,0.95);  /* Weiß */
+
+    font-size: 20px;
+    /* font-weight: 900; */
+    background: transparent;
+}
+
+BrandLabel#brandPractice {
+    qproperty-baseColor:  rgba(255,255,255,0.95);  /* Weiß */
+    qproperty-pulseColor: #2FA8FF;                 /* Blau */
+
+    font-size: 20px;
+    /* font-weight: 900; */
+    background: transparent;
+
+    /* margin-left: -2px; optional: „zusammenkleben“ */
+}
+
+
+/* Slogan rechts dezenter */
+QWizard#setupWizard QLabel#brandSlogan {
+    color: rgba(255,255,255,0.70);
+    font-weight: 700;
+}
 

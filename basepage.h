@@ -8,6 +8,7 @@ class QTreeWidget;
 class QLabel;
 class QRadioButton;;
 class SetupWizard;
+class QVBoxLayout;
 
 class BasePage : public QWizardPage {
     Q_OBJECT
@@ -15,7 +16,7 @@ public:
     explicit BasePage(QWidget *parent = nullptr);
     [[nodiscard]] QString createHeader(const QString &title);
 protected:
-    void addHeaderLogo(QLayout* layout, const QString& title);
+    void addHeaderLogo(QVBoxLayout* layout, const QString& title);
     void styleInfoLabel(QLabel* label) const;
     void stylePushButton(QPushButton* button) const;
     void styleRadioButton(QRadioButton* radio) const;

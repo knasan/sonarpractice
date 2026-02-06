@@ -1,5 +1,6 @@
 // basepage.cpp
 #include "basepage.h"
+#include "brandlabel.h"
 #include "setupwizard.h"
 
 #include <QWizardPage>
@@ -10,6 +11,7 @@
 #include <qradiobutton.h>
 #include <QTextBrowser>
 #include <QLayout>
+#include <QPropertyAnimation>
 
 BasePage::BasePage(QWidget *parent)
     : QWizardPage(parent)
@@ -135,25 +137,51 @@ bool BasePage::filterItemRecursive(QTreeWidgetItem* item, const QString& text, C
     return shouldBeVisible;
 }
 
-void BasePage::addHeaderLogo(QLayout* layout, const QString& title) {
+void BasePage::addHeaderLogo(QVBoxLayout* layout, const QString& title)
+{
     if (!layout) return;
 
-    // The QTextBrowser for explanatory text
-    QTextBrowser *browser = new QTextBrowser(this);
+    auto *row = new QHBoxLayout;
+    row->setContentsMargins(0,0,0,0);
+    row->setSpacing(0);
 
-    // Visual tuning
-    browser->setFrameStyle(QFrame::NoFrame);
-    QPalette p = browser->palette();
-    p.setColor(QPalette::Base, Qt::transparent);
-    browser->setPalette(p);
+    auto *sonar = new BrandLabel(this);
+    sonar->setObjectName("brandSonar");
+    sonar->setText("Sonar");
+    sonar->setMargin(0);
 
-    browser->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    browser->setFixedHeight(50);
+    auto *practice = new BrandLabel(this);
+    practice->setObjectName("brandPractice");
+    practice->setText("Practice");
+    practice->setMargin(0);
 
-    QString headerLogo = createHeader(title);
-    browser->setHtml(headerLogo);
+    row->addWidget(sonar);
+    row->addWidget(practice);
+    row->addStretch(1);
 
-    layout->addWidget(browser);
+    auto *slogan = new QLabel(title, this);
+    slogan->setObjectName("brandSlogan");
+    row->addWidget(slogan);
+
+    auto *a = new QVariantAnimation(this);
+    a->setDuration(10000);
+    a->setLoopCount(-1);
+    a->setStartValue(0.0);
+    a->setEndValue(1.0);
+    a->setKeyValueAt(0.0, 0.0);
+    a->setKeyValueAt(0.5, 1.0);
+    a->setKeyValueAt(1.0, 0.0);
+    a->setEasingCurve(QEasingCurve::InOutSine);
+
+    connect(a, &QVariantAnimation::valueChanged, this, [=](const QVariant &v){
+        const qreal t = v.toReal();
+        sonar->setPulse(t);
+        practice->setPulse(t);
+    });
+
+    a->start();
+
+    layout->addLayout(row);
 }
 
 SetupWizard* BasePage::wiz() {

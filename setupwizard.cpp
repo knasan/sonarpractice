@@ -14,6 +14,7 @@
 SetupWizard::SetupWizard(QWidget *parent)
     : QWizard(parent)
 {
+    setObjectName("setupWizard");
     setWindowFlags(windowFlags()
                    | Qt::WindowMinimizeButtonHint
                    | Qt::WindowMaximizeButtonHint

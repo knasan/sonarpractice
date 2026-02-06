@@ -36,6 +36,7 @@ set(PREVIEW_COMMON
     sonarmenuhelper.h
     fileselectiondialog.h fileselectiondialog.cpp
     importdialog.h importdialog.cpp
+    brandlabel.h brandlabel.cpp
     CACHE INTERNAL "Common files for main project and tests"
 )
 
@@ -51,8 +52,6 @@ add_library(CommonObjects OBJECT ${PREVIEW_COMMON}
     styles/app.qss
     styles/wizard.qss
     styles/base.qss
-
-
 )
 
 # Aktiviere Qt für diese Library (Löst den "QObject not found" Fehler)

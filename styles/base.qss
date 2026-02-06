@@ -116,3 +116,4 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     border-radius: 8px;
     padding: 6px 8px;
 }
+
