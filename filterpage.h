@@ -12,6 +12,7 @@ public:
     explicit FilterPage(QWidget *parent = nullptr);
     virtual void initializePage() override;
     int nextId() const override;
+    void cleanupPage() override;
 
     [[nodiscard]] bool isComplete() const override;
 

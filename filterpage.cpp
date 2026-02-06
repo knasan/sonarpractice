@@ -69,8 +69,6 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     lblTargetPath_m->setObjectName("targetPathLabel");
 
     btnSelectTargetPath_m->setEnabled(false);
-    // Visual feedback: Slightly gray out or frame the label
-    // lblTargetPath_m->setStyleSheet("color: gray; border: 1px solid #444; padding: 5px;");
 
     pathLayout->addWidget(lblTargetPath_m);
     pathLayout->addWidget(btnSelectTargetPath_m);
@@ -106,13 +104,9 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 
     // Add Button
     btnAddSource_m = new QPushButton(tr("Add folder"), this);
-    // button style add
-    // stylePushButton(btnAddSource_m);
 
     // Remove Button
     btnRemSource_m = new QPushButton(tr("Remove folder"), this);
-    // button style rem
-    // stylePushButton(btnRemSource_m);
 
     // Default Button State
     btnRemSource_m->setEnabled(false);
@@ -164,8 +158,12 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 }
 
 void FilterPage::initializePage() {
-    bool managed = field("manageData").toBool();
-    updateTargetPathStyle(managed);
+    SetupWizard *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (wiz) {
+        cbManageData_m->setChecked(wiz->field("manageData").toBool());
+        lblTargetPath_m->setText(wiz->field("targetPath").toString());
+        updateTargetPathStyle(cbManageData_m->isChecked());
+    }
 }
 
 int FilterPage::nextId() const {
@@ -384,4 +382,13 @@ bool FilterPage::validatePage() {
 
     wiz()->button(QWizard::NextButton)->setEnabled(false);
     return true;
+}
+
+void FilterPage::cleanupPage() {
+    // cleanupPage call by back button
+    SetupWizard *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (wiz) {
+        wiz->setField("manageData", cbManageData_m->isChecked());
+        wiz->setField("targetPath", lblTargetPath_m->text());
+    }
 }
