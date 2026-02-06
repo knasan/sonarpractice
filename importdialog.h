@@ -32,6 +32,7 @@ private:
     void accept() override;
 
     [[nodiscard]] QStandardItem* deepCopyItem(QStandardItem* item);
+    [[nodiscard]] QStandardItem* deepCopyItemForUnmap(QStandardItem* item);
     [[nodiscard]] QStandardItem* getTargetFolder();
     [[nodiscard]] QStandardItem* reconstructPathInSource(const QString &fullPath);
     [[nodiscard]] int countFiles(QStandardItem* item);

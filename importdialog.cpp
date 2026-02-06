@@ -296,10 +296,9 @@ void ImportDialog::mapSelectedItems() {
     if (selected.isEmpty()) return;
 
     QStandardItem *targetFolder = getTargetFolder();
-
     QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
-    // IMPORTANT: Sort the indices in descending order so that deleting items in the source model does not shift the indices of the items still waiting.
+    // Sort in descending order to avoid shifts.
     std::sort(selected.begin(), selected.end(), [](const QModelIndex &a, const QModelIndex &b) {
         return a.row() > b.row();
     });
@@ -308,18 +307,16 @@ void ImportDialog::mapSelectedItems() {
         QStandardItem *sourceItem = sourceModel_m->itemFromIndex(index);
         if (!sourceItem) continue;
 
-        // Create a deep copy (whether file or folder with 1000 children)
+        // Create a deep copy, but filter only existing elements. (StatusAlreadyInDatabase)
         QStandardItem *newItem = deepCopyItem(sourceItem);
-        targetFolder->appendRow(newItem);
-
-        // Remove from the source tree
-        sourceModel_m->removeRow(index.row(), index.parent());
+        if (newItem) {
+            targetFolder->appendRow(newItem);
+            sourceModel_m->removeRow(index.row(), index.parent());
+        }
     }
 
     cleanupEmptyFolders(sourceModel_m->invisibleRootItem());
-
     QGuiApplication::restoreOverrideCursor();
-
     sourceView_m->viewport()->update();
 }
 
@@ -361,7 +358,7 @@ void ImportDialog::unmapItem() {
     sourceView_m->setUpdatesEnabled(false);
     sourceModel_m->blockSignals(true);
 
-    // Work from bottom to top (Important when deleting!)
+    // Sort in descending order to avoid shifts.
     std::sort(selected.begin(), selected.end(), [](const QModelIndex &a, const QModelIndex &b) {
         return a.row() > b.row();
     });
@@ -374,20 +371,19 @@ void ImportDialog::unmapItem() {
         QStandardItem *targetParentForReturn = nullptr;
 
         if (item->data(RoleIsFolder).toBool()) {
-            // CASE A: An entire FOLDER is pushed back
-            // We search for the parent folder of the folder in the source tree
+            //Move folder back: Reconstruct path
             QFileInfo dirInfo(fullPath);
             targetParentForReturn = reconstructPathInSource(dirInfo.path());
         } else {
-            // CASE B: A single FILE is pushed back
+            // Move file back: Reconstruct path
             targetParentForReturn = reconstructPathInSource(fullPath);
         }
 
-        // Deep Copy (copies files or entire folder trees)
-        QStandardItem *returnItem = deepCopyItem(item);
+        // Copy ALL elements (including duplicates) back to the source.
+        QStandardItem *returnItem = deepCopyItemForUnmap(item);
         targetParentForReturn->appendRow(returnItem);
 
-        // Remove from the right side of the target tree
+        // Remove the element from the target structure
         targetModel_m->removeRow(index.row(), index.parent());
     }
 
@@ -436,18 +432,46 @@ QStandardItem* ImportDialog::reconstructPathInSource(const QString &fullPath) {
 }
 
 QStandardItem* ImportDialog::deepCopyItem(QStandardItem* item) {
-    QStandardItem* copy = item->clone(); // Creates a copy of the item with text, icon, and all data (roles).
+    // Skip elements that are already in the database.
+    if (item->data(RoleFileStatus).toInt() == StatusAlreadyInDatabase) {
+        return nullptr;
+    }
 
-    // Clone all custom roles (clone() usually only copies standard roles)
+    QStandardItem* copy = item->clone();
     copy->setData(item->data(RoleFilePath), RoleFilePath);
     copy->setData(item->data(RoleFileHash), RoleFileHash);
     copy->setData(item->data(RoleIsFolder), RoleIsFolder);
     copy->setData(item->data(RoleFileStatus), RoleFileStatus);
 
-    // Copy all children recursively
+    // Copy all children recursively (including duplicates within the selection)
     for (int i = 0; i < item->rowCount(); ++i) {
-        copy->appendRow(deepCopyItem(item->child(i)));
+        QStandardItem* childCopy = deepCopyItem(item->child(i));
+        if (childCopy) {
+            copy->appendRow(childCopy);
+        }
     }
+
+    // Return nullptr if the folder is empty (all children were already in the database).
+    if (item->data(RoleIsFolder).toBool() && copy->rowCount() == 0) {
+        delete copy;
+        return nullptr;
+    }
+
+    return copy;
+}
+
+QStandardItem* ImportDialog::deepCopyItemForUnmap(QStandardItem* item) {
+    QStandardItem* copy = item->clone();
+    copy->setData(item->data(RoleFilePath), RoleFilePath);
+    copy->setData(item->data(RoleFileHash), RoleFileHash);
+    copy->setData(item->data(RoleIsFolder), RoleIsFolder);
+    copy->setData(item->data(RoleFileStatus), RoleFileStatus);
+
+    // Copy all children (including disabled ones)
+    for (int i = 0; i < item->rowCount(); ++i) {
+        copy->appendRow(deepCopyItemForUnmap(item->child(i)));
+    }
+
     return copy;
 }
 
@@ -470,8 +494,6 @@ void ImportDialog::cleanupEmptyFolders(QStandardItem *parent) {
         }
     }
 }
-
-// -------------
 
 void ImportDialog::collectTasksFromModel(QStandardItem* parent, QString currentDirPath, QList<ImportTask>& tasks) {
     if (!parent) {
