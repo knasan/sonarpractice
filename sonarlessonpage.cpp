@@ -22,6 +22,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QListWidget>
+#include <QHeaderView>
 #include <QMenu>
 #include <QProgressBar>
 #include <QPushButton>
@@ -43,7 +44,8 @@ void SonarLessonPage::setupUI() {
     // --- SIDEBAR (left) ---
     auto *sidebar = new QVBoxLayout();
     calendar_m = new QCalendarWidget(this);
-    // Style note: Use QSS here for the dark look of the calendar.
+    calendar_m->setObjectName("lessonCalendar");
+
     sidebar->addWidget(new QLabel(tr("Daily Journal")));
     sidebar->addWidget(calendar_m);
 
@@ -61,9 +63,11 @@ void SonarLessonPage::setupUI() {
 
     // Form: Exercise & Song Details
     auto *groupSongInformation = new QGroupBox(tr("Song information"));
+    groupSongInformation->setObjectName("styledGroup");
     auto *formLayout = new QGridLayout(groupSongInformation);
 
     songSelector_m = new QComboBox(this);
+    songSelector_m->setObjectName("songSelection");
     tuningLabel_m = new QLabel(tr("Tuning: - "));
     tempoSpin_m = new QSpinBox(this);
     tempoSpin_m->setRange(40, 250);
@@ -102,7 +106,13 @@ void SonarLessonPage::setupUI() {
 
     // Table: Practice session (time from/to, tempo, duration, repetitions)
     sessionTable_m = new QTableWidget(5, 6, this);
+    sessionTable_m->setObjectName("journalTable");
+    sessionTable_m->setAlternatingRowColors(true);
     sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
+    // sessionTable_m->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    // journalTable_m->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    sessionTable_m->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
 
     contentLayout->addWidget(sessionTable_m);
 

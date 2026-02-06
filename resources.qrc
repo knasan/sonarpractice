@@ -2,5 +2,7 @@
     <qresource prefix="/">
         <file alias="icon">assets/svg/icon.svg</file>
         <file alias="exe-icon">assets/logo.ico</file>
+        <file alias="main.qss">styles/main.qss</file>
+        <file alias="wizard.qss">styles/wizard.qss</file>
     </qresource>
 </RCC>

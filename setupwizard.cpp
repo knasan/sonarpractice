@@ -63,16 +63,9 @@ SetupWizard::SetupWizard(QWidget *parent)
     setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
 
     // Set window size
-    // resize(wizardWidth, wizardHeight);
     setMinimumSize(600, 500);
-    // setMinimumSize(finalWidth, finalHeight);
     resize(finalWidth , finalHeight);
     move(screenGeometry.center() - rect().center());
-    // this->showMaximized();
-
-
-    // Center the wizard on the screen
-
 
     //  Stil-Optionen setzen
     // 'IndependentPages' ensures that pages are more clearly separated.

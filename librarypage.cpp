@@ -71,6 +71,7 @@ void LibraryPage::setupUI() {
 
     searchEdit_m = new QLineEdit(this);
     searchEdit_m->setPlaceholderText(tr("Search for songs, videos, or PDFs..."));
+    searchEdit_m->setObjectName("searchBar");
 
     expertModeCheck_m = new QCheckBox(tr("Expert mode"), this);
 

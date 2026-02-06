@@ -22,7 +22,10 @@ private:
     LibraryPage *libraryPage_m;
     SonarLessonPage *lessonPage_m;
 
-    QString formatFilter(const QString& description, const QStringList& extensions);
+    [[nodiscard]] QString formatFilter(const QString& description, const QStringList& extensions);
+
+private slots:
+    void reloadStyle();
 
 signals:
     void dataChanged();

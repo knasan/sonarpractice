@@ -62,7 +62,14 @@ int main(int argc, char *argv[])
 
     a.setWindowIcon(QIcon(":/icon"));
 
-    a.setStyleSheet(
+    // Load Style
+    QFile styleFile(":/main.qss");
+    if(styleFile.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(styleFile.readAll());
+        // a.setStyleSheet(styleSheet);
+    }
+
+   /*a.setStyleSheet(
         "QWidget { background-color: #353535; color: #ffffff; }"
         "QCheckBox { color: #ffffff; spacing: 5px; }"
         "QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #777777; background: #252525; }"
@@ -85,7 +92,7 @@ int main(int argc, char *argv[])
         "  color: #555555; "            // Dark grey text (barely legible)
         "  border: 1px solid #333333; " // Barely visible frame
         "}"
-        );
+        );*/
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -105,6 +112,11 @@ int main(int argc, char *argv[])
 
     if (isSetupNeeded(dbPath)) {
         qInfo() << "SonarPractice setup wizard started";
+        /*QFile styleFile(":/wizard.qss");
+        if(styleFile.open(QFile::ReadOnly)) {
+            QString styleSheet = QLatin1String(styleFile.readAll());
+            a.setStyleSheet(styleSheet);
+        }*/
         SetupWizard wizard;
 
         QFileInfo dbInfo(dbPath);
@@ -120,8 +132,11 @@ int main(int argc, char *argv[])
             return 0;
         }
     } else {
-        qInfo()<< "------------------------------------------";
-        qInfo() << "SonarPractice launched.";
+        /*QFile styleFile(":/main.qss");
+        if(styleFile.open(QFile::ReadOnly)) {
+            QString styleSheet = QLatin1String(styleFile.readAll());
+            a.setStyleSheet(styleSheet);
+        }*/
     }
 
     // Database connection

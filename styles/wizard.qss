@@ -1,0 +1,127 @@
+/* =========================
+   QWizard (ModernStyle) - Sonar Theme
+   ========================= */
+
+QWizard {
+    background-color: #2f3133; /* BG */
+}
+
+/* Header oben (ModernStyle) */
+#qt_wizard_header {
+    background-color: #2f3133;              /* Surface */
+    border-bottom: 1px solid #ff0000;       /* Border */
+}
+
+/* Titel / Untertitel */
+#qt_wizard_title {
+    color: #243443;          /* Text */
+    font-weight: 800;
+    font-size: 18px;
+}
+
+#qt_wizard_subtitle {
+    color: #5D7284;          /* Text Muted */
+    font-size: 12px;
+}
+
+/* Step-Liste (falls angezeigt) */
+#qt_wizard_steplist {
+    background-color: #2f3133;
+    border: 1px solid #D6E0E8;
+    border-radius: 12px;
+    padding: 8px;
+}
+
+/* Seite/Content Bereich */
+#qt_wizard_stackedwidget {
+    background-color: #2f3133;
+}
+
+/* WizardPage selbst */
+QWizardPage {
+    background-color: #2f3133;
+}
+
+/* Buttons im Wizard (erben von globalem QPushButton; hier optional minimal anpassen) */
+QWizard QPushButton {
+    border-radius: 10px;
+    padding: 8px 14px;
+}
+
+/* Optional: „Back“ etwas neutraler machen, wenn du ihm im Code kind="ghost" gibst */
+QWizard QPushButton[kind="ghost"] {
+    background-color: transparent;
+    color: #1E86D6;
+    border: 1px solid rgba(47, 168, 255, 0.85);
+}
+QWizard QPushButton[kind="ghost"]:hover {
+    background-color: rgba(47, 168, 255, 0.10);
+}
+QWizard QPushButton[kind="ghost"]:pressed {
+    background-color: rgba(47, 168, 255, 0.20);
+}
+
+/* ---- QTextBrowser wirklich dunkel halten (auch bei Windows Hell) ---- */
+QWizard QTextBrowser {
+    background-color: #2B2F36;
+    color: #D6DCE6;                 /* etwas gedimmt statt grell-weiß */
+    border: 1px solid #3A404A;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+/* Der entscheidende Part: der Viewport (QAbstractScrollArea) */
+QWizard QTextBrowser::viewport {
+    background-color: #2B2F36;
+}
+
+QWizard QTextBrowser:focus {
+    border: 1px solid rgba(47,168,255,0.55);
+}
+
+
+/* =========================
+   SonarPractice RichText (QTextDocument CSS)
+   ========================= */
+
+body {
+  font-family: "Inter", "Segoe UI", sans-serif;
+  color: #EAF2FF;
+  line-height: 1.45;
+}
+
+h1 {
+  font-size: 24px;
+  font-weight: 900;
+  margin: 0 0 10px 0;
+}
+
+h2 {
+  font-size: 15px;
+  font-weight: 800;
+  color: #63C0FF;
+  margin: 16px 0 8px 0;
+}
+
+p {
+  margin: 0 0 10px 0;
+  color: #A7B4C8;
+}
+
+ul {
+  margin: 8px 0 0 18px;
+  color: #A7B4C8;
+}
+
+li { margin: 6px 0; }
+
+a {
+  color: #B79CFF;            /* playful Accent */
+  text-decoration: none;
+  font-weight: 700;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+

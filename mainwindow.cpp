@@ -20,6 +20,7 @@
 #include <QStandardPaths>
 #include <QProgressDialog>
 #include <QThread>
+#include <QShortcut>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -93,9 +94,44 @@ MainWindow::MainWindow(QWidget *parent)
     if (importFile) {
         connect(importDirectory, &QAction::triggered, this, &MainWindow::onImportDirectoryTriggered);
     }
+
+    QShortcut *shortcut = new QShortcut(QKeySequence(Qt::Key_F5), this);
+    connect(shortcut, &QShortcut::activated, this, &MainWindow::reloadStyle);
 }
 
 MainWindow::~MainWindow() {}
+
+/*void MainWindow::reloadStyle() {
+    qDebug() << "Load Style";
+    QFile file(":/main.qss"); // Pfad zu deiner Ressource
+    if (file.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        qApp->setStyleSheet(styleSheet);
+        file.close();
+        qDebug() << "Style reloaded!";
+    }
+}*/
+
+void MainWindow::reloadStyle() {
+    // 1. Pfad zu deiner echten Datei auf der Festplatte (NICHT die Ressource)
+    // Ersetze den Pfad durch deinen tatsächlichen Pfad zur Datei!
+    QString diskPath = "C:/Users/smk/Develop/03_Projects/SonarPractice/styles/main.qss";
+
+    QFile file(diskPath);
+
+    // Falls die Datei auf der Platte nicht gefunden wird (z.B. beim User),
+    // nimm die eingebaute Ressource als Fallback
+    if (!file.exists()) {
+        file.setFileName(":/main.qss");
+    }
+
+    if (file.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        qApp->setStyleSheet(styleSheet);
+        file.close();
+        qDebug() << "Style reloaded from:" << file.fileName();
+    }
+}
 
 void MainWindow::onImportFileTriggered() {
 
