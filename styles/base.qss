@@ -1,0 +1,118 @@
+/* Base Dark Theme Stylesheet */
+
+* {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #3d3d3d;
+}
+
+QMainWindow {
+    background-color: #1e1e1e;
+}
+
+QWidget {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+}
+
+QPushButton {
+    background-color: #0d47a1;
+    color: #ffffff;
+    border: 1px solid #0d47a1;
+    border-radius: 4px;
+    padding: 5px 15px;
+    font-weight: bold;
+}
+
+QPushButton:hover {
+    background-color: #1565c0;
+}
+
+QPushButton:pressed {
+    background-color: #0c3c8c;
+}
+
+QLineEdit, QTextEdit, QPlainTextEdit {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #3d3d3d;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+QLineEdit:focus {
+    border: 2px solid #0d47a1;
+}
+
+QLabel {
+    color: #e0e0e0;
+    background-color: transparent;
+    border: none;
+}
+
+QComboBox {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #3d3d3d;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+QComboBox::drop-down {
+    border: none;
+}
+
+QScrollBar:vertical {
+    background-color: #1e1e1e;
+    width: 12px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #555555;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #777777;
+}
+
+QMenuBar {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+}
+
+QMenu {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    border: 1px solid #3d3d3d;
+}
+
+QMenu::item:selected {
+    background-color: #0d47a1;
+}
+
+/* === Base: verhindert helle Ausreißer === */
+QWidget {
+    color: #C9D1DC;
+    font-family: "Segoe UI";
+    font-size: 10.5pt;
+}
+
+QMainWindow, QDialog, QWizard {
+    background-color: #252A31;
+}
+
+/* Textflächen (sonst werden die gern weiß) */
+QTextBrowser, QTextEdit, QPlainTextEdit,
+QTextBrowser::viewport, QTextEdit::viewport, QPlainTextEdit::viewport {
+    background-color: #2B2F36;
+    color: #C9D1DC;
+}
+
+/* Inputs */
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
+    background-color: #2B2F36;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 6px 8px;
+}

@@ -9,7 +9,7 @@
 #include <QDialog>
 #include <QDir>
 #include <QStandardPaths>
-
+#include <QStyleFactory>
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
@@ -44,6 +44,13 @@ bool isSetupNeeded(const QString &dbPath) {
     return !QFile::exists(dbPath);
 }
 
+static QString loadQss(const QString& path)
+{
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) return {};
+    return QString::fromUtf8(f.readAll());
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -60,39 +67,10 @@ int main(int argc, char *argv[])
         QString dbPath = appDataDir + "/sonar_practice.db";
     #endif
 
-    a.setWindowIcon(QIcon(":/icon"));
-
     // Load Style
-    QFile styleFile(":/main.qss");
-    if(styleFile.open(QFile::ReadOnly)) {
-        QString styleSheet = QLatin1String(styleFile.readAll());
-        // a.setStyleSheet(styleSheet);
-    }
-
-   /*a.setStyleSheet(
-        "QWidget { background-color: #353535; color: #ffffff; }"
-        "QCheckBox { color: #ffffff; spacing: 5px; }"
-        "QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #777777; background: #252525; }"
-        "QCheckBox::indicator:checked { background-color: #2a82da; }"
-
-        "QGroupBox { border: 1px solid #777777; margin-top: 1.5ex; color: #ffffff; font-weight: bold; }"
-        "QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; padding: 0 3px; }"
-
-        "QLineEdit, QListWidget, QTreeWidget { background-color: #252525; border: 1px solid #777777; color: #ffffff; }"
-
-        // --- STANDARDBUTTONS ---
-        "QPushButton { background-color: #555555; color: white; border: 1px solid #777777; padding: 5px 15px; border-radius: 2px; }"
-        "QPushButton:hover { background-color: #666666; }"
-
-        // "QPushButton:pressed { background-color: #2a82da; }" // Blue when pressed for feedback
-        // --- DEAKTIVIERTER STATUS ---
-
-        "QPushButton:disabled { "
-        "  background-color: #222222; " // Very dark grey (almost black)
-        "  color: #555555; "            // Dark grey text (barely legible)
-        "  border: 1px solid #333333; " // Barely visible frame
-        "}"
-        );*/
+    a.setStyle(QStyleFactory::create("Fusion"));
+    a.setWindowIcon(QIcon(":/icon"));
+    a.setStyleSheet(loadQss(":/base.qss"));
 
     QTranslator translator;
     const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -112,11 +90,7 @@ int main(int argc, char *argv[])
 
     if (isSetupNeeded(dbPath)) {
         qInfo() << "SonarPractice setup wizard started";
-        /*QFile styleFile(":/wizard.qss");
-        if(styleFile.open(QFile::ReadOnly)) {
-            QString styleSheet = QLatin1String(styleFile.readAll());
-            a.setStyleSheet(styleSheet);
-        }*/
+        // a.setStyleSheet(loadQss(":/wizard.qss"));
         SetupWizard wizard;
 
         QFileInfo dbInfo(dbPath);
@@ -132,11 +106,7 @@ int main(int argc, char *argv[])
             return 0;
         }
     } else {
-        /*QFile styleFile(":/main.qss");
-        if(styleFile.open(QFile::ReadOnly)) {
-            QString styleSheet = QLatin1String(styleFile.readAll());
-            a.setStyleSheet(styleSheet);
-        }*/
+        // a.setStyleSheet(loadQss(":/app.qss"));
     }
 
     // Database connection
@@ -144,7 +114,6 @@ int main(int argc, char *argv[])
         qDebug() << "Critical error: Database could not be opened!";
         return -1;
     }
-
 
     MainWindow w;
     w.show();
