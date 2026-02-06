@@ -69,6 +69,8 @@ public:
 
     [[nodiscard]] QList<QList<QStandardItem*>> takeFromIgnore(const QString &path);
 
+    void setProxyModelHeader();
+
 private:
     WelcomePage*    welcomePage_m;
     FilterPage*     filterPage_m;

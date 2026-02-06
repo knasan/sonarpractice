@@ -60,7 +60,6 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
     topControlLayout->addWidget(collabsTree_m);
     topControlLayout->addWidget(expertModeCheck_m);
 
-
     // Filter (All, Error, Duplicates)
     auto *filterGroupBox = new QGroupBox(tr("Filter"), this);
     auto *filterLayout = new QHBoxLayout();
@@ -119,6 +118,11 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
 void ReviewPage::initializePage() {
     treeView_m->setModel(wiz()->proxyModel_m);
     treeView_m->setSortingEnabled(false);
+
+    // reset file model
+    wiz()->filesModel()->clear();
+    wiz()->setProxyModelHeader();
+
     wiz()->proxyModel_m->setSourceModel(wiz()->filesModel());
     wiz()->proxyModel_m->setDynamicSortFilter(true);
 
@@ -211,6 +215,7 @@ void ReviewPage::initializePage() {
             scanThread->quit();
             scanThread->deleteLater();
             worker->deleteLater();
+            isConnectionsEstablished_m = false;
         });
 
         connect(worker, &FileScanner::finishWithAllBatches, this, [this, scanThread](const QList<ScanBatch> &allBatches, const ReviewStats &stats) {

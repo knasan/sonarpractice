@@ -36,7 +36,7 @@ SetupWizard::SetupWizard(QWidget *parent)
     fileManager_m->setModel(filesModel_m);
 
     filesModel_m->setColumnCount(4);
-    filesModel_m->setHorizontalHeaderLabels({tr("Name"), tr("Size"), tr("Status"), tr("Group")});
+    setProxyModelHeader();
 
     // Instanzen
     proxyModel_m = new FileFilterProxyModel(this);
@@ -75,15 +75,37 @@ SetupWizard::SetupWizard(QWidget *parent)
     // Explicitly focus on a modern style
     setWizardStyle(QWizard::ModernStyle);
 
+    connect(this, &QWizard::currentIdChanged, this, [this](int id) {
+        qDebug() << "SetupWizard currentIdChanged: " << id;
+
+        if (id == 1) {
+            qDebug() << "initialize for Filterpage";
+            FilterPage *page = qobject_cast<FilterPage*>(currentPage());
+            if (page) {
+                page->initializePage();
+            }
+        }
+
+        if (id == 2) {
+            qDebug() << "initialize for ReviewPage";
+            ReviewPage *page = qobject_cast<ReviewPage*>(currentPage());
+            if (page) {
+                page->initializePage();
+            }
+        }
+
+        // id 3 ?
+    });
+
     welcomePage_m = new WelcomePage(this);
     filterPage_m = new FilterPage(this);
     reviewPage_m = new ReviewPage(this);
     mappingPage_m = new MappingPage(this);
 
-    addPage(welcomePage_m);
-    addPage(filterPage_m);
-    addPage(reviewPage_m);
-    addPage(mappingPage_m);
+    addPage(welcomePage_m); // Id 0
+    addPage(filterPage_m);  // Id 1
+    addPage(reviewPage_m);  // Id 2
+    addPage(mappingPage_m); // Id 3
 }
 
 SetupWizard::~SetupWizard() {}
@@ -102,4 +124,8 @@ QStringList SetupWizard::getSelectedPaths() const {
 
 QStringList SetupWizard::getFileFilters() const {
     return activeFilters_m;
+}
+
+void SetupWizard::setProxyModelHeader() {
+    filesModel_m->setHorizontalHeaderLabels({tr("Name"), tr("Size"), tr("Status"), tr("Group")});
 }
