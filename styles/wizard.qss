@@ -43,23 +43,25 @@ QWizardPage {
 }
 
 /* Buttons im Wizard (erben von globalem QPushButton; hier optional minimal anpassen) */
-QWizard QPushButton {
+/*QWizard QPushButton {
     border-radius: 10px;
     padding: 8px 14px;
-}
+}*/
 
 /* Optional: „Back“ etwas neutraler machen, wenn du ihm im Code kind="ghost" gibst */
-QWizard QPushButton[kind="ghost"] {
+/*QWizard QPushButton[kind="ghost"] {
     background-color: transparent;
     color: #1E86D6;
     border: 1px solid rgba(47, 168, 255, 0.85);
-}
-QWizard QPushButton[kind="ghost"]:hover {
+}*/
+
+/*QWizard QPushButton[kind="ghost"]:hover {
     background-color: rgba(47, 168, 255, 0.10);
-}
-QWizard QPushButton[kind="ghost"]:pressed {
+}*/
+
+/*QWizard QPushButton[kind="ghost"]:pressed {
     background-color: rgba(47, 168, 255, 0.20);
-}
+}*/
 
 /* ---- QTextBrowser wirklich dunkel halten (auch bei Windows Hell) ---- */
 QWizard QTextBrowser {
@@ -79,6 +81,38 @@ QWizard QTextBrowser:focus {
     border: 1px solid rgba(47,168,255,0.55);
 }
 
+/* Spezifisches Label für den Pfad */
+QLabel#targetPathLabel {
+    background-color: #2b2f36;
+    border: 1px solid #3d3d3d;
+    border-radius: 6px;
+    padding: 8px;
+    font-family: "Consolas", "Monaco", monospace; /* Pfade lesen sich so besser */
+    font-size: 9pt;
+}
+
+/* Die GroupBox braucht im Darkmode klare Definitionen */
+QGroupBox {
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+    margin-top: 1ex; /* Platz für den Titel */
+    padding: 15px;
+    font-weight: bold;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0 5px;
+    color: #2FA8FF; /* Dein Blau-Akzent aus den Buttons */
+}
+
+/* Checkboxen etwas mehr Platz geben */
+/*QCheckBox {
+    spacing: 8px;
+    padding: 4px;
+}*/
 
 /* =========================
    SonarPractice RichText (QTextDocument CSS)
@@ -166,4 +200,3 @@ QWizard#setupWizard QLabel#brandSlogan {
     color: rgba(255,255,255,0.70);
     font-weight: 700;
 }
-

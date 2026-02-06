@@ -20,9 +20,17 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     setSubTitle(tr("Settings for your repertoire."));
 
     auto *layout = new QVBoxLayout(this);
+
+    layout->setContentsMargins(30, 20, 30, 20);
+    layout->setSpacing(15);
+
     addHeaderLogo(layout, tr("Filterpage"));
 
     auto *infoLabel = new QLabel(this);
+    infoLabel->setObjectName("infoLabel");
+    infoLabel->setContentsMargins(0, 0, 0, 10);
+    layout->addWidget(infoLabel);
+
     infoLabel->setText(tr("<h3>Select Data Management</h3>"
                           "<p>You decide how SonarPractice handles your files:</p>"
                           "<p>Manage option:</p>"
@@ -36,29 +44,33 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
                           "<p><i>Note: Your progress analysis and journal entries are securely stored in the system's internal database (AppData/Local).</i></p>"));
     infoLabel->setWordWrap(true);
 
-    styleInfoLabel(infoLabel);
-
-    layout->addWidget(infoLabel);
-
     // --- Data management ---
     cbManageData_m = new QCheckBox(tr("Manage"), this);
+    cbManageData_m->setObjectName("manageData");
+
     skipImport_m = new QCheckBox(tr("Skip import"), this);
+    skipImport_m->setObjectName("skipimport");
+
     skipImport_m->setToolTip(tr("Skip the file import. An empty library will be created with your chosen path settings so you can add files manually later."));
+
     layout->addWidget(cbManageData_m);
     layout->addWidget(skipImport_m);
 
     // Container for path selection
     QHBoxLayout *pathLayout = new QHBoxLayout();
+    pathLayout->setContentsMargins(0, 0, 0, 0);
     // SonarPractice is my top level in the tree
-    lblTargetPath_m = new QLabel(QDir::homePath() + "/SonarPractice", this);
 
+    lblTargetPath_m = new QLabel(QDir::homePath() + "/SonarPractice", this);
     btnSelectTargetPath_m = new QPushButton(tr("Change path..."), this);
 
     // Initial state: Disabled
     lblTargetPath_m->setEnabled(false);
+    lblTargetPath_m->setObjectName("targetPathLabel");
+
     btnSelectTargetPath_m->setEnabled(false);
     // Visual feedback: Slightly gray out or frame the label
-    lblTargetPath_m->setStyleSheet("color: gray; border: 1px solid #444; padding: 5px;");
+    // lblTargetPath_m->setStyleSheet("color: gray; border: 1px solid #444; padding: 5px;");
 
     pathLayout->addWidget(lblTargetPath_m);
     pathLayout->addWidget(btnSelectTargetPath_m);
@@ -88,17 +100,19 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     layout->addStretch();
 
     listWidgetSource_m = new QListWidget(this);
+    listWidgetSource_m->setMinimumHeight(120);
+
     layout->addWidget(listWidgetSource_m);
 
     // Add Button
     btnAddSource_m = new QPushButton(tr("Add folder"), this);
     // button style add
-    stylePushButton(btnAddSource_m);
+    // stylePushButton(btnAddSource_m);
 
     // Remove Button
     btnRemSource_m = new QPushButton(tr("Remove folder"), this);
     // button style rem
-    stylePushButton(btnRemSource_m);
+    // stylePushButton(btnRemSource_m);
 
     // Default Button State
     btnRemSource_m->setEnabled(false);

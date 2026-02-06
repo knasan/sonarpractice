@@ -69,9 +69,7 @@ int main(int argc, char *argv[])
 
     QString qss =
         loadQss(":/base.qss") +
-        loadQss(":/app.qss") +
-        loadQss(":/wizard.qss"); // +   // enthält nur #setupWizard ... Regeln
-           // loadQss(userThemePath);             // app_custom.qss
+        loadQss(":/wizard.qss");
 
     a.setStyle(QStyleFactory::create("Fusion"));
     a.setWindowIcon(QIcon(":/icon"));

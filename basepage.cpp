@@ -61,7 +61,7 @@ void BasePage::styleRadioButton(QRadioButton* radio) const {
     radio->setStyleSheet(radioStyle);
 }
 
-void BasePage::stylePushButton(QPushButton* button) const {
+/*void BasePage::stylePushButton(QPushButton* button) const {
     if (!button)
         return;
 
@@ -75,7 +75,7 @@ void BasePage::stylePushButton(QPushButton* button) const {
         "  border: 1px solid #333;" // Dezenterer Rand
         "}"
     );
-}
+}*/
 
 QString BasePage::createHeader(const QString &title) {
     return QString(

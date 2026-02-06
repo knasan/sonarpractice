@@ -109,10 +109,8 @@ void SonarLessonPage::setupUI() {
     sessionTable_m->setObjectName("journalTable");
     sessionTable_m->setAlternatingRowColors(true);
     sessionTable_m->setHorizontalHeaderLabels({tr("Day"), tr("Takt from"), tr("Takt to"), tr("Tempo (BPM)"), tr("Repetitions"), tr("Duration (Min)")});
-    // sessionTable_m->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    // journalTable_m->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    sessionTable_m->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
+    sessionTable_m->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     contentLayout->addWidget(sessionTable_m);
 
@@ -130,9 +128,27 @@ void SonarLessonPage::setupUI() {
 
     // A container for the resource icons
     resourceLayout_m = new QHBoxLayout();
-    pdfIcon_m = new QPushButton(tr("PDF"));
-    videoIcon_m = new QPushButton(tr("Video"));
-    audioIcon_m = new QPushButton(tr("Audio"));
+    pdfIcon_m = new QPushButton(this);
+
+    pdfIcon_m->setObjectName("docsButton");
+    pdfIcon_m->setIcon(QIcon(":/file-stack.svg"));
+    pdfIcon_m->setCheckable(true);
+    pdfIcon_m->setAutoExclusive(true);
+    pdfIcon_m->setToolTip(tr("Open linked documents"));
+
+    videoIcon_m = new QPushButton(this);
+    videoIcon_m->setObjectName("videosButton");
+    videoIcon_m->setIcon(QIcon(":/list-video.svg"));
+    videoIcon_m->setCheckable(true);
+    videoIcon_m->setAutoExclusive(true);
+    videoIcon_m->setToolTip(tr("Open linked video files"));
+
+    audioIcon_m = new QPushButton(this);
+    audioIcon_m->setObjectName("audioButton");
+    audioIcon_m->setIcon(QIcon(":/audio-lines.svg"));
+    audioIcon_m->setCheckable(true);
+    audioIcon_m->setAutoExclusive(true);
+    audioIcon_m->setToolTip(tr("Open linked audio tracks"));
 
     pdfIcon_m->setEnabled(false);
     videoIcon_m->setEnabled(false);

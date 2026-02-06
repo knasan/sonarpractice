@@ -51,11 +51,19 @@ MainWindow::MainWindow(QWidget *parent)
     // --- NAVIGATION ---
     QHBoxLayout *navLayout = new QHBoxLayout();
 
-    QPushButton *btnHome = new QPushButton(tr("Exercise (Home)"), this);
-    QPushButton *btnLibrary = new QPushButton(tr("Library"), this);
+    QPushButton *btnHome = new QPushButton(this);
+    btnHome->setObjectName("homeButton");
+    btnHome->setIcon(QIcon(":/house.svg"));
+    btnHome->setCheckable(true);
+    btnHome->setAutoExclusive(true);
+    btnHome->setToolTip(tr("Exercise (Home)"));
 
-    btnHome->setMinimumHeight(40);
-    btnLibrary->setMinimumHeight(40);
+    QPushButton *btnLibrary = new QPushButton(this);
+    btnLibrary->setObjectName("libraryButton");
+    btnLibrary->setIcon(QIcon(":/book.svg"));
+    btnLibrary->setCheckable(true);
+    btnLibrary->setAutoExclusive(true);
+    btnLibrary->setToolTip(tr("Library"));
 
     navLayout->addWidget(btnHome);
     navLayout->addWidget(btnLibrary);

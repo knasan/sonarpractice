@@ -108,24 +108,24 @@ void LibraryPage::setupUI() {
     // Buttons directly below the list in the same GroupBox
     auto *btnLayout = new QHBoxLayout();
 
-    addLinkBtn_m = new QPushButton("+", this);
+    addLinkBtn_m = new QPushButton(this);
     addLinkBtn_m->setToolTip(tr("Select files and link them to the currently selected medium."));
     addLinkBtn_m->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Plus));
+    addLinkBtn_m->setObjectName("addLinkButton");
+    addLinkBtn_m->setIcon(QIcon(":/circle-plus.svg"));
+    addLinkBtn_m->setCheckable(true);
+    addLinkBtn_m->setAutoExclusive(true);
 
-    remLinkBtn_m = new QPushButton("-", this);
+    remLinkBtn_m = new QPushButton(this);
     remLinkBtn_m->setToolTip(tr("Remove selected links from the list."));
     remLinkBtn_m->setShortcut(QKeySequence(Qt::Key_Delete));
+    remLinkBtn_m->setObjectName("remLinkButton");
+    remLinkBtn_m->setIcon(QIcon(":/circle-minus.svg"));
+    remLinkBtn_m->setCheckable(true);
+    remLinkBtn_m->setAutoExclusive(true);
 
     addLinkBtn_m->setEnabled(false);
     remLinkBtn_m->setEnabled(false);
-
-    QString buttonStyle =
-        "QPushButton:disabled { background-color: #333333; color: #666666; border: 1px solid #444444; }"
-        "QPushButton:enabled { background-color: #2c3e50; color: white; border: 1px solid #34495e; }"
-                          "QPushButton:hover { background-color: #34495e; }";
-
-    addLinkBtn_m->setStyleSheet(buttonStyle);
-    remLinkBtn_m->setStyleSheet(buttonStyle);
 
     btnLayout->addWidget(addLinkBtn_m);
     btnLayout->addWidget(remLinkBtn_m);

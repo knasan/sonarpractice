@@ -1,9 +1,12 @@
 /* Base Dark Theme Stylesheet */
 
 * {
-    background-color: #1e1e1e;
+    background-color: transparent; /* Vererbung erlauben */
     color: #e0e0e0;
-    border: 1px solid #3d3d3d;
+    border: none; /* Erstmal alles sauber ohne Rahmen */
+    /* Dies entfernt das System-Lila bei Markierungen */
+    selection-background-color: #2FA8FF; 
+    selection-color: #08111f;
 }
 
 QMainWindow {
@@ -13,31 +16,42 @@ QMainWindow {
 QWidget {
     background-color: #1e1e1e;
     color: #e0e0e0;
+    selection-background-color: #2FA8FF; /* Dein helles Blau */
+    selection-color: #08111f;            /* Dunkler Text auf der Auswahl */
 }
 
 QPushButton {
-    background-color: #0d47a1;
-    color: #ffffff;
-    border: 1px solid #0d47a1;
-    border-radius: 4px;
-    padding: 5px 15px;
-    font-weight: bold;
+   border-style: solid; 
+    
+    background-color: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 15px; 
+    
+    padding: 8px 16px;
+    font-weight: 650;
+    color: #e0e0e0;
 }
 
 QPushButton:hover {
-    background-color: #1565c0;
+    background-color: rgba(255,255,255,0.10); 
+    border: 1px solid rgba(255,255,255,0.15);
 }
 
 QPushButton:pressed {
-    background-color: #0c3c8c;
+    background-color: rgba(255,255,255,0.05);
 }
 
-QLineEdit, QTextEdit, QPlainTextEdit {
+QPushButton:disabled {
+    background-color: rgba(255,255,255,0.03);
+    color: #666666;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QListWidget {
     background-color: #2d2d2d;
-    color: #e0e0e0;
     border: 1px solid #3d3d3d;
-    padding: 5px;
     border-radius: 4px;
+    padding: 5px;
 }
 
 QLineEdit:focus {
@@ -60,6 +74,44 @@ QComboBox {
 
 QComboBox::drop-down {
     border: none;
+}
+
+/* --- Checkbox Styling --- */
+QCheckBox {
+    spacing: 8px;
+    background-color: transparent; /* Verhindert den dunklen Block-Look */
+    color: #e0e0e0;
+}
+
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    background-color: transparent;
+    border: 1px solid #63C0FF; /* Dein Blau-Akzent */
+    border-radius: 4px;
+}
+
+/* Unchecked: Wirkt wie { } durch transparenten Inhalt */
+QCheckBox::indicator:unchecked {
+    background-color: transparent;
+}
+
+/* Checked: Ein dezenter Punkt oder Haken in der Mitte */
+QCheckBox::indicator:checked {
+    background-color: #2FA8FF;
+    /* image: url(:/icons/check_mark.svg); Falls du ein Icon hast, sonst weglassen */
+    border: 1px solid #2FA8FF;
+}
+
+/* Hover-Effekt für bessere Bedienbarkeit */
+QCheckBox::indicator:hover {
+    border: 1px solid #FFFFFF;
+}
+
+/* Deaktivierte Checkboxen */
+QCheckBox::indicator:disabled {
+    border: 1px solid #555555;
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 QScrollBar:vertical {
@@ -117,3 +169,109 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     padding: 6px 8px;
 }
 
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {
+    border: 1px solid rgba(47,168,255,0.85);
+}
+
+/* --- Tabelle / TreeView (Fix für die weißen Balken) --- */
+QTreeView, QTreeWidget, QHeaderView::section {
+    background-color: #1e1e1e;
+    alternate-background-color: #252525; /* Ganz dezente Streifen */
+    border: 1px solid #3d3d3d;
+    gridline-color: #333;
+}
+
+QTreeView::item {
+    padding: 4px;
+    background-color: transparent; /* Verhindert weiße Balken */
+}
+
+QTreeView::item:selected {
+    background-color: rgba(99, 192, 255, 0.2);
+    color: #63C0FF;
+}
+
+/* Header oben fixieren */
+QHeaderView::section {
+    background-color: #2d2d2d;
+    padding: 4px;
+    border: 1px solid #1e1e1e;
+    font-weight: bold;
+}
+
+/* --- Kalender-Styling (lessonCalendar) --- */
+
+/* Grundgehäuse des Kalenders */
+QCalendarWidget#lessonCalendar {
+    background-color: #1e1e1e;
+    border: 1px solid #3d3d3d;
+    border-radius: 8px;
+}
+
+/* Der Header (Monat/Jahr Bereich) */
+QCalendarWidget#lessonCalendar QWidget#qt_calendar_navigationbar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #3d3d3d;
+}
+
+/* Die Wochentage und Zahlen */
+QCalendarWidget#lessonCalendar QAbstractItemView {
+    background-color: #1e1e1e;
+    selection-background-color: #2e7d32; /* Dein Session-Grün */
+    selection-color: white;
+    color: #e0e0e0;
+}
+
+/* Der heutige Tag (Rahmen statt Füllung, damit es sich von Selektion unterscheidet) */
+QCalendarWidget#lessonCalendar QAbstractItemView:enabled {
+    outline: none;
+}
+
+/* Die Pfeile zum Blättern */
+QCalendarWidget#lessonCalendar QToolButton {
+    background-color: transparent;
+    icon-size: 24px;
+    color: #e0e0e0;
+}
+
+QCalendarWidget#lessonCalendar QToolButton:hover {
+    background-color: rgba(46, 125, 50, 0.2); /* Sanftes Grün beim Hover */
+    border-radius: 4px;
+}
+
+/* Das Dropdown-Menü für die Monatsauswahl */
+QCalendarWidget#lessonCalendar QMenu {
+    background-color: #2d2d2d;
+    color: white;
+    border: 1px solid #3d3d3d;
+}
+
+/* Spezielle Sidebar-Buttons */
+QPushButton#homeButton, QPushButton#libraryButton, QPushButton#docsButton, QPushButton#videosButton, QPushButton#audioButton {
+    min-width: 45px;
+    max-width: 45px;
+    min-height: 45px;
+    border-radius: 22px; /* Perfekter Kreis bei 45px Höhe */
+    padding: 0px;        /* Padding entfernen für Zentrierung */
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    qproperty-iconSize: 24px 24px;
+}
+
+/* Hover-Effekt */
+QPushButton#homeButton:hover, QPushButton#libraryButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #63C0FF;
+}
+
+/* AKTIVER ZUSTAND (Die Seite, auf der ich gerade bin) */
+QPushButton#homeButton:checked, QPushButton#libraryButton:checked {
+    background-color: rgba(47, 168, 255, 0.2); /* Sanfter blauer Schimmer */
+    border: 2px solid #2FA8FF;                /* Kräftiger Rand */
+}
+
+/* Optional: Das Icon beim Aktivieren grün oder blau färben, 
+   falls du verschiedene SVGs hast */
+QPushButton#homeButton:checked {
+    /* qproperty-icon: url(:/house_active.svg); */
+}

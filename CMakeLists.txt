@@ -49,7 +49,6 @@ add_library(CommonObjects OBJECT ${PREVIEW_COMMON}
 
     README_de.md
     README.md
-    styles/app.qss
     styles/wizard.qss
     styles/base.qss
 )

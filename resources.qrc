@@ -2,8 +2,14 @@
     <qresource prefix="/">
         <file alias="icon">assets/svg/icon.svg</file>
         <file alias="exe-icon">assets/logo.ico</file>
-        <file alias="app.qss">styles/app.qss</file>
         <file alias="wizard.qss">styles/wizard.qss</file>
         <file alias="base.qss">styles/base.qss</file>
+        <file alias="book.svg">assets/svg/book-open-text.svg</file>
+        <file alias="house.svg">assets/svg/house.svg</file>
+        <file alias="circle-minus.svg">assets/svg/circle-minus.svg</file>
+        <file alias="circle-plus.svg">assets/svg/circle-plus.svg</file>
+        <file alias="file-stack.svg">assets/svg/file-stack.svg</file>
+        <file alias="audio-lines.svg">assets/svg/audio-lines.svg</file>
+        <file alias="list-video.svg">assets/svg/list-video.svg</file>
     </qresource>
 </RCC>
