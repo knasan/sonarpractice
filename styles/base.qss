@@ -214,6 +214,11 @@ QCalendarWidget#lessonCalendar QWidget#qt_calendar_navigationbar {
     border-bottom: 1px solid #3d3d3d;
 }
 
+/* 2. Den Bereich für die Wochennummern (links) explizit abdunkeln */
+QCalendarWidget#lessonCalendar QWidget {
+    alternate-background-color: #252525; /* Hintergrund der Wochennummern */
+}
+
 /* Die Wochentage und Zahlen */
 QCalendarWidget#lessonCalendar QAbstractItemView {
     background-color: #1e1e1e;
