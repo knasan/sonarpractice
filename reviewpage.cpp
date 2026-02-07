@@ -70,10 +70,6 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
     // Default all on
     radioAll_m->setChecked(true);
 
-    styleRadioButton(radioAll_m);
-    styleRadioButton(radioErrors_m);
-    styleRadioButton(radioDup_m);
-
     // Search
     searchLineEdit_m = new QLineEdit(this);
     searchLineEdit_m->setPlaceholderText(tr("Search for artists, songs, or paths..."));

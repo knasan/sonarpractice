@@ -18,8 +18,6 @@ public:
 protected:
     void addHeaderLogo(QVBoxLayout* layout, const QString& title);
     void styleInfoLabel(QLabel* label) const;
-    void stylePushButton(QPushButton* button) const;
-    void styleRadioButton(QRadioButton* radio) const;
 
     using CustomFilterCriteria = std::function<bool(QTreeWidgetItem*)>;
 
