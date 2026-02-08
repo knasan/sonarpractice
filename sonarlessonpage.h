@@ -40,9 +40,11 @@ private:
     void loadJournalForDay(int songId, QDate date);
     void loadTableDataForDay(int songId, QDate date);
     void refreshTableDisplay(QDate date);
+    void showSaveMessage();
     void addEmptyRow(QDate date);
     void addSessionToTable(const PracticeSession &s, bool isReadOnly);
     void addTimeToTable(int minutes);
+
     void dailyNotePlaceholder();
     void updateCalendarHighlights();
 
@@ -83,6 +85,7 @@ private:
 
     bool isDirtyNotes_m{false};
     bool isDirtyTable_m{false};
+    bool isPlaceholderActive_m{true};
 
     QTimer *uiRefreshTimer_m;                   // Timer for UI update (1-second intervals)
     QElapsedTimer elapsedTimer_m;

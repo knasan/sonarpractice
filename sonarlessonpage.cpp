@@ -102,6 +102,72 @@ void SonarLessonPage::setupUI() {
     contentLayout->addWidget(new QLabel(tr("Notes:")));
 
     notesEdit_m = new QTextEdit(this);
+
+    auto *toolbarLayout = new QHBoxLayout();
+    toolbarLayout->setSpacing(5);
+
+    // bold button
+    QPushButton *btnBold = new QPushButton(this);
+    btnBold->setObjectName("boldButton");
+    btnBold->setCheckable(true);
+    btnBold->setIcon(QIcon(":/bold.svg"));
+    btnBold->setShortcut(QKeySequence("Ctrl+B"));
+    btnBold->setToolTip(tr("Bold (Ctrl+B)"));
+    btnBold->setFixedWidth(35);
+
+    // italic button
+    QPushButton *btnItalic = new QPushButton(this);
+    btnItalic->setObjectName("italicButton");
+    btnItalic->setCheckable(true);
+    btnItalic->setIcon(QIcon(":/italic.svg"));
+    btnItalic->setShortcut(QKeySequence("Ctrl+I"));
+    btnItalic->setToolTip(tr("Italic (Ctrl+I)"));
+    btnItalic->setFixedWidth(35);
+
+    // heading buttons
+    QPushButton *btnHeader1 = new QPushButton(this);
+    btnHeader1->setObjectName("heading1Button");
+    btnHeader1->setCheckable(true);
+    btnHeader1->setIcon(QIcon(":/heading-1.svg"));
+    btnHeader1->setShortcut(QKeySequence("Ctrl+1"));
+    btnHeader1->setToolTip(tr("Heading 1 (Ctrl+1)"));
+    btnHeader1->setFixedWidth(35);
+
+    QPushButton *btnHeader2 = new QPushButton(this);
+    btnHeader2->setObjectName("heading2Button");
+    btnHeader2->setCheckable(true);
+    btnHeader2->setIcon(QIcon(":/heading-2.svg"));
+    btnHeader2->setShortcut(QKeySequence("Ctrl+2"));
+    btnHeader2->setToolTip(tr("heading 2 (Ctrl+2)"));
+    btnHeader2->setFixedWidth(35);
+
+    // list button
+    QPushButton *btnList = new QPushButton(this);
+    btnList->setObjectName("listButton");
+    btnList->setCheckable(true);
+    btnList->setIcon(QIcon(":/minus.svg"));
+    btnList->setShortcut(QKeySequence("Ctrl+L"));
+    btnList->setToolTip(tr("List(Ctrl+L)"));
+    btnList->setFixedWidth(35);
+
+    // btnCheck
+    QPushButton *btnCheck = new QPushButton(this);
+    btnCheck->setObjectName("checkButton");
+    btnCheck->setCheckable(true);
+    btnCheck->setIcon(QIcon(":/brackets.svg"));
+    btnCheck->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_Return)); // Key_Return ist die Enter-Taste
+    btnCheck->setToolTip(tr("Task List (Ctrl+Enter)"));
+    btnCheck->setFixedWidth(35);
+
+    toolbarLayout->addWidget(btnBold);
+    toolbarLayout->addWidget(btnItalic);
+    toolbarLayout->addWidget(btnHeader1);
+    toolbarLayout->addWidget(btnHeader2);
+    toolbarLayout->addWidget(btnList);
+    toolbarLayout->addWidget(btnCheck);
+    toolbarLayout->addStretch();
+
+    contentLayout->addLayout(toolbarLayout);
     contentLayout->addWidget(notesEdit_m);
 
     // Table: Practice session (time from/to, tempo, duration, repetitions)
@@ -163,6 +229,7 @@ void SonarLessonPage::setupUI() {
     footerLayout->insertLayout(0, resourceLayout_m);
 
     statusLabel_m = new QLabel(this);
+    statusLabel_m->setObjectName("statusMessageLabel");
     footerLayout->addWidget(statusLabel_m);
 
     saveBtn_m = new QPushButton(tr("Save"));
@@ -172,6 +239,60 @@ void SonarLessonPage::setupUI() {
     contentLayout->addLayout(footerLayout);
 
     layout->addLayout(contentLayout, 3);
+
+    // connect with local objects
+    // Bold Button
+    connect(btnBold, &QPushButton::clicked, this, [this]() {
+        QTextCharFormat format;
+        format.setFontWeight(notesEdit_m->fontWeight() == QFont::Bold ? QFont::Normal : QFont::Bold);
+        notesEdit_m->mergeCurrentCharFormat(format);
+    });
+
+    // Italic Button
+    connect(btnItalic, &QPushButton::clicked, this, [this]() {
+        QTextCharFormat format;
+        format.setFontItalic(!notesEdit_m->fontItalic());
+        notesEdit_m->mergeCurrentCharFormat(format);
+    });
+
+    // Heading Buttons
+    // --- HEADER 1 (# ) ---
+    connect(btnHeader1, &QPushButton::clicked, this, [this]() {
+        QTextCursor cursor = notesEdit_m->textCursor();
+        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.insertText("# ");
+        notesEdit_m->setFocus();
+    });
+
+    // --- HEADER 2 (## ) ---
+    connect(btnHeader2, &QPushButton::clicked, this, [this]() {
+        QTextCursor cursor = notesEdit_m->textCursor();
+        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.insertText("## ");
+        notesEdit_m->setFocus();
+    });
+
+    // --- AUFLISTUNG (- ) ---
+    connect(btnList, &QPushButton::clicked, this, [this]() {
+        QTextCursor cursor = notesEdit_m->textCursor();
+        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.insertText("- ");
+        notesEdit_m->setFocus();
+    });
+
+    // --- CHECKLISTE / ERLEDIGT ([ ] ) ---
+    connect(btnCheck, &QPushButton::clicked, this, [this]() {
+        QTextCursor cursor = notesEdit_m->textCursor();
+        cursor.movePosition(QTextCursor::StartOfLine);
+        cursor.insertText("- [ ] ");
+        notesEdit_m->setFocus();
+    });
+
+    // Cursor-Update: Buttons aktivieren/deaktivieren, wenn man durch Text klickt
+    connect(notesEdit_m, &QTextEdit::currentCharFormatChanged, this, [=](const QTextCharFormat &format) {
+        btnBold->setChecked(format.fontWeight() == QFont::Bold);
+        btnItalic->setChecked(format.fontItalic());
+    });
 
     sitesConnects();
 
@@ -199,10 +320,20 @@ void SonarLessonPage::sitesConnects() {
 
         // To make the grey text disappear when the user clicks again:
         connect(notesEdit_m, &QTextEdit::selectionChanged, this, [this]() {
-            if (notesEdit_m->textColor() == Qt::gray) {
+            static bool blockSignal = false;
+            if (blockSignal) return;
+
+            blockSignal = true;
+
+            if (isPlaceholderActive_m && !notesEdit_m->toMarkdown().isEmpty()) {
                 notesEdit_m->clear();
-                notesEdit_m->setTextColor(Qt::white);
+                isPlaceholderActive_m = false;
+            } else if (!isPlaceholderActive_m && notesEdit_m->toMarkdown().isEmpty()) {
+                dailyNotePlaceholder();
+                isPlaceholderActive_m = true;
             }
+
+            blockSignal = false;
         });
 
         // In the setup area:
@@ -508,12 +639,24 @@ void SonarLessonPage::onSaveClicked() {
     }
 
     if (isDirtyNotes_m) {
-        notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toPlainText(), selectedDate);
-        if (notesSuccess) isDirtyNotes_m = false;
+        notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toMarkdown(), selectedDate);
+        if (notesSuccess) {
+            isDirtyNotes_m = false;
+            showSaveMessage();
+        }
     }
 
     updateButtonState();
     updateCalendarHighlights();
+}
+
+void SonarLessonPage::showSaveMessage() {
+    static QString msgSucess = tr("Successfully saved");
+    statusLabel_m->setText(msgSucess);
+    // show for 10 secons a saved message
+    QTimer::singleShot(10000, [this]() {
+        statusLabel_m->clear();
+    });
 }
 
 bool SonarLessonPage::saveTableRowsToDatabase() {
@@ -525,14 +668,7 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
     bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
         isDirtyTable_m = false;
-
-        static QString msgSucess = tr("Successfully saved");
-        statusLabel_m->setText(msgSucess);
-        // show for 10 secons a saved message
-        QTimer::singleShot(10000, [this]() {
-            statusLabel_m->clear();
-        });
-
+        showSaveMessage();
         updateButtonState();
     }
 
@@ -549,10 +685,11 @@ void SonarLessonPage::dailyNotePlaceholder() {
     static QString questionThree = tr("What didn't work so well?");
     static QString questionFour = tr("What will you pay attention to tomorrow?");
 
-    notesEdit_m->setTextColor(Qt::gray);
-    notesEdit_m->setPlainText(questionOne + "\n" + questionTwo + "\n" +
-                              questionThree + "\n" + questionFour);
-
+    QString markdownList = "- " + questionOne + "\n" +
+                           "- " + questionTwo + "\n" +
+                           "- " + questionThree + "\n" +
+                           "- " + questionFour;
+    notesEdit_m->setMarkdown(markdownList);
 }
 
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
@@ -562,11 +699,12 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 
     // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
-    notesEdit_m->setPlainText(dailyNote);
+    notesEdit_m->setMarkdown(dailyNote);
 
     if (!dailyNote.isEmpty()) {
         notesEdit_m->setTextColor(Qt::white);
-        notesEdit_m->setPlainText(dailyNote);
+        notesEdit_m->setMarkdown(dailyNote);
+        isPlaceholderActive_m = false;
     } else {
         dailyNotePlaceholder();
     }

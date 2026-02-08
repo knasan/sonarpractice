@@ -1,10 +1,9 @@
 /* Base Dark Theme Stylesheet */
 
 * {
-    background-color: transparent; /* Vererbung erlauben */
+    background-color: transparent;
     color: #e0e0e0;
-    border: none; /* Erstmal alles sauber ohne Rahmen */
-    /* Dies entfernt das System-Lila bei Markierungen */
+    border: none;
     selection-background-color: #2FA8FF; 
     selection-color: #08111f;
 }
@@ -16,8 +15,12 @@ QMainWindow {
 QWidget {
     background-color: #1e1e1e;
     color: #e0e0e0;
-    selection-background-color: #2FA8FF; /* Dein helles Blau */
-    selection-color: #08111f;            /* Dunkler Text auf der Auswahl */
+    selection-background-color: #2FA8FF;
+    selection-color: #08111f;
+}
+
+QMainWindow, QDialog, QWizard {
+    background-color: #1e1e1e;
 }
 
 QPushButton {
@@ -47,11 +50,47 @@ QPushButton:disabled {
     border: 1px solid rgba(255,255,255,0.05);
 }
 
-QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QListWidget {
+QTextBrowser, QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox, QListWidget {
     background-color: #2d2d2d;
     border: 1px solid #3d3d3d;
-    border-radius: 4px;
-    padding: 5px;
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: #e0e0e0;
+}
+
+QTextEdit::viewport, QPlainTextEdit::viewport, QAbstractItemView::viewport {
+    background-color: #2d2d2d;
+}
+
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border: 1px solid #2FA8FF;
+}
+
+QHeaderView::section {
+    background-color: #2d2d2d;
+    color: #e0e0e0;
+    padding: 4px;
+    border: 1px solid #1e1e1e;
+    font-weight: bold;
+}
+
+QTableWidget, QTreeView, QTreeWidget {
+    background-color: #1e1e1e;
+    alternate-background-color: #252525;
+    border: 1px solid #3d3d3d;
+    gridline-color: #333333;
+}
+
+QTableWidget::item, QTreeView::item {
+    background-color: transparent;
+    padding: 4px;
+}
+
+QLabel#statusMessageLabel {
+    color: #2e7d32;
+    font-weight: bold;
+    font-size: 13px;
+    background: transparent;
 }
 
 QLineEdit:focus {
@@ -79,7 +118,7 @@ QComboBox::drop-down {
 /* --- Checkbox Styling --- */
 QCheckBox {
     spacing: 8px;
-    background-color: transparent; /* Verhindert den dunklen Block-Look */
+    background-color: transparent;
     color: #e0e0e0;
 }
 
@@ -87,28 +126,23 @@ QCheckBox::indicator {
     width: 18px;
     height: 18px;
     background-color: transparent;
-    border: 1px solid #63C0FF; /* Dein Blau-Akzent */
+    border: 1px solid #63C0FF;
     border-radius: 4px;
 }
 
-/* Unchecked: Wirkt wie { } durch transparenten Inhalt */
 QCheckBox::indicator:unchecked {
     background-color: transparent;
 }
 
-/* Checked: Ein dezenter Punkt oder Haken in der Mitte */
 QCheckBox::indicator:checked {
     background-color: #2FA8FF;
-    /* image: url(:/icons/check_mark.svg); Falls du ein Icon hast, sonst weglassen */
     border: 1px solid #2FA8FF;
 }
 
-/* Hover-Effekt für bessere Bedienbarkeit */
 QCheckBox::indicator:hover {
     border: 1px solid #FFFFFF;
 }
 
-/* Deaktivierte Checkboxen */
 QCheckBox::indicator:disabled {
     border: 1px solid #555555;
     background-color: rgba(255, 255, 255, 0.05);
@@ -143,7 +177,6 @@ QMenu::item:selected {
     background-color: #0d47a1;
 }
 
-/* === Base: verhindert helle Ausreißer === */
 QWidget {
     color: #C9D1DC;
     font-family: "Segoe UI";
@@ -154,14 +187,29 @@ QMainWindow, QDialog, QWizard {
     background-color: #252A31;
 }
 
-/* Textflächen (sonst werden die gern weiß) */
-QTextBrowser, QTextEdit, QPlainTextEdit,
-QTextBrowser::viewport, QTextEdit::viewport, QPlainTextEdit::viewport {
-    background-color: #2B2F36;
-    color: #C9D1DC;
+QPushButton#boldButton,
+QPushButton#italicButton {
+    border-radius: 4px;
+    outline: none;
 }
 
-/* Inputs */
+QPushButton#boldButton:hover,
+QPushButton#italicButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+QPushButton#boldButton:checked,
+QPushButton#italicButton:checked {
+    background-color: rgba(47, 168, 255, 0.3);
+    border: 1px solid #2FA8FF;
+}
+
+QPushButton#boldButton:focus,
+QPushButton#italicButton:focus {
+    border: 1px solid transparent;
+}
+
 QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox {
     background-color: #2B2F36;
     border: 1px solid rgba(255,255,255,0.12);
@@ -173,25 +221,22 @@ QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus {
     border: 1px solid rgba(47,168,255,0.85);
 }
 
-/* --- Tabelle / TreeView (Fix für die weißen Balken) --- */
 QTreeView, QTreeWidget, QHeaderView::section {
     background-color: #1e1e1e;
-    alternate-background-color: #252525; /* Ganz dezente Streifen */
+    alternate-background-color: #252525;
     border: 1px solid #3d3d3d;
     gridline-color: #333;
 }
 
 QTreeView::item {
     padding: 4px;
-    background-color: transparent; /* Verhindert weiße Balken */
-}
+    background-color: transparent;
 
 QTreeView::item:selected {
     background-color: rgba(99, 192, 255, 0.2);
     color: #63C0FF;
 }
 
-/* Header oben fixieren */
 QHeaderView::section {
     background-color: #2d2d2d;
     padding: 4px;
@@ -199,40 +244,32 @@ QHeaderView::section {
     font-weight: bold;
 }
 
-/* --- Kalender-Styling (lessonCalendar) --- */
-
-/* Grundgehäuse des Kalenders */
 QCalendarWidget#lessonCalendar {
     background-color: #1e1e1e;
     border: 1px solid #3d3d3d;
     border-radius: 8px;
 }
 
-/* Der Header (Monat/Jahr Bereich) */
 QCalendarWidget#lessonCalendar QWidget#qt_calendar_navigationbar {
     background-color: #2d2d2d;
     border-bottom: 1px solid #3d3d3d;
 }
 
-/* 2. Den Bereich für die Wochennummern (links) explizit abdunkeln */
 QCalendarWidget#lessonCalendar QWidget {
-    alternate-background-color: #252525; /* Hintergrund der Wochennummern */
+    alternate-background-color: #252525;
 }
 
-/* Die Wochentage und Zahlen */
 QCalendarWidget#lessonCalendar QAbstractItemView {
     background-color: #1e1e1e;
-    selection-background-color: #2e7d32; /* Dein Session-Grün */
+    selection-background-color: #2e7d32;
     selection-color: white;
     color: #e0e0e0;
 }
 
-/* Der heutige Tag (Rahmen statt Füllung, damit es sich von Selektion unterscheidet) */
 QCalendarWidget#lessonCalendar QAbstractItemView:enabled {
     outline: none;
 }
 
-/* Die Pfeile zum Blättern */
 QCalendarWidget#lessonCalendar QToolButton {
     background-color: transparent;
     icon-size: 24px;
@@ -240,43 +277,40 @@ QCalendarWidget#lessonCalendar QToolButton {
 }
 
 QCalendarWidget#lessonCalendar QToolButton:hover {
-    background-color: rgba(46, 125, 50, 0.2); /* Sanftes Grün beim Hover */
+    background-color: rgba(46, 125, 50, 0.2);
     border-radius: 4px;
 }
 
-/* Das Dropdown-Menü für die Monatsauswahl */
 QCalendarWidget#lessonCalendar QMenu {
     background-color: #2d2d2d;
     color: white;
     border: 1px solid #3d3d3d;
 }
 
-/* Spezielle Sidebar-Buttons */
 QPushButton#homeButton, QPushButton#libraryButton, QPushButton#docsButton, QPushButton#videosButton, QPushButton#audioButton {
     min-width: 45px;
     max-width: 45px;
     min-height: 45px;
-    border-radius: 22px; /* Perfekter Kreis bei 45px Höhe */
-    padding: 0px;        /* Padding entfernen für Zentrierung */
+    border-radius: 22px;
+    padding: 0px;
     background-color: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
     qproperty-iconSize: 24px 24px;
 }
 
-/* Hover-Effekt */
 QPushButton#homeButton:hover, QPushButton#libraryButton:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid #63C0FF;
 }
 
-/* AKTIVER ZUSTAND (Die Seite, auf der ich gerade bin) */
 QPushButton#homeButton:checked, QPushButton#libraryButton:checked {
-    background-color: rgba(47, 168, 255, 0.2); /* Sanfter blauer Schimmer */
-    border: 2px solid #2FA8FF;                /* Kräftiger Rand */
+    background-color: rgba(47, 168, 255, 0.2);
+    border: 2px solid #2FA8FF;
 }
 
-/* Optional: Das Icon beim Aktivieren grün oder blau färben, 
-   falls du verschiedene SVGs hast */
-QPushButton#homeButton:checked {
-    /* qproperty-icon: url(:/house_active.svg); */
+QTreeView, QTreeWidget, QTableView, QTableWidget,
+QTreeView::viewport, QTableView::viewport {
+    background-color: #1e1e1e;
+    color: #C9D1DC;
+    outline: none;
 }

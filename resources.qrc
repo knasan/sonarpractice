@@ -11,5 +11,11 @@
         <file alias="file-stack.svg">assets/svg/file-stack.svg</file>
         <file alias="audio-lines.svg">assets/svg/audio-lines.svg</file>
         <file alias="list-video.svg">assets/svg/list-video.svg</file>
+        <file alias="bold.svg">assets/svg/bold.svg</file>
+        <file alias="italic.svg">assets/svg/italic.svg</file>
+        <file alias="brackets.svg">assets/svg/brackets.svg</file>
+        <file alias="heading-1.svg">assets/svg/heading-1.svg</file>
+        <file alias="heading-2.svg">assets/svg/heading-2.svg</file>
+        <file alias="minus.svg">assets/svg/minus.svg</file>
     </qresource>
 </RCC>
