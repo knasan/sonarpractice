@@ -357,11 +357,10 @@ void LibraryPage::refreshRelatedFilesList() {
 }
 
 void LibraryPage::showCatalogContextMenu(const QPoint &pos) {
-    // 1. Hole alle ausgewählten Indizes
+    // 1. Get all selected indices
     QModelIndexList selectedIndexes = catalogTreeView_m->selectionModel()->selectedRows();
 
-    // Falls der Rechtsklick auf ein Element erfolgte, das noch nicht markiert war,
-    // markieren wir es manuell, um die UX zu verbessern.
+    // If the right-click occurred on an element that was not yet selected, we will select it manually to improve the UX.
     QModelIndex clickedIndex = catalogTreeView_m->indexAt(pos);
     if (clickedIndex.isValid() && !selectedIndexes.contains(clickedIndex)) {
         catalogTreeView_m->selectionModel()->select(clickedIndex, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
@@ -372,13 +371,13 @@ void LibraryPage::showCatalogContextMenu(const QPoint &pos) {
 
     QMenu menu(this);
 
-    // Text dynamisch anpassen (Singular/Plural)
+    // Dynamically adjust text (singular/plural)
     QString deleteText = (selectedIndexes.size() > 1)
                              ? tr("Delete %1 files (Move to Trash)").arg(selectedIndexes.size())
                              : tr("Delete file (Move to Trash)");
 
     QAction *openAction = menu.addAction(tr("Open file in default player"));
-    if (selectedIndexes.size() > 1) openAction->setEnabled(false); // Öffnen bei Mehrfachauswahl deaktivieren
+    if (selectedIndexes.size() > 1) openAction->setEnabled(false);
 
     QAction *deleteAction = nullptr;
     if (expertModeCheck_m->isChecked()) {
@@ -391,6 +390,11 @@ void LibraryPage::showCatalogContextMenu(const QPoint &pos) {
 
     if (selected == openAction && selectedIndexes.size() == 1) {
         QString fullPath = selectedIndexes.first().data(LibraryPage::FilePathRole).toString();
+        qDebug() << "FullPath: " << fullPath;
+        if (dbManager_m->getSetting("is_managed", QString("false")) == "true") {
+            fullPath = dbManager_m->getManagedPath() + "/" + fullPath;
+            qDebug() << "FullPath managed: " << fullPath;
+        }
         UIHelper::openFileWithFeedback(this, fullPath);
     }
     else if (deleteAction && selected == deleteAction) {
@@ -446,7 +450,10 @@ void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes) {
 
     for (const QModelIndex &index : sortedIndexes) {
         QString path = index.data(LibraryPage::FilePathRole).toString();
-        // int fileId = index.data(LibraryPage::FileIdRole).toInt();
+        if (dbManager_m->getSetting("is_managed", QString("false")) == "true") {
+            path = dbManager_m->getManagedPath() + "/" + path;
+            qDebug() << "FullPath managed: " << path;
+        }
         int songId = index.data(LibraryPage::SongIdRole).toInt();
 
         // drive delete
