@@ -16,12 +16,9 @@ class FileFilterProxyModel : public QSortFilterProxyModel {
     friend class FileFilterProxyModelTest;
 public:
     enum FilterMode { ModeAll, ModeErrors, ModeDuplicates };
-
     explicit FileFilterProxyModel(QObject *parent = nullptr);
-
     void setFilterMode(FilterMode mode);
-
-    [[nodiscard]] ReviewStats calculateVisibleStats(const QModelIndex &parent = QModelIndex());
+    [[nodiscard]] ReviewStats calculateCurrentStats() const;
 
 protected:
     [[nodiscard]] bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
@@ -29,6 +26,7 @@ protected:
 
     void collectPathsRecursive(const QModelIndex &parent, QStringList &paths, bool onlyChecked) const;
     [[nodiscard]] bool hasStatusChild(const QModelIndex &parent, FileStatus targetStatus) const;
+    void updateStatsRecursive(const QModelIndex &parent, ReviewStats &stats) const;
 
 private:
     FilterMode currentMode_m;

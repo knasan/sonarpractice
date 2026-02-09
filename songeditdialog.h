@@ -1,38 +1,38 @@
 #ifndef SONGEDITDIALOG_H
 #define SONGEDITDIALOG_H
 
-#include "sonarstructs.h"
-
-#include <QComboBox>
 #include <QDialog>
-#include <QSpinBox>
 #include <QLineEdit>
+#include <QComboBox>
+#include <QSpinBox>
+#include <QStringList>
 
 class SongEditDialog : public QDialog {
     Q_OBJECT
+
 public:
     explicit SongEditDialog(QWidget *parent = nullptr);
 
-    // Methoden zum Datenaustausch
-    void setTitle(const QString &title) { m_titleEdit->setText(title); }
-    QString getTitle() const { return m_titleEdit->text(); }
+    void setSongData(const QString &title,
+                     const QString &artist,
+                     const QString &tuning,
+                     int bpm,
+                     const QStringList &allArtists,
+                     const QStringList &allTunings);
 
-    void setArtist(const QString &artist, const QStringList &allArtists);
-    QString getArtist() const { return m_artistCombo->currentText(); }
-
-    void setTunings(const QStringList &tunings);
-
-    void setData(const SongData &data, const QStringList &allArtists);
-    SongData getData() const;
-
-    // ... weitere Getter/Setter für BPM, Tuning etc.
+    // Getter für die Ergebnisse (um sie später in die DB zu schreiben)
+    [[nodiscard]] QString title() const { return titleEdit_m->text(); }
+    [[nodiscard]] QString artist() const { return artistCombo_m->currentText(); }
+    [[nodiscard]] QString tuning() const { return tuningCombo_m->currentText(); }
+    [[nodiscard]] int bpm() const { return bpmSpin_m->value(); }
 
 private:
-    QLineEdit *m_titleEdit;
-    QComboBox *m_artistCombo;
-    QComboBox *m_tuningCombo;
-    QSpinBox *m_bpmSpin;
-    QSpinBox *m_barsSpin;
+    // UI Elemente
+    QLineEdit* titleEdit_m;
+    QComboBox* artistCombo_m;
+    QComboBox* tuningCombo_m;
+    QSpinBox* bpmSpin_m;
+    void setupLayout();
 };
 
-#endif
+#endif // SONGEDITDIALOG_H

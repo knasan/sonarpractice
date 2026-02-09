@@ -10,9 +10,7 @@ class FilterPage : public BasePage {
     Q_OBJECT
 public:
     explicit FilterPage(QWidget *parent = nullptr);
-    virtual void initializePage() override;
     int nextId() const override;
-    void cleanupPage() override;
 
     [[nodiscard]] bool isComplete() const override;
 
@@ -20,32 +18,36 @@ public:
     QStringList activeFilters_m;
 
 private slots:
+    void onSettingsChanged();
     void addTargetPath();
     void addSourcePath();
+
+private:
+    void setupLayout();
+    void setupConnections();
+    [[nodiscard]] bool handleSkipImport();
 
     [[nodiscard]] QStringList getActiveFilters();
     [[nodiscard]] bool validatePage() override;
 
-private:
-    bool isConnectionsEstablished_m = false;
     void updateTargetPathStyle(bool checked);
     void flashItem(QListWidgetItem *item);
     void removeSourcePath();
     void updateRemoveSourceButtonState();
 
-    QCheckBox *cbManageData_m;
-    QCheckBox *cbPdf_m;
-    QCheckBox *cbAudio_m;
-    QCheckBox *cbVideo_m;
-    QCheckBox *cbGuitarPro_m;
-    QCheckBox *skipImport_m;
+    QCheckBox* cbManageData_m{nullptr};
+    QCheckBox* cbPdf_m{nullptr};
+    QCheckBox* cbAudio_m{nullptr};
+    QCheckBox* cbVideo_m{nullptr};
+    QCheckBox* cbGuitarPro_m{nullptr};
+    QCheckBox* skipImport_m{nullptr};
 
-    QLabel *lblTargetPath_m;
-    QPushButton *btnSelectTargetPath_m;
-    QPushButton *btnRemSource_m;
-    QPushButton *btnAddSource_m;
+    QLabel* lblTargetPath_m{nullptr};
+    QPushButton* btnSelectTargetPath_m{nullptr};
+    QPushButton* btnRemSource_m{nullptr};
+    QPushButton* btnAddSource_m{nullptr};
 
-    QListWidget *listWidgetSource_m;
+    QListWidget* listWidgetSource_m{nullptr};
 };
 
 #endif // FILTERPAGE_H

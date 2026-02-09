@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/SonarPractice.exe",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "env": {
+                "PATH": "C:\\Qt\\6.10.2\\llvm-mingw_64\\bin;${env:PATH}"
+            }
+        }
+    ]
+}

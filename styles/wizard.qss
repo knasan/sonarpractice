@@ -16,20 +16,20 @@ QWizard {
 #qt_wizard_title {
     color: #243443;          /* Text */
     font-weight: 800;
-    font-size: 18px;
+    font-size: 12px;
 }
 
 #qt_wizard_subtitle {
     color: #5D7284;          /* Text Muted */
-    font-size: 12px;
+    font-size: 8px;
 }
 
 /* Step-Liste (falls angezeigt) */
 #qt_wizard_steplist {
     background-color: #2f3133;
     border: 1px solid #D6E0E8;
-    border-radius: 12px;
-    padding: 8px;
+    border-radius: 10px;
+    padding: 5px;
 }
 
 /* Seite/Content Bereich */
@@ -42,26 +42,6 @@ QWizardPage {
     background-color: #2f3133;
 }
 
-/* Buttons im Wizard (erben von globalem QPushButton; hier optional minimal anpassen) */
-/*QWizard QPushButton {
-    border-radius: 10px;
-    padding: 8px 14px;
-}*/
-
-/* Optional: „Back“ etwas neutraler machen, wenn du ihm im Code kind="ghost" gibst */
-/*QWizard QPushButton[kind="ghost"] {
-    background-color: transparent;
-    color: #1E86D6;
-    border: 1px solid rgba(47, 168, 255, 0.85);
-}*/
-
-/*QWizard QPushButton[kind="ghost"]:hover {
-    background-color: rgba(47, 168, 255, 0.10);
-}*/
-
-/*QWizard QPushButton[kind="ghost"]:pressed {
-    background-color: rgba(47, 168, 255, 0.20);
-}*/
 
 /* ---- QTextBrowser wirklich dunkel halten (auch bei Windows Hell) ---- */
 QWizard QTextBrowser {

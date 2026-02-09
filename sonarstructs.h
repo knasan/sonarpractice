@@ -20,7 +20,6 @@ struct ScanBatch {
     bool layoutChange{false};
 };
 
-// TODO: mal überprüfen was hiervon noch benötigt wird. Denke vieles waren nur tests und gibt es nicht mehr!
 enum Column {
     ColName = 0,
     ColSize,
@@ -33,22 +32,22 @@ enum Column {
 };
 
 enum ItemRole {
-    RoleFileInfo = Qt::UserRole + 1,    // Das komplette QFileInfo Objekt
-    RoleFileSizeRaw,                    // qint64 (Rohwert für Berechnungen)
-    RoleFileHash,                       // QString (Der berechnete Hash)
-    RoleItemType,                       // int (0 = Datei, 1 = Ordner)
-    RoleFileStatus,                     // int (Enum: OK, Defekt, Dublette)
-    RoleFilePath,                       // speichert den den pfad
-    RoleDuplicateId,                    // Gruppen im Model markieren.
-    RoleIsFolder
+    RoleFileInfo = Qt::UserRole + 1, // The complete QFileInfo object
+    RoleFileSizeRaw,                 // qint64 (raw value for calculations)
+    RoleFileHash,                    // QString (The calculated hash)
+    RoleItemType,                    // int (0 = file, 1 = directroy)
+    RoleFileStatus,                  // int (Enum: OK, defect, duplicate)
+    RoleFilePath,                    // saves the path
+    RoleDuplicateId,                 // Mark groups in the model.
+    RoleIsFolder                     // Stores information about whether this is a folder.
 };
 
-// Zusätzliches Enum für den Status (für RoleFileStatus)
+// Additional enum for status (for RoleFileStatus)
 enum FileStatus {
-    StatusReady = 0,    // Datei ist in Ordnung (Grün)
-    StatusDefect,       // 0-Byte Datei (Rot/Deaktiviert)
-    StatusDuplicate,    // Echte Dublette (Orange)
-    StatusManaged,      // File is managed
+    StatusReady = 0, // File is OK (green)
+    StatusDefect,    // 0-byte file (Red/Disabled)
+    StatusDuplicate, // True doublet (orange)
+    StatusManaged,   // File is managed
     StatusFiles,
     StatusReject,
     StatusAlreadyInDatabase
@@ -57,7 +56,7 @@ enum FileStatus {
 // Database
 struct SongImportData {
     QString title;
-    QString artist = "Unbekannt";
+    QString artist = "Unknown";
     QString tuning = "E-Standard";
     QString relativePath;
     QString fileSuffix;
@@ -65,7 +64,11 @@ struct SongImportData {
     bool isManaged;
 };
 
-// Pages wie songeditdialog
+// Pages like songeditdialog
+/* SongDialog hasn't been used for a long time and isn't included in this version.
+ * It needs to be completely rewritten, and it also needs to be reconsidered whether 
+ * a SongDialog Editor is even necessary.
+*/
 struct SongData {
     int id{-1};
     int artistId{-1};

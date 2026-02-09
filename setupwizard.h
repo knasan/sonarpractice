@@ -1,85 +1,80 @@
 #ifndef SETUPWIZARD_H
 #define SETUPWIZARD_H
 
-#include "filemanager.h"
 #include <QWizard>
-#include <QFileInfoList>
-#include <QLabel>
 #include <QStandardItemModel>
-#include "filefilterproxymodel.h"
 
+class FileManager;
+class FileScanner;
+class FileFilterProxyModel;
 class WelcomePage;
 class FilterPage;
-class ProcessingPage;
 class ReviewPage;
 class MappingPage;
-class FileManager;
 
-class SetupWizard : public QWizard
-{
+class SetupWizard : public QWizard {
     Q_OBJECT
-    friend class ReviewPageTest;
+
 public:
-    // Definition der IDs (so weiß jede Seite, wer sie ist)
+    // Definition der Seiten-IDs für Typsicherheit
     enum PageId {
-        Page_Welcome,
-        Page_Filter,
-        Page_Processing,
-        Page_Review,
-        Page_Mapping
+        Page_Welcome = 0,
+        Page_Filter = 1,
+        Page_Review = 2,
+        Page_Mapping = 3
     };
 
-    // Hilfsfunktionen, um von den Seiten aus auf andere Seiten zuzugreifen
-    [[nodiscard]] ReviewPage* reviewPage() const { return reviewPage_m; }
-
     explicit SetupWizard(QWidget *parent = nullptr);
-    ~SetupWizard();
+    ~SetupWizard() override;
 
-    QStringList activeFilters_m;      // Zentraler Speicher für die Endungen
-    QStringList sourcePaths_m;        // Zentraler Speicher für die Suchordner
+    [[nodiscard]] QStringList activeFilters() const { return activeFilters_m; }
+    void setActiveFilters(const QStringList &filters) { activeFilters_m = filters; }
 
-    QStringList finalImportList_m;    // Zentraler Speicher für Übernahmeliste
-    QStringList realDuplicates_m;     // Zentraler Speicher für Duplikate
-    long long totalSizeBytes_m;       // Zentraler Speicher für Größe
+    [[nodiscard]] QStringList sourcePaths() const { return sourcePaths_m; }
+    void setSourcePaths(const QStringList &paths) { sourcePaths_m = paths; }
 
-    FileFilterProxyModel *proxyModel_m;
+    FileScanner* fileScanner() const { return fileScanner_m; } // scan discs etc.
 
-    [[nodiscard]] ReviewStats getFinalStats() const { // in reviewpage UI Status get state!
-        qDebug() << "[SetupWizard]: getFinalStatus.";
-        // Falls der Proxy existiert, berechne LIVE.
-        // Das ist syntaktisch sauberer als eine veraltete Variable.
-        if (proxyModel_m) {
-            return proxyModel_m->calculateVisibleStats();
-        }
-        return ReviewStats();
-    }
-
-    // Zugriff auf das zentrale Model
-    [[nodiscard]] FileManager* fileManager() { return fileManager_m; }
+    // Access to the data model (source)
     [[nodiscard]] QStandardItemModel* filesModel() const { return filesModel_m; }
 
-    void setButtonsState(bool backEnabled, bool nextEnabled, bool cancelEnabled);
+    // Accessing the proxy model (filter/search)
+    [[nodiscard]] FileFilterProxyModel* proxyModel() const { return proxyModel_m; }
 
-    [[nodiscard]] bool isDuplicateHash(const QString &hash) const {
-        return realDuplicates_m.contains(hash);
-    }
+    // Access to the manager
+    [[nodiscard]] FileManager* fileManager() const { return fileManager_m; }
 
-    [[nodiscard]] QStringList getSelectedPaths() const;
-    [[nodiscard]] QStringList getFileFilters() const;
+    void setScanResults(const QStringList &results) { scanResults_m = results; }
+    [[nodiscard]] QStringList scanResults() const { return scanResults_m; }
 
-    [[nodiscard]] QList<QList<QStandardItem*>> takeFromIgnore(const QString &path);
-
-    void setProxyModelHeader();
+    void prepareScannerWithDatabaseData();
 
 private:
-    WelcomePage*    welcomePage_m;
-    FilterPage*     filterPage_m;
-    ProcessingPage* processingPage_m;
-    ReviewPage*     reviewPage_m;
-    MappingPage*    mappingPage_m;
+    void setupUiLayout();
+    void setupModels();
+    void createPages();
+    void setupConnections();
+    void setProxyModelHeader();
 
-    QStandardItemModel* filesModel_m;
-    FileManager*   fileManager_m;
+    QStandardItemModel* filesModel_m{nullptr};
+
+    FileManager* fileManager_m{nullptr};
+    FileScanner* fileScanner_m{nullptr};
+
+    QThread* scannerThread_m{nullptr};
+
+    FileFilterProxyModel* proxyModel_m{nullptr};
+
+    // Pointers to the pages for direct access
+    WelcomePage* welcomePage_m{nullptr};
+    FilterPage* filterPage_m{nullptr};
+    ReviewPage* reviewPage_m{nullptr};
+    MappingPage* mappingPage_m{nullptr};
+
+    QStringList sourcePaths_m;
+    QStringList activeFilters_m;
+
+    QStringList scanResults_m;
 };
 
-#endif // SETUPWIZARD_H
+#endif

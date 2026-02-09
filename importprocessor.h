@@ -2,6 +2,7 @@
 #define IMPORTPROCESSOR_H
 
 #include "databasemanager.h"
+#include "gpparser.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -58,29 +59,54 @@ public:
                 }
 
                 // --- Database logic (DRY & grouping) ---
-                QString filePath = QFileInfo(task.sourcePath).fileName();
+                QString fileName = QFileInfo(task.sourcePath).fileName();
                 qlonglong songId;
 
-                auto it = createdSongs.find(filePath);
-                if (it == createdSongs.end()) {
-                    songId = DatabaseManager::instance().createSong(filePath);
-                    if (songId == -1) throw std::runtime_error("DB Song Error");
-                    createdSongs.insert(filePath, songId);
-                } else {
-                    songId = it.value();
+                QString title = task.itemName; // Fallback auf Dateiname
+                QString artist = "Unknown Artist";
+                QString tuning = "E-Standard";
+                int bpm = 0;
+
+                // Nur Parsen, wenn es eine GP-Datei ist
+                if (task.fileSuffix.startsWith("gp", Qt::CaseInsensitive)) {
+                    GpParser parser;
+                    GpParser::GPMetadata meta = parser.parseMetadata(task.sourcePath);
+                    if (meta.isValid) {
+                        if (!meta.title.isEmpty())
+                            title = meta.title;
+                        if (!meta.artist.isEmpty())
+                            artist = meta.artist;
+                        if (!meta.tuning.isEmpty())
+                            tuning = meta.tuning;
+                        if (meta.bpm > 300) {
+                            qDebug() << "Wrong BPM Found File: " << task.itemName.toStdString()
+                                     << " BPM: " << meta.bpm;
+                            bpm = 0;
+                        } else {
+                            bpm = meta.bpm;
+                        }
+                    }
                 }
 
-                // Attach the file to the (new or existing) song
-                bool ok = DatabaseManager::instance().addFileToSong(
-                    songId,
-                    isManaged ? task.relativePath : finalDest,
-                    isManaged,
-                    task.fileSuffix,
-                    task.fileSize,
-                    task.fileHash
-                    );
-
-                if (!ok) [[unlikely]] throw std::runtime_error("DB Media Error: " + task.itemName.toStdString());
+                auto it = createdSongs.find(fileName);
+                if (it == createdSongs.end()) {
+                    // songId = DatabaseManager::instance().createSong(fileName);
+                    songId = DatabaseManager::instance().createSong(title, artist, tuning, bpm);
+                    if (songId == -1) throw std::runtime_error("DB Song Error");
+                    // createdSongs.insert(fileName, songId);
+                    bool ok = DatabaseManager::instance().addFileToSong(songId,
+                                                                        isManaged
+                                                                            ? task.relativePath
+                                                                            : finalDest,
+                                                                        isManaged,
+                                                                        task.fileSuffix,
+                                                                        task.fileSize,
+                                                                        task.fileHash);
+                    if (!ok) {
+                        qCritical() << "[ImportProcessor] executeImport failed for file: "
+                                    << task.itemName.toStdString();
+                    }
+                }
 
             } catch (const std::exception &e) {
                 qDebug() << "Import failed:" << e.what();

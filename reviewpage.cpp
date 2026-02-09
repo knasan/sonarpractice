@@ -1,61 +1,105 @@
 #include "reviewpage.h"
+#include "fileutils.h"
 #include "setupwizard.h"
 #include "filemanager.h"
-#include "fileutils.h"
-#include "uihelper.h"
 #include "filefilterproxymodel.h"
 #include "filescanner.h"
-#include "sonarstructs.h"
-#include "reviewstruct.h"
-
-#include <QGraphicsOpacityEffect>
-#include <QPropertyAnimation>
+#include "uihelper.h"
 
 #include <QVBoxLayout>
 #include <QTreeView>
 #include <QHeaderView>
 #include <QLabel>
-#include <QMenu>
-#include <QWizard>
+#include <QLineEdit>
 #include <QRadioButton>
 #include <QGroupBox>
+#include <QApplication>
+#include <QMenu>
 #include <QTimer>
-#include <QEvent>
+#include <QMessageBox>
+#include <QCheckBox>
 #include <QKeyEvent>
 #include <QPushButton>
-#include <QCache>
-#include <QCheckBox>
-#include <QApplication>
-#include <QMessageBox>
-#include <QLineEdit>
+#include <QAbstractButton>
+
 
 // =============================================================================
 // --- LIFECYCLE (Constructor / Destructor)
 // =============================================================================
 
-ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
-{
+ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent) {
     setTitle(tr("Examination"));
     setSubTitle(tr("Choose which files to import."));
 
     qRegisterMetaType<ReviewStats>("ReviewStats");
 
-    // ContextMenu find partners (Duplicates)
-    pathPartsCache_m = new QCache<QString, QStringList>(10000);
+    setupLayout();
+}
 
+ReviewPage::~ReviewPage() = default;
+
+// =============================================================================
+// --- PAGE FLOW (Initialization / Validation)
+// =============================================================================
+
+void ReviewPage::initializePage() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (!wiz) return;
+
+    // ALL wiz
+    static bool connectionsEstablished = false;
+    if (!connectionsEstablished) {
+        setupConnections();
+        connectionsEstablished = true;
+    }
+
+    wiz->fileManager()->clearCaches();
+    if (wiz->filesModel()) {
+        wiz->filesModel()->removeRows(0, wiz->filesModel()->rowCount());
+    }
+
+    wiz->prepareScannerWithDatabaseData();
+
+    treeView_m->setModel(wiz->proxyModel());
+
+    // configure header
+    treeView_m->header()->setSectionResizeMode(ColName, QHeaderView::Stretch);
+
+    treeView_m->header()->setSectionResizeMode(ColSize, QHeaderView::ResizeToContents);
+    treeView_m->header()->setSectionResizeMode(ColStatus, QHeaderView::ResizeToContents);
+
+    treeView_m->header()->setStretchLastSection(true);
+
+    QMetaObject::invokeMethod(wiz->fileScanner(), "doScan",
+                              Qt::QueuedConnection,
+                              Q_ARG(QStringList, wiz->sourcePaths()),
+                              Q_ARG(QStringList, wiz->activeFilters()));
+
+
+
+}
+
+void ReviewPage::setupLayout() {
     auto *layout = new QVBoxLayout(this);
+    layout->setSpacing(10);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setStretchFactor(treeView_m, 1);
+
     auto *topControlLayout = new QHBoxLayout();
 
-    // TreeView Setup
+    // --- Middle: The TreeView ---
     treeView_m = new QTreeView(this);
     treeView_m->setAlternatingRowColors(true);
     treeView_m->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    treeView_m->setContextMenuPolicy(Qt::CustomContextMenu);
     treeView_m->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    treeView_m->setContextMenuPolicy(Qt::CustomContextMenu);
+    treeView_m->setIndentation(20);
+    treeView_m->setSortingEnabled(true);
 
     collabsTree_m = new QCheckBox(tr("Open structure"), this);
     expertModeCheck_m = new QCheckBox(tr("Expert mode"), this);
     expertModeCheck_m->setToolTip(tr("Enables file deletion and direct editing of indexed files!"));
+    expertModeCheck_m->hide(); // TODO: Disable for stable version, proxy sync problems
 
     topControlLayout->addWidget(collabsTree_m);
     topControlLayout->addWidget(expertModeCheck_m);
@@ -65,7 +109,7 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
     auto *filterLayout = new QHBoxLayout();
     radioAll_m = new QRadioButton(tr("All"), this);
     radioErrors_m = new QRadioButton(tr("Errors"), this);
-    radioDup_m = new QRadioButton(tr("Duplicates"), this);
+    radioDuplicates_m = new QRadioButton(tr("Duplicates"), this);
 
     // Default all on
     radioAll_m->setChecked(true);
@@ -76,162 +120,74 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
 
     filterLayout->addWidget(radioAll_m);
     filterLayout->addWidget(radioErrors_m);
-    filterLayout->addWidget(radioDup_m);
+    filterLayout->addWidget(radioDuplicates_m);
     filterLayout->addWidget(searchLineEdit_m);
+    filterLayout->addStretch();
 
     filterGroupBox->setLayout(filterLayout);
 
     topControlLayout->addWidget(filterGroupBox);
 
     layout->addLayout(topControlLayout);
-
     layout->addWidget(treeView_m);
+    this->setLayout(layout);
 
+
+    // --- Below: Statistics bar ---
     // Container-Layout (Vertikal)
     auto *statsContainerLayout = new QVBoxLayout();
     statsContainerLayout->setSpacing(10);
 
     // Summary & Status (Vertically stacked on top of each other)
     summaryLabel_m = new QLabel(this);
+    summaryLabel_m->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+    summaryLabel_m->setWordWrap(true);
+
     statusLabel_m = new QLabel(this);
+    statusLabel_m->setText("Status:");
+
     statsContainerLayout->addWidget(summaryLabel_m);
     statsContainerLayout->addWidget(statusLabel_m);
 
-    // Button-Layout (Horizontal)
-    auto *actionHBox = new QHBoxLayout();
+    progressBar_m = new QProgressBar(this);
+    progressBar_m->setRange(0, 0);
+    progressBar_m->setVisible(false);
+    progressBar_m->hide();
 
-    // Putting it all together
-    statsContainerLayout->addLayout(actionHBox);
+    layout->addWidget(progressBar_m);
 
     // Finally, into your main page layout (which is probably called 'layout')
     layout->addLayout(statsContainerLayout);
+
+    // Signals for filter changes connect
+    connect(radioAll_m, &QRadioButton::toggled, this, &ReviewPage::onFilterChanged);
+    connect(radioDuplicates_m, &QRadioButton::toggled, this, &ReviewPage::onFilterChanged);
+    connect(radioErrors_m, &QRadioButton::toggled, this, &ReviewPage::onFilterChanged);
 }
 
-// =============================================================================
-// --- PAGE FLOW (Initialization / Validation)
-// =============================================================================
-
-void ReviewPage::initializePage() {
-    treeView_m->setModel(wiz()->proxyModel_m);
-    treeView_m->setSortingEnabled(false);
-
-    // reset file model
-    wiz()->filesModel()->clear();
-    wiz()->setProxyModelHeader();
-
-    wiz()->proxyModel_m->setSourceModel(wiz()->filesModel());
-    wiz()->proxyModel_m->setDynamicSortFilter(true);
-
-    wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeAll);
-    wiz()->proxyModel_m->setFilterFixedString(QString());
-    wiz()->proxyModel_m->setFilterKeyColumn(0); //
-    wiz()->proxyModel_m->setFilterCaseSensitivity(Qt::CaseInsensitive); //
-
-    // Column optimization (important for visibility)
-    treeView_m->header()->setSectionResizeMode(QHeaderView::Interactive);
-    treeView_m->setColumnWidth(ColName, 1200); //
-    treeView_m->header()->setSectionResizeMode(ColName, QHeaderView::Interactive);
-    treeView_m->header()->setCascadingSectionResizes(true);
-    treeView_m->header()->setSectionResizeMode(ColSize, QHeaderView::Stretch);
-    treeView_m->header()->setSectionResizeMode(ColStatus, QHeaderView::Stretch);
-
-    treeView_m->setEnabled(false);
-
-    // Tell the search field that this class (this) is monitoring the events
-    searchLineEdit_m->installEventFilter(this);
-    searchLineEdit_m->setClearButtonEnabled(true); // add x in QLineEdit
-
-    if (!isConnectionsEstablished_m) {
-        isConnectionsEstablished_m = true;
-        QThread* scanThread = new QThread(this);
-        FileScanner* worker = new FileScanner();
-        worker->moveToThread(scanThread);
-
-        // --- CONNECTIONS ---
-        sideConnections();
-
-        // Start signal
-        connect(this, &ReviewPage::requestScanStart, worker, &FileScanner::doScan);
-
-        connect(worker, &FileScanner::batchesFound, this, [this](const QList<ScanBatch> &batches) {
-            wiz()->filesModel()->blockSignals(true);
-            wiz()->fileManager()->addBatchesToModel(batches);
-            wiz()->filesModel()->blockSignals(false);
-            summaryLabel_m->setText(tr("Index: %1").arg(batches.last().info.absoluteFilePath()));
-            statusLabel_m->setText(tr("Scanning ..."));
-        });
-
-        connect(worker, &FileScanner::progressStats, this, [this](const ReviewStats &stats) {
-            // qDebug() << "[ReviewPage] progressStats";
-            treeView_m->setEnabled(false);
-            statusLabel_m->setText(tr("%1 Data scanned ... ").arg(stats.totalFiles()));
-        });
-
-        connect(worker, &FileScanner::finished, this, [this, scanThread, worker](const ReviewStats &workerStats) {
-            // Copy the data from the worker to the wizard's global stats.
-            // ReviewStats has an assignment operator operator=
-            qDebug() << "[ReviewPage] Worker reports files:" << workerStats.totalFiles();
-
-            // Transfer data to the wizard
-            // wiz()->getFinalStats() When a reference is returned, we use the operator=
-            wiz()->getFinalStats() = workerStats;
-
-            auto *effector = new QGraphicsOpacityEffect(statusLabel_m);
-            statusLabel_m->setGraphicsEffect(effector);
-
-            // UI update with the now (hopefully) populated wizard stats
-            int count = workerStats.totalFiles();
-            statusLabel_m->setText(tr("Scan complete. %1 files found.").arg(count));
-
-            // A "delayed" fade-out: Wait 4 seconds, then fade for 1 second.
-            QTimer::singleShot(4000, this, [effector]() {
-                auto *anim = new QPropertyAnimation(effector, "opacity");
-                anim->setDuration(1000); // The fade lasts 1 second.
-                anim->setStartValue(1.0);
-                anim->setEndValue(0.0);
-                anim->setEasingCurve(QEasingCurve::OutCubic); // Gentle exit
-
-                //After the animation ends, really clear the text.
-                connect(anim, &QPropertyAnimation::finished, [anim]() {
-                    anim->deleteLater();
-                });
-
-                anim->start(QAbstractAnimation::DeleteWhenStopped);
-            });
-
-            // Unlock UI elements
-            wiz()->filesModel()->layoutChanged();
-            treeView_m->blockSignals(false);
-            updateUIStats();
-
-            treeView_m->setEnabled(true);
-            // treeView_m->expandAll();
-
-            // Cleanly close the thread
-            scanThread->quit();
-            scanThread->deleteLater();
-            worker->deleteLater();
-            isConnectionsEstablished_m = false;
-        });
-
-        connect(worker, &FileScanner::finishWithAllBatches, this, [this, scanThread](const QList<ScanBatch> &allBatches, const ReviewStats &stats) {
-            this->totalDuplicatesCount_m = stats.duplicates();
-            this->totalDefectsCount_m = stats.defects();
-            wiz()->fileManager()->updateStatuses(allBatches);
-        });
-
-        // Cleanup
-        connect(scanThread, &QThread::finished, worker, &QObject::deleteLater);
-        connect(scanThread, &QThread::finished, scanThread, &QObject::deleteLater);
-
-        scanThread->start();
-        emit requestScanStart(wiz()->getSelectedPaths(), wiz()->getFileFilters(), wiz());
+void ReviewPage::cleanupPage() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (wiz && wiz->fileScanner()) {
+        wiz->fileScanner()->abort();
     }
 }
 
-bool ReviewPage::validatePage() {
-    qDebug() << "[ReviewPage] validatePage START";
-    return finishDialog();
+void ReviewPage::onFilterChanged() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (!wiz || !treeView_m->model()) {
+        return;
+    }
+
+    auto *proxy = qobject_cast<FileFilterProxyModel*>(treeView_m->model());
+    if (!proxy) return;
+
+    if (radioDuplicates_m->isChecked()) {
+        proxy->setFilterMode(FileFilterProxyModel::ModeDuplicates);
+    } else if (radioErrors_m->isChecked()) {
+        proxy->setFilterMode(FileFilterProxyModel::ModeErrors);
+    } else {
+        proxy->setFilterMode(FileFilterProxyModel::ModeAll);
+    }
 }
 
 // =============================================================================
@@ -239,27 +195,24 @@ bool ReviewPage::validatePage() {
 // =============================================================================
 
 void ReviewPage::showContextMenu(const QPoint &pos) {
-    qDebug() << "[ReviewPage] showContextMenu START";
     QModelIndex proxyIndex = treeView_m->indexAt(pos);
     if (!proxyIndex.isValid()) {
-        qDebug() << "index from model not valid";
         return;
     }
-    // TODO: context menü für summaryLabel
+    // TODO: Context menu for summaryLabel
     showTreeContextMenu(pos, proxyIndex);
 }
 
 void ReviewPage::showSummaryContextMenu(const QPoint &pos) {
-    qDebug() << "ShowSummaryContextMenu planed";
+    qInfo() << "ShowSummaryContextMenu planed";
 }
 
 void ReviewPage::showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid()) {
-        qDebug() << "index from model not valid";
         return;
     }
-    qDebug() << "[ReviewPage] showTreeContextMenu START";
-    QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
+
+    QModelIndex sourceIndex = wiz()->proxyModel()->mapToSource(proxyIndex);
 
     QModelIndex nameIndex = sourceIndex.siblingAtColumn(ColName);
     QString currentHash = nameIndex.data(RoleFileHash).toString();
@@ -273,110 +226,51 @@ void ReviewPage::showTreeContextMenu(const QPoint &pos, const QModelIndex &proxy
     // Section 2: Duplicates
     addDuplicateSectionToMenu(&menu, nameIndex, currentHash, currentPath);
 
-    // Section 3: Standard Actions
-    addStandardActionsToMenu(&menu);
+    // Section 3: Standard Actions - Select all or uncheck all to slow by many files and fixed many bugs
+    // addStandardActionsToMenu(&menu);
 
     menu.exec(treeView_m->viewport()->mapToGlobal(pos));
 }
 
 void ReviewPage::handleItemChanged(QStandardItem *item) {
-    if (item->column() != ColName) return;
+    if (!item || item->column() != ColName) return;
 
-    static bool isUpdating = false;
-    if (isUpdating) return;
+    // 1. When a user selects a duplicate
+    if (item->checkState() == Qt::Checked) {
+        QString hash = item->data(RoleFileHash).toString();
 
-    qDebug() << "[ReviewPage] handleItemChanged START";
+        // If it is indeed a duplicate (hash present and not empty)
+        if (!hash.isEmpty() && hash != "0") {
+            QList<QStandardItem*> duplicates;
+            auto *wiz = qobject_cast<SetupWizard*>(wizard());
+            collectItemsByHashRecursive(wiz->filesModel()->invisibleRootItem(), hash, duplicates);
 
-    isUpdating = true;
-
-    int groupId = item->data(RoleDuplicateId).toInt();
-
-    Qt::CheckState currentState = item->checkState();
-
-    if (currentState == Qt::Checked) {
-        // Checkmark set -> Managed (Blue)
-        item->setData(StatusManaged, RoleFileStatus);
-        updateItemVisuals(item, StatusManaged);
-
-        // PARTNER SEARCH: It must see deep through the tree
-        if (groupId > 0) {
-            QList<QStandardItem*> results;
-            // The search starts at the root to catch all levels.
-            searchGroupRecursive(wiz()->filesModel()->invisibleRootItem(), groupId, results);
-
-            for (QStandardItem* other : std::as_const(results)) {
-                if (other != item) {
-                    other->setCheckState(Qt::Unchecked);
-                    other->setData(StatusReject, RoleFileStatus);
-                    if (other->column() != ColName && other->data(Qt::CheckStateRole).isValid()) {
-                        qWarning() << "ERROR: other (item) handleItemChanged: in column: " << other->column()
-                        << "has a checkbox! Path:" << other->data(RoleFilePath).toString();
-                    }
-                    updateItemVisuals(other, StatusReject);
+            // Logic: "Only one file may be selected at any one time"
+            for (QStandardItem* dup : std::as_const(duplicates)) {
+                if (dup != item && dup->checkState() == Qt::Checked) {
+                    // Another file with this hash is already active!
+                    item->setCheckState(Qt::Unchecked);
+                    QMessageBox::warning(this, tr("Duplicate protection"),
+                                         tr("You have already selected a copy of this file.\n"
+                                            "Only one duplicate can be imported per group."));
+                    return;
                 }
             }
         }
-    } else {
-        // Check removed -> Back to original
-        int currentStatus = item->data(RoleFileStatus).toInt();
-        int newStatus;
-
-        if (currentStatus == StatusReject) {
-            // If it was already rejected, we'll make it a "normal" duplicate again.
-            newStatus = (groupId > 0) ? StatusDuplicate : StatusReady;
-        } else {
-            // Otherwise, we will mark it as rejected.
-            newStatus = StatusReject;
-        }
-
-        item->setData(newStatus, RoleFileStatus);
-        updateItemVisuals(item, newStatus);
     }
-
-    // RECURSION: Children (Folder Logic)
-    if (item->hasChildren()) {
-        recursiveCheckChilds(item, currentState);
-    }
-
-    debugItemInfo(item, QString("handleItemChanged"));
-
-    // Statistics Connect recalculates everything.
-    wiz()->filesModel()->dataChanged(item->index(), item->index());
-    isUpdating = false;
-}
-
-void ReviewPage::setAllCheckStates(Qt::CheckState state) {
-    if (!wiz()->filesModel()) return;
-    qDebug() << "[ReviewPage] setAllCheckStates START";
-    wiz()->filesModel()->blockSignals(true);
-
-    // Iterate directly over the source model (including filtered items!).
-    for (int row = 0; row < wiz()->filesModel()->rowCount(); ++row) {
-        QStandardItem* item = wiz()->filesModel()->item(row, ColName);
-        if (item) {
-            setCheckStateRecursive(item, state);
-        }
-    }
-
-    wiz()->filesModel()->blockSignals(false);
-
-    treeView_m->viewport()->update();
 }
 
 // block return by search line (don't delete this)
 bool ReviewPage::eventFilter(QObject *obj, QEvent *event) {
-    // qDebug() << "[ReviewPage] eventFilter START";
     if (obj == searchLineEdit_m && event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
         if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
             // Run search immediately
-            wiz()->proxyModel_m->setFilterFixedString(searchLineEdit_m->text());
+            wiz()->proxyModel()->setFilterFixedString(searchLineEdit_m->text());
 
             // Keep the focus in the field so the user can continue typing.
             searchLineEdit_m->selectAll();
-
-            // qDebug() << "Enter is used for search - Next button is blocked";
 
             return true;
         }
@@ -386,61 +280,20 @@ bool ReviewPage::eventFilter(QObject *obj, QEvent *event) {
 }
 
 // --- private --
+void ReviewPage::setupConnections() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if(!wiz) return;
 
-void ReviewPage::sideConnections() {
-    // qDebug() << "[ReviewPage] sideConnections START";
 
-    // Signals connect
-    connect(treeView_m, &QTreeView::customContextMenuRequested,
-            this, &ReviewPage::showContextMenu);
+    progressBar_m->show();
 
-    connect(collabsTree_m, &QCheckBox::checkStateChanged, this, [this](int state) {
-        // qDebug() << "checkStateChanged live in connect";
-        if (state == Qt::Checked) {
-            treeView_m->expandAll();
-        } else {
-            treeView_m->collapseAll();
-        }
+    // Live search: Filter directly by proxy model
+    connect(searchLineEdit_m, &QLineEdit::textChanged, this, [wiz](const QString &text) {
+        wiz->proxyModel()->setFilterFixedString(text);
     });
 
-    connect(wiz()->filesModel(), &QStandardItemModel::itemChanged,
-            this, &ReviewPage::onItemChanged);
-
-    // Observe model changes, Qt::QueuedConnection -> is executed when Tree has time.
-    connect(wiz()->filesModel(), &QStandardItemModel::dataChanged, this, &ReviewPage::updateUIStats, Qt::QueuedConnection);
-
-    // Responds to file deletion (ignore, delete 0-bytes)
-    connect(wiz()->filesModel(), &QStandardItemModel::rowsRemoved,
-            this, &ReviewPage::updateUIStats, Qt::QueuedConnection);
-
-    // If the entire list is ever reloaded
-    connect(wiz()->filesModel(), &QStandardItemModel::modelReset,
-            this, &ReviewPage::updateUIStats, Qt::QueuedConnection);
-
-    // Filters
-    // Connection for "Show all"
-    connect(radioAll_m, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeAll);
-        }
-    });
-
-    // Connection for "Show errors only"
-    connect(radioErrors_m, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeErrors);
-        }
-    });
-
-    // Connection for "Show only duplicates"
-    connect(radioDup_m, &QRadioButton::toggled, this, [this](bool checked) {
-        if (checked) {
-            wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeDuplicates);
-        }
-    });
-
-    // Checkbox logik
-    connect(wiz()->filesModel(), &QStandardItemModel::itemChanged,
+    // Item changes (checkboxes)
+    connect(wiz->filesModel(), &QStandardItemModel::itemChanged,
             this, &ReviewPage::handleItemChanged);
 
     // Instead of filtering immediately, start only after 400ms of inactivity in the typing flow.
@@ -448,18 +301,105 @@ void ReviewPage::sideConnections() {
     searchTimer->setSingleShot(true);
     searchTimer->setInterval(400);
 
-    // intercept return
-    connect(searchLineEdit_m, &QLineEdit::returnPressed, this, [this, searchTimer]() {
+    connect(searchLineEdit_m, &QLineEdit::returnPressed, this, [this, wiz, searchTimer]() {
         searchTimer->stop();
-        wiz()->proxyModel_m->setFilterFixedString(searchLineEdit_m->text());
+        wiz->proxyModel()->setFilterFixedString(this->searchLineEdit_m->text());
     });
 
     // Connect search
-    connect(searchTimer, &QTimer::timeout, this, [this]() {
-        wiz()->proxyModel_m->setFilterFixedString(searchLineEdit_m->text());
+    connect(searchTimer, &QTimer::timeout, this, [this, wiz]() {
+        wiz->proxyModel()->setFilterFixedString(searchLineEdit_m->text());
     });
 
     connect(searchLineEdit_m, &QLineEdit::textChanged, searchTimer, qOverload<>(&QTimer::start));
+
+    connect(wiz->filesModel(), &QStandardItemModel::itemChanged,
+            this, &ReviewPage::onItemChanged);
+
+    // TreeView
+    connect(treeView_m, &QTreeView::customContextMenuRequested,
+            this, &ReviewPage::showContextMenu);
+
+    connect(collabsTree_m, &QCheckBox::toggled, this, [this](bool checked) {
+        if (!treeView_m) return;
+
+        treeView_m->setUpdatesEnabled(false);
+
+        if (checked) {
+            treeView_m->expandAll();
+        } else {
+            treeView_m->collapseAll();
+        }
+
+        treeView_m->setUpdatesEnabled(true);
+    });
+
+    // 3. Connect scanner signals (Qt::UniqueConnection prevents multiple connections)
+    connect(wiz->fileScanner(), &FileScanner::batchesFound, wiz->fileManager(), &FileManager::addBatchesToModel, Qt::UniqueConnection);
+
+    connect(wiz->fileScanner(), &FileScanner::progressStats, this, [this](const ReviewStats &stats) {
+        statusLabel_m->setText(tr("Scanning files: %1").arg(stats.totalFiles));
+    }, Qt::QueuedConnection);
+
+    connect(wiz->fileScanner(), &FileScanner::finished, this, [this](const ReviewStats &workerStats) {
+        applySmartCheck();
+        progressBar_m->hide();
+        statusLabel_m->setText(tr("Scan complete. %1 files found.").arg(workerStats.totalFiles));
+        emit completeChanged();
+    }, Qt::QueuedConnection);
+
+    connect(wiz->proxyModel(), &QStandardItemModel::dataChanged, this, &ReviewPage::updateUIStats);
+}
+
+bool ReviewPage::isComplete() const {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+
+    if (!wiz || !wiz->filesModel()) {
+        qDebug() << "[ReviewPage::isComplete] filemodel oder wiz not ready";
+        return false;
+    }
+
+    if (wiz->fileScanner()->isScanning()) {
+        qDebug() << "[ReviewPage::isComplete] is FileScanner in scanning mode: " << wiz->fileScanner()->isScanning();
+        return false;
+    }
+
+    // Sync proxy
+    wiz->proxyModel()->invalidate();
+
+    QMap<QString, int> selectionCounts;
+    int totalSelected = 0;
+    bool collisionFound = false;
+
+    auto checkRecursive = [&](auto self, QStandardItem* parent) -> void {
+        for (int i = 0; i < parent->rowCount(); ++i) {
+            QStandardItem* item = parent->child(i, ColName);
+            if (!item) continue;
+
+            if (item->checkState() == Qt::Checked) {
+                totalSelected++;
+                QString hash = item->data(RoleFileHash).toString();
+                if (!hash.isEmpty() && hash != "0") {
+                    selectionCounts[hash]++;
+                    if (selectionCounts[hash] > 1) {
+                        collisionFound = true;
+                    }
+                }
+            }
+            if (item->hasChildren()) self(self, item);
+        }
+    };
+
+    checkRecursive(checkRecursive, wiz->filesModel()->invisibleRootItem());
+
+    if(collisionFound) {
+        statusLabel_m->setText(tr("Please check your selection for duplicate or corrupted files."));
+    } else {
+        statusLabel_m->setText("");
+    }
+
+    return (totalSelected > 0 && !collisionFound);
+
 }
 
 void ReviewPage::updateUIStats() {
@@ -476,13 +416,7 @@ void ReviewPage::updateUIStats() {
         return;
     }
 
-    qDebug() << "[ReviewPage] updateUIStats START";
-
-    // qDebug() << "[ReviewPage] updateUIStats START";
-    // Wir holen die Basis-Stats (für totalFiles, defects, etc.)
-    // ReviewStats stats = wiz()->fileManager()->calculateStats(wiz()->filesModel());
-    // ReviewStats stats = wiz()->proxyModel_m->calculateVisibleStats();
-    ReviewStats stats = calculateGlobalStats();
+    ReviewStats currentStats = wiz()->proxyModel()->calculateCurrentStats();
 
     // --- COLORS ---
     QColor colDefect = wiz()->fileManager()->getStatusColor(StatusDefect);
@@ -511,105 +445,64 @@ void ReviewPage::updateUIStats() {
     // %13 Duplicate counter
     QString labelHtml = QString("<html><b>%1:</b>  <span style='color:%4;'>%2 (%6)</span> | <b>%3:</b> <span style='color:%4;'><b>%5</b> (%7)</span> | <b>%8:</b> <span style='color:%9;'>%10</span> | <b>%11:</b> <span style='color:%12;'>%13</span></html>");
 
-    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusFiles), QString::number(stats.totalFiles()));
+    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusFiles), QString::number(currentStats.totalFiles));
 
     labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusManaged),
                               strColReady,
-                              QString::number(stats.selectedFiles()),
-                              FileUtils::formatBytes(stats.totalBytes()),
-                              FileUtils::formatBytes(stats.savedBytes()));
+                              QString::number(currentStats.selectedFiles),
+                              FileUtils::formatBytes(currentStats.totalBytes),
+                              FileUtils::formatBytes(currentStats.selectedBytes));
 
-    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusDefect), strColDefect, QString::number(totalDefectsCount_m));
+    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusDefect), strColDefect, QString::number(currentStats.defects));
 
     // Here, stats.duplicates remains (the constant number of duplicates found).
-    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusDuplicate), strColDup.name(), QString::number(totalDuplicatesCount_m));
+    labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusDuplicate), strColDup.name(), QString::number(currentStats.duplicates));
 
     summaryLabel_m->setText(labelHtml);
 }
 
-void ReviewPage::updateItemVisuals(QStandardItem* nameItem, int status) {
-    if (!nameItem) return;
+void ReviewPage::applySmartCheck() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (!wiz) return;
 
-    qDebug() << "[ReviewPage] updateItemVisuals status:" << status;
+    QStandardItemModel* model = wiz->filesModel();
+    QSet<QString> seenHashes;
 
-    QStandardItemModel* model = wiz()->filesModel();
-    QStandardItem* parent = nameItem->parent() ? nameItem->parent() : model->invisibleRootItem();
-    QStandardItem* statusItem = parent->child(nameItem->row(), ColStatus);
+    // Block the signal to prevent handleItemChanged from running amok.
+    model->blockSignals(true);
 
-    if (!statusItem) return;
+    // recursively go through all items
+    auto applyRecursive = [&](auto self, QStandardItem* parent) -> void {
+        for (int i = 0; i < parent->rowCount(); ++i) {
+            QStandardItem* item = parent->child(i, ColName);
+            if (!item) continue;
 
-    // Basic reset
-    nameItem->setBackground(Qt::transparent);
-    statusItem->setText(FileManager::getStatusText(status));
-    statusItem->setForeground(QApplication::palette().text());
-
-    // Deletes the stored state, causing the box to disappear from the view.
-    statusItem->setData(QVariant(), Qt::CheckStateRole);
-    statusItem->setCheckable(false);
-
-    if (status == StatusManaged) {
-        QColor baseColor = FileManager::getStatusColor(StatusManaged);
-        statusItem->setForeground(baseColor);
-
-        QColor bgColor = baseColor;
-        bgColor.setAlpha(30);
-        nameItem->setBackground(bgColor);
-    }
-    else if (status == StatusReject) {
-        // Grey and neutral for discarded items
-        statusItem->setForeground(Qt::gray);
-    }
-    else if (status == StatusDuplicate) {
-        // Warning color orange, if it is still an "unprocessed" duplicate
-        statusItem->setForeground(FileManager::getStatusColor(StatusDuplicate));
-    }
-}
-
-// =============================================================================
-// --- Core logic (calculations & data processing)
-// =============================================================================
-
-ReviewStats ReviewPage::calculateGlobalStats() {
-    qDebug() << "[ReviewPage] calculateGlobalStats START";
-    ReviewStats stats;
-    QStandardItemModel* model = wiz()->filesModel();
-
-    // Use a recursive helper function to count all items in the source model.
-    countItemsRecursive(model->invisibleRootItem(), stats);
-
-    return stats;
-}
-
-void ReviewPage::countItemsRecursive(QStandardItem* parent, ReviewStats &stats) const {
-    qDebug() << "[ReviewPage] countItemsRecursive START";
-    for (int row = 0; row < parent->rowCount(); ++row) {
-        QStandardItem* item = parent->child(row, ColName);
-        if (!item) continue;
-
-        if (item->hasChildren()) {
-            // It's a folder -> further down
-            countItemsRecursive(item, stats);
-        } else {
-            // It's a file -> read values
+            QString hash = item->data(RoleFileHash).toString();
             int status = item->data(RoleFileStatus).toInt();
-            qint64 size = item->data(RoleFileSizeRaw).toLongLong();
 
-            stats.totalFiles_m++;
-            stats.totalBytes_m += size;
-
-            // The most important part: Counting what is ready for import.
-            if (item->checkState() == Qt::Checked || status == StatusManaged) {
-                stats.selectedFiles_m++;
-                stats.savedBytes_m += size;
+            if (status == StatusDuplicate) {
+                if (seenHashes.contains(hash)) {
+                    item->setCheckState(Qt::Unchecked);
+                } else {
+                    item->setCheckState(Qt::Checked);
+                    seenHashes.insert(hash);
+                }
+            } else if (status == StatusReady) {
+                item->setCheckState(Qt::Checked);
             }
+
+            if (item->hasChildren()) self(self, item);
         }
-    }
+    };
+
+    applyRecursive(applyRecursive, model->invisibleRootItem());
+    model->blockSignals(false);
+
+    updateUIStats();
 }
 
 void ReviewPage::collectHashesRecursive(QStandardItem* parent, QStringList &hashes) {
     if (!parent) return;
-
-    qDebug() << "[ReviewPage] collectHashesRecursive START";
 
     for (int i = 0; i < parent->rowCount(); ++i) {
         QStandardItem* child = parent->child(i, ColName);
@@ -631,13 +524,10 @@ void ReviewPage::collectHashesRecursive(QStandardItem* parent, QStringList &hash
 
 // Delete Guard
 QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
-    qDebug() << "[ReviewPage] getUnrecognizedFiles START";
     QStringList unrecognized;
     QDir dir(folderPath);
 
-    QStringList knownFilters = wiz()->getFileFilters();
-
-    qDebug() << "[ReviewPage] getUnrecognizedFiles knownFilters: " << knownFilters;
+    QStringList knownFilters = wiz()->activeFilters();
 
     QDirIterator it(folderPath, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
 
@@ -656,8 +546,7 @@ QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
 }
 
 bool ReviewPage::finishDialog() {
-    qDebug() << "[ReviewPage] finishDialog START";
-    ReviewStats stats = wiz()->proxyModel_m->calculateVisibleStats();
+    ReviewStats stats = wiz()->proxyModel()->calculateCurrentStats();
     QStringList unresolvedDups = getUnresolvedDuplicateNames();
 
     // The message text (HTML for better readability)
@@ -665,14 +554,14 @@ bool ReviewPage::finishDialog() {
                       "<h3>" + tr("Import summary") + "</h3>"
                                                                    "<p><b>" + tr("In total:") + "</b> %1 (%2)</p>"
                                         "<p><b>" + tr("Take over:") + "</b> <span style='color:green;'>%3 (%4)</span></p>"
-                                            "<p><b>" + tr("Defect:") + "</b> <span style='color:red;'>%5</span></p>"
-                                        "<p><b>" + tr("Duplicates:") + "</b> %6</p>"
-                      ).arg(QString::number(stats.totalFiles()),
-                           FileUtils::formatBytes(stats.totalBytes()),
-                           QString::number(stats.selectedFiles()),
-                           FileUtils::formatBytes(stats.savedBytes()),
-                           QString::number(stats.defects()),
-                           QString::number(totalDuplicatesCount_m));
+                                            "<p><b>" + tr("Corrupted files found (were skipped):") + "</b> <span style='color:red;'>%5</span></p>"
+                                        "<p><b>" + tr("Found duplicate files (managed by you):") + "</b> %6</p>"
+                      ).arg(QString::number(stats.totalFiles),
+                           FileUtils::formatBytes(stats.totalBytes),
+                           QString::number(stats.selectedFiles),
+                           FileUtils::formatBytes(stats.selectedBytes),
+                           QString::number(stats.defects),
+                           QString::number(stats.selectedBytes));
 
     // Add warning for unresolved duplicates
     if (!unresolvedDups.isEmpty()) {
@@ -693,14 +582,58 @@ bool ReviewPage::finishDialog() {
     QPushButton *confirmBtn = msgBox.addButton(tr("Take over"), QMessageBox::AcceptRole);
     msgBox.addButton(tr("Correct"), QMessageBox::RejectRole);
 
-
     msgBox.exec();
 
-    if (msgBox.clickedButton() == confirmBtn) {
+    if (msgBox.clickedButton() == static_cast<QAbstractButton*>(confirmBtn)) {
         return true;
     }
 
     return false;
+}
+
+QStringList ReviewPage::getUnresolvedDuplicateNames() {
+    qDebug() << "[ReviewPage] getUnresolvedDuplicateNames START";
+    QMap<int, bool> groupHasSelection;
+    QMap<int, QString> groupExampleName;
+
+    // Start the recursion at the root element.
+    checkFolderRecursive(wiz()->filesModel()->invisibleRootItem(), groupHasSelection, groupExampleName);
+
+    QStringList unresolved;
+    for (auto it = groupExampleName.begin(); it != groupExampleName.end(); ++it) {
+        if (!groupHasSelection.value(it.key(), false)) {
+            unresolved << it.value();
+        }
+    }
+    return unresolved;
+}
+
+void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
+                                      QMap<int, bool>& groupHasSelection,
+                                      QMap<int, QString>& groupExampleName) {
+    if (!parentItem) return;
+
+    for (int i = 0; i < parentItem->rowCount(); ++i) {
+        QStandardItem* item = parentItem->child(i, ColName);
+        if (!item) continue;
+
+        int gId = item->data(RoleDuplicateId).toInt();
+
+        if (gId > 0) {
+            if (!groupExampleName.contains(gId)) {
+                groupExampleName[gId] = item->text();
+            }
+            int status = item->data(RoleFileStatus).toInt();
+            if (item->checkState() == Qt::Checked || status == StatusManaged) {
+                groupHasSelection[gId] = true;
+            }
+        }
+
+        // Dive deeper into the tree (folders have children)
+        if (item->hasChildren()) {
+            checkFolderRecursive(item, groupHasSelection, groupExampleName);
+        }
+    }
 }
 
 void ReviewPage::onItemChanged(QStandardItem *item) {
@@ -724,8 +657,6 @@ void ReviewPage::addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameI
         return;
     }
 
-    qDebug() << "[ReviewPage] addDuplicateSectionToMenu START";
-
     QString fileName = nameIndex.data(Qt::DisplayRole).toString();
 
     // "Jump to Duplicate" submenu
@@ -737,7 +668,6 @@ void ReviewPage::addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameI
 
 void ReviewPage::addJumpToDuplicateActions(QMenu *jumpMenu, const QString &currentHash,
                                            const QString &currentPath) {
-    qDebug() << "[ReviewPage] addJumpToDuplicateActions START";
     QModelIndexList partners = findDuplicatePartners(currentHash);
     if (partners.isEmpty()) return;
 
@@ -753,7 +683,6 @@ void ReviewPage::addJumpToDuplicateActions(QMenu *jumpMenu, const QString &curre
 
 
 QModelIndexList ReviewPage::findDuplicatePartners(const QString &hash) {
-    qDebug() << "[ReviewPage] findDuplicatePartners START";
     return wiz()->filesModel()->match(
         wiz()->filesModel()->index(0, 0),
         RoleFileHash,
@@ -764,8 +693,7 @@ QModelIndexList ReviewPage::findDuplicatePartners(const QString &hash) {
 }
 
 void ReviewPage::jumpToDuplicate(const QModelIndex &sourceIndex) {
-    qDebug() << "[ReviewPage] jumpToDuplicate START";
-    QModelIndex proxyIndex = wiz()->proxyModel_m->mapFromSource(sourceIndex);
+    QModelIndex proxyIndex = wiz()->proxyModel()->mapFromSource(sourceIndex);
     if (!proxyIndex.isValid()) return;
 
     treeView_m->expand(proxyIndex.parent());
@@ -786,13 +714,11 @@ void ReviewPage::jumpToDuplicate(const QModelIndex &sourceIndex) {
 void ReviewPage::refreshDuplicateStatus(const QString &hash) {
     if (hash.isEmpty()) return;
 
-    qDebug() << "[ReviewPage] refreshDuplicateStatus START";
-
     QList<QStandardItem*> remainingItems;
     collectItemsByHashRecursive(wiz()->filesModel()->invisibleRootItem(), hash, remainingItems);
 
     if (remainingItems.size() == 1) {
-        QStandardItem* lastOne = remainingItems.first(); // Das ist ColName (0)
+        QStandardItem* lastOne = remainingItems.first();
 
         lastOne->setData(StatusReady, RoleFileStatus);
 
@@ -811,14 +737,10 @@ void ReviewPage::refreshDuplicateStatus(const QString &hash) {
         lastOne->setFont(font);
 
         lastOne->setCheckState(Qt::Checked);
-
-        debugItemInfo(lastOne, QString("refreshDuplicateStatus"));
     }
 }
 
 void ReviewPage::collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result) {
-    qDebug() << "[ReviewPage] collectItemsByHashRecursive START";
-
     for (int i = 0; i < parent->rowCount(); ++i) {
         QStandardItem* child = parent->child(i, ColName);
         if (!child) continue;
@@ -833,35 +755,16 @@ void ReviewPage::collectItemsByHashRecursive(QStandardItem* parent, const QStrin
     }
 }
 
-
-QStringList ReviewPage::getUnresolvedDuplicateNames() {
-    qDebug() << "[ReviewPage] getUnresolvedDuplicateNames START";
-    QMap<int, bool> groupHasSelection;
-    QMap<int, QString> groupExampleName;
-
-    // Start the recursion at the root element.
-    checkFolderRecursive(wiz()->filesModel()->invisibleRootItem(), groupHasSelection, groupExampleName);
-
-    QStringList unresolved;
-    for (auto it = groupExampleName.begin(); it != groupExampleName.end(); ++it) {
-        if (!groupHasSelection.value(it.key(), false)) {
-            unresolved << it.value();
-        }
-    }
-    return unresolved;
-}
-
-
 // =========================================================================
 // --- RECURSIVE HELPERS & UTILS
 // =========================================================================
 
 void ReviewPage::discardItemFromModel(const QModelIndex &proxyIndex) {
-    QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
+    QModelIndex sourceIndex = wiz()->proxyModel()->mapToSource(proxyIndex);
     QStandardItem *item = wiz()->filesModel()->itemFromIndex(sourceIndex);
     if (!item) return;
 
-    qDebug() << "[ReviewPage] discardItemFromModel START";
+    qDebug() << "[ReviewPage::discardItemFromModel] START";
 
     QString name = item->text();
     bool isFolder = QFileInfo(item->data(RoleFilePath).toString()).isDir();
@@ -891,29 +794,23 @@ void ReviewPage::discardItemFromModel(const QModelIndex &proxyIndex) {
     for (const QString &h : std::as_const(affectedHashes)) {
         refreshDuplicateStatus(h);
     }
-
-    updateUIStats();
+    emit completeChanged();
 }
 
 void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
-    qDebug() << "[ReviewPage] deleteItemPhysically START";
-
     // Retrieve source index (since we are using a proxy model)
-    QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
+    QModelIndex sourceIndex = wiz()->proxyModel()->mapToSource(proxyIndex);
     QStandardItem *item = wiz()->filesModel()->itemFromIndex(sourceIndex);
+
+    if (!item) return;
 
     QString rawPath = item->data(RoleFilePath).toString();
     QString cleanPath = QDir::cleanPath(rawPath);
-
-    qDebug() << "[ReviewPage] Try folder check for:" << cleanPath;
-    if (!item) return;
-
 
     QString fileHash = item->data(RoleFileHash).toString();
     QFileInfo fileInfo(cleanPath);
     bool isFolder = fileInfo.isDir();
 
-    qDebug() << "[ReviewPage] deleteItemPhysically isFolder: " << isFolder;
     if (isFolder) {
         QStringList unknown = getUnrecognizedFiles(cleanPath);
 
@@ -953,7 +850,7 @@ void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
             refreshDuplicateStatus(fileHash);
         }
 
-        qDebug() << "Successfully deleted: " << cleanPath;
+        qInfo() << "Successfully deleted: " << cleanPath;
     } else {
         QMessageBox::critical(this, tr("Error"), tr("The file could not be deleted."));
     }
@@ -962,7 +859,6 @@ void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
 void ReviewPage::addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &proxyIndex,
                                              const QString &currentPath) {
     if (currentPath.isEmpty()) return;
-    qDebug() << "[ReviewPage] addFileActionsSectionToMenu START";
 
     QFileInfo fileInfo(currentPath);
     if (fileInfo.isDir()) {
@@ -984,76 +880,59 @@ void ReviewPage::addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &pro
     });
 
     if (expertModeCheck_m->isChecked()) {
-        int status = proxyIndex.data(RoleFileStatus).toInt();
-        QString hash = proxyIndex.data(RoleFileHash).toString();
-        if (status == StatusDuplicate) {
-            menu->addSeparator();
-            menu->addAction(tr("Delete duplicate %1").arg(currentPath), this, [this, proxyIndex](){
-                deleteItemPhysically(proxyIndex);
-            });
-        } else if (hash.isEmpty()) {
-            menu->addSeparator();
-            menu->addAction(tr("Delete directory %1").arg(currentPath), this, [this, proxyIndex](){
-                deleteItemPhysically(proxyIndex);
-            });
-        }
+        menu->addSeparator();
+        menu->addAction(tr("Delete %1").arg(currentPath), this, [this, proxyIndex](){
+            deleteItemPhysically(proxyIndex);
+        });
         menu->addSeparator();
     }
 }
 
 void ReviewPage::addStandardActionsToMenu(QMenu *menu) {
-    qDebug() << "[ReviewPage] addStandardActionsToMenu START";
-
-    menu->addAction(tr("Select all"), this, [this]() { setAllCheckStates(Qt::Checked); });
-    menu->addAction(tr("Clear selection"), this, [this]() { setAllCheckStates(Qt::Unchecked); });
+    menu->addAction(tr("Select all"), this, [this]() {
+        setAllCheckStates(Qt::Checked);
+    });
+    menu->addAction(tr("Clear selection"), this, [this]() {
+        setAllCheckStates(Qt::Unchecked);
+    });
 }
 
+void ReviewPage::setAllCheckStates(Qt::CheckState state) {
+    if (!wiz()->filesModel()) return;
+    wiz()->filesModel()->blockSignals(true);
 
-// =============================================================================
-// --- UTILS (Recursive Helpers)
-// =============================================================================
-
-void ReviewPage::recursiveCheckChilds(QStandardItem* parentItem, Qt::CheckState state) {
-    qDebug() << "[ReviewPage] recursiveCheckChilds START";
-    for (int i = 0; i < parentItem->rowCount(); ++i) {
-        QStandardItem* child = parentItem->child(i, ColName);
-        if (child) {
-            child->setCheckState(state);
-
-            // Child status update
-            int gId = child->data(RoleDuplicateId).toInt();
-            int status = (state == Qt::Checked) ? StatusManaged :
-                             (gId > 0 ? StatusDuplicate : StatusReady);
-
-            child->setData(status, RoleFileStatus);
-
-            debugItemInfo(child, QString("recursiveCheckChilds"));
-
-            updateItemVisuals(child, status);
-
-            // Go deeper if the child is a folder again
-            if (child->hasChildren()) {
-                recursiveCheckChilds(child, state);
-            }
+    // Iterate directly over the source model (including filtered items!).
+    for (int row = 0; row < wiz()->filesModel()->rowCount(); ++row) {
+        QStandardItem* item = wiz()->filesModel()->item(row, ColName);
+        if (item) {
+            setCheckStateRecursive(item, state);
         }
     }
+
+    wiz()->filesModel()->blockSignals(false);
+
+    treeView_m->viewport()->update();
+    emit completeChanged();
 }
 
 void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState state) {
     if (!item) return;
 
-    qDebug() << "[ReviewPage] setCheckStateRecursive START";
+    if(item->data(RoleIsFolder).toBool()) {
+        item->setCheckable(false);
+    }
 
     if (item->column() == ColName) {
-        if (item->data(RoleFileStatus).toInt() != StatusDefect) {
-            item->setCheckState(state);
+        // It should only be unselectable if it is defective.
+        if (item->data(RoleFileStatus).toInt() == StatusDefect) {
+            item->setCheckState(Qt::Unchecked);
+        } else {
+            item->setCheckState(state); // Set the actually selected status
         }
     } else {
         // If we end up here, we'll clear the column just to be safe.
         item->setData(QVariant(), Qt::CheckStateRole);
-        item->setCheckable(false);
-
-        debugItemInfo(item,  QString("setCheckStateRecursive"));
+        item->setCheckable(true);
     }
 
     for (int row = 0; row < item->rowCount(); ++row) {
@@ -1062,137 +941,9 @@ void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState stat
             setCheckStateRecursive(child, state);
         }
     }
+    emit completeChanged();
 }
 
-void ReviewPage::searchGroupRecursive(QStandardItem* parent, int groupId, QList<QStandardItem*>& results) {
-    qDebug() << "[ReviewPage] searchGroupRecursive START";
-    for (int i = 0; i < parent->rowCount(); ++i) {
-        // always search in the name column (ColName).
-        QStandardItem* child = parent->child(i, ColName);
-        if (!child) continue;
-
-        if (child->data(RoleDuplicateId).toInt() == groupId) {
-            results.append(child);
-        }
-
-        if (child->hasChildren()) {
-            searchGroupRecursive(child, groupId, results);
-        }
-    }
-}
-
-void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
-                                      QMap<int, bool>& groupHasSelection,
-                                      QMap<int, QString>& groupExampleName) {
-    if (!parentItem) return;
-
-    qDebug() << "[ReviewPage] checkFolderRecursive START";
-
-    for (int i = 0; i < parentItem->rowCount(); ++i) {
-        QStandardItem* item = parentItem->child(i, ColName);
-        if (!item) continue;
-
-        int gId = item->data(RoleDuplicateId).toInt();
-
-        if (gId > 0) {
-            if (!groupExampleName.contains(gId)) {
-                groupExampleName[gId] = item->text();
-            }
-            int status = item->data(RoleFileStatus).toInt();
-            if (item->checkState() == Qt::Checked || status == StatusManaged) {
-                groupHasSelection[gId] = true;
-            }
-        }
-
-        // Dive deeper into the tree (folders have children)
-        if (item->hasChildren()) {
-            checkFolderRecursive(item, groupHasSelection, groupExampleName);
-        }
-    }
-}
-
-
-QStringList ReviewPage::getPathParts(const QString& fullPath) {
-    QStringList* cached = pathPartsCache_m->object(fullPath);
-    if (cached) return *cached;
-    qDebug() << "[ReviewPage] getPathParts START";
-
-    QStringList parts = fullPath.split('/', Qt::SkipEmptyParts);
-    pathPartsCache_m->insert(fullPath, new QStringList(parts));
-    return parts;
-}
-
-bool ReviewPage::isRootExpanded() {
-    qDebug() << "[ReviewPage] isRootExpanded START";
-    return treeView_m->isExpanded(treeView_m->model()->index(0, 0));
-}
-
-
-// =============================================================================
-// --- Debugging
-// =============================================================================
-
-void ReviewPage::debugRoles(QModelIndex indexAtPos) {
-    // 1. Mappe zum Source-Model
-    QModelIndex srcIdx = wiz()->proxyModel_m->mapToSource(indexAtPos);
-    if (!srcIdx.isValid()) {
-        qDebug() << "index from model not valid";
-        return;
-    }
-
-    QModelIndex realName  = srcIdx.siblingAtColumn(ColName);
-    QModelIndex realSize = srcIdx.siblingAtColumn(ColSize);
-    QModelIndex realStatus = srcIdx.siblingAtColumn(ColStatus);
-
-    QStandardItem* itemRealName = wiz()->filesModel()->itemFromIndex(realName);
-    if (!itemRealName) {
-        qDebug() << "item ColName does not exist";
-        qDebug() << "-------------------------------------------------------------------------";
-    } else {
-        qDebug() << "ColName / RoleFileInfo : " << itemRealName->data(RoleFileInfo);
-        qDebug() << "ColName / RoleFileSizeRaw : " << itemRealName->data(RoleFileSizeRaw);
-        qDebug() << "ColName / RoleFilePath : " << itemRealName->data(RoleFilePath);
-        qDebug() << "ColName / RoleFileStatus : " << itemRealName->data(RoleFileStatus);
-        qDebug() << "ColName / RoleFileHash : " << itemRealName->data(RoleFileHash);
-        qDebug() << "ColName / RoleIsFolder : " << itemRealName->data(RoleIsFolder);
-        qDebug() << "ColName / RoleItemType : " << itemRealName->data(RoleItemType);
-        qDebug() << "-------------------------------------------------------------------------";
-    }
-
-    QStandardItem* itemRealSize = wiz()->filesModel()->itemFromIndex(realSize);
-    if (!itemRealSize) {
-        qDebug() << "item ColSize does not exist";
-        qDebug() << "-------------------------------------------------------------------------";
-    } else {
-        qDebug() << "ColSize / RoleFileInfo : " << itemRealSize->data(RoleFileInfo);
-        qDebug() << "ColSize / RoleFileSizeRaw : " << itemRealSize->data(RoleFileSizeRaw);
-        qDebug() << "ColSize / RoleFilePath : " << itemRealSize->data(RoleFilePath);
-        qDebug() << "ColSize / RoleFileStatus : " << itemRealSize->data(RoleFileStatus);
-        qDebug() << "ColSize / RoleFileHash : " << itemRealSize->data(RoleFileHash);
-        qDebug() << "ColSize / RoleIsFolder : " << itemRealSize->data(RoleIsFolder);
-        qDebug() << "ColSize / RoleItemType : " << itemRealSize->data(RoleItemType);
-        qDebug() << "-------------------------------------------------------------------------";
-    }
-
-    QStandardItem* itemRealStatus = wiz()->filesModel()->itemFromIndex(realStatus);
-    if (!itemRealStatus) {
-        qDebug() << "item ColStatus does not exist";
-        qDebug() << "-------------------------------------------------------------------------";
-    } else {
-        qDebug() << "ColStatus / RoleFileInfo : " << itemRealStatus->data(RoleFileInfo);
-        qDebug() << "ColStatus / RoleFileSizeRaw : " << itemRealStatus->data(RoleFileSizeRaw);
-        qDebug() << "ColStatus / RoleFilePath : " << itemRealStatus->data(RoleFilePath);
-        qDebug() << "ColStatus / RoleFileStatus : " << itemRealStatus->data(RoleFileStatus);
-        qDebug() << "ColStatus / RoleFileHash : " << itemRealStatus->data(RoleFileHash);
-        qDebug() << "ColStatus / RoleIsFolder : " << itemRealStatus->data(RoleIsFolder);
-        qDebug() << "ColStatus / RoleItemType : " << itemRealStatus->data(RoleItemType);
-        qDebug() << "-------------------------------------------------------------------------";
-    }
-}
-
-void ReviewPage::debugItemInfo(QStandardItem* item, QString fromFunc) {
-    if (item->column() != ColName && item->data(Qt::CheckStateRole).isValid()) {
-        qWarning() << "ERROR: in (" << fromFunc << "): in column " << item->column()
-        << "has a checkbox! Path: " << item->data(RoleFilePath).toString();
-    }
+bool ReviewPage::validatePage() {
+    return finishDialog();
 }

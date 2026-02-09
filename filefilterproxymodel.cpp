@@ -35,22 +35,27 @@ void FileFilterProxyModel::setFilterMode(FilterMode mode) {
 * @return true if the row meets the criteria, otherwise false.
 */
 bool FileFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
-    QModelIndex index = sourceModel()->index(sourceRow, ColName, sourceParent);
+    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
     if (!filterRegularExpression().pattern().isEmpty()) {
         return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
     }
 
+    int status = sourceModel()->data(index, RoleFileStatus).toInt();
+
+    // 1. Dateien, die bereits in der DB sind, immer ausblenden
+    if (status == StatusAlreadyInDatabase) {
+        return false;
+    }
+
+    // 2. Deine bestehende Filter-Logik nach Modus
     if (currentMode_m == ModeDuplicates) {
-        int status = index.data(RoleFileStatus).toInt();
-        return (status == StatusDuplicate);
+        return (status == ModeDuplicates);
+    } else if (currentMode_m == ModeErrors) {
+        return (status == ModeErrors);
     }
 
-    if (currentMode_m == ModeErrors) {
-        int status = index.data(RoleFileStatus).toInt();
-        return (status == StatusDefect);
-    }
-
-    return true;
+    // 3. Suche/RegExp (falls gesetzt)
+    return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
 /**
@@ -135,45 +140,29 @@ void FileFilterProxyModel::collectPathsRecursive(const QModelIndex &parent, QStr
     }
 }
 
-/**
-* @brief Calculates statistics for all files currently visible in the view.
-* Recursively traverses the (filtered) model tree and aggregates:
-* - Number of duplicates and defects.
-* - Total number of files and their file sizes.
-* - Number of checked files and the amount of storage space saved.
-* Because the function uses the 'rowCount' and 'index' of the proxy model,
-* hidden rows are automatically ignored.
-* @param parent The starting index for the statistical analysis.
-* @return A ReviewStats object containing the accumulated values.
-*/
-ReviewStats FileFilterProxyModel::calculateVisibleStats(const QModelIndex &parent) {
+ReviewStats FileFilterProxyModel::calculateCurrentStats() const {
     ReviewStats stats;
-    int rows = rowCount(parent);
+    updateStatsRecursive(QModelIndex(), stats);
+    return stats;
+}
 
-    for (int i = 0; i < rows; ++i) {
-        QModelIndex proxyIndex = index(i, ColName, parent);
+void FileFilterProxyModel::updateStatsRecursive(const QModelIndex &parent, ReviewStats &stats) const {
+    QAbstractItemModel* src = sourceModel();
+    for (int r = 0; r < src->rowCount(parent); ++r) {
+        QModelIndex idx = src->index(r, 0, parent);
+        if (src->hasChildren(idx)) {
+            updateStatsRecursive(idx, stats);
+        } else {
+            // Hier die Logik aus collectPathsRecursive nutzen
+            long long size = src->data(idx, RoleFileStatus).toLongLong();
+            int status = src->data(idx, RoleFileStatus).toInt();
+            bool checked = (src->data(idx, Qt::CheckStateRole).toInt() == Qt::Checked);
 
-        if (hasChildren(proxyIndex)) {
-            stats.add(calculateVisibleStats(proxyIndex));
-            continue;
-        }
-
-        int status = proxyIndex.data(RoleFileStatus).toInt();
-        qint64 size = data(proxyIndex, RoleFileSizeRaw).toLongLong();
-
-        if (status == StatusDuplicate) {
-            stats.duplicates_m++;
-        } else if (status == StatusDefect) {
-            stats.defects_m++;
-        }
-
-        stats.totalFiles_m++;
-        stats.totalBytes_m += size;
-
-        if (data(proxyIndex, Qt::CheckStateRole).toInt() == Qt::Checked) {
-            stats.selectedFiles_m++;
-            stats.savedBytes_m += size;
+            stats.addFile(size, (status == StatusDuplicate), (status == StatusDefect));
+            if (checked) {
+                stats.selectedFiles++;
+                stats.selectedBytes += size;
+            }
         }
     }
-    return stats;
 }

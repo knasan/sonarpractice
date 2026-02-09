@@ -24,8 +24,8 @@ protected:
     void paintEvent(QPaintEvent *e) override;
 
 private:
-    QColor base_m       = QColor("#2FA8FF");
-    QColor pulseColor_m = QColor("#7CFFEC");
+    QColor base_m = QColor(47, 168, 255);
+    QColor pulseColor_m = QColor(124, 255, 236);
     qreal  pulse_m      = 0.0; // 0..1
 };
 

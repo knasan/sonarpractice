@@ -31,6 +31,7 @@ private:
     [[nodiscard]] int countFiles(QStandardItem* item);
 
 
+
     QTreeView *sourceView_m;
     QTreeView *targetView_m;
 
@@ -55,6 +56,7 @@ private slots:
     void resetMapping();
     void applyFilter(const QString &filterText);
     [[nodiscard]] bool filterItemRecursive(QStandardItem *item, const QString &filterText);
+    void restartApp();
 };
 
 #endif
