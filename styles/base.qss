@@ -198,6 +198,30 @@ QHeaderView::section {
 
 /* --- Kalender-Styling (lessonCalendar) --- */
 
+/* Spezieller Fix für die Wochennummern unter Linux */
+QCalendarWidget#lessonCalendar QWidget#qt_calendar_prevmonth,
+QCalendarWidget#lessonCalendar QWidget#qt_calendar_nextmonth {
+    background-color: #2d2d2d;
+}
+
+/* Dies spricht die Tabelle und die Seitenspalte direkt an */
+QCalendarWidget#lessonCalendar QAbstractItemView {
+    background-color: #1e1e1e; /* [cite: 28] */
+    border: none;
+}
+
+/* Der entscheidende Teil für die vertikale Header-Säule (Wochennummern) */
+QCalendarWidget#lessonCalendar QHeaderView {
+    background-color: #252A31; /* [cite: 18] */
+    border: none;
+}
+
+QCalendarWidget#lessonCalendar QHeaderView::section {
+    background-color: #252A31; /* [cite: 25] */
+    color: #888;
+    border: none;
+}
+
 QCalendarWidget#lessonCalendar {
     background-color: #1e1e1e;
     border: 1px solid #3d3d3d;
