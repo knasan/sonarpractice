@@ -111,7 +111,7 @@ MainWindow::~MainWindow() {}
 
 /*void MainWindow::reloadStyle() {
     qDebug() << "Load Style";
-    QFile file(":/main.qss"); // Pfad zu deiner Ressource
+    QFile file(":/base.qss"); // Pfad zu deiner Ressource
     if (file.open(QFile::ReadOnly)) {
         QString styleSheet = QLatin1String(file.readAll());
         qApp->setStyleSheet(styleSheet);
@@ -123,14 +123,14 @@ MainWindow::~MainWindow() {}
 void MainWindow::reloadStyle() {
     // 1. Pfad zu deiner echten Datei auf der Festplatte (NICHT die Ressource)
     // Ersetze den Pfad durch deinen tatsächlichen Pfad zur Datei!
-    QString diskPath = "C:/Users/smk/Develop/03_Projects/SonarPractice/styles/main.qss";
+    QString diskPath = "C:/Users/smk/Develop/03_Projects/SonarPractice/styles/base.qss";
 
     QFile file(diskPath);
 
     // Falls die Datei auf der Platte nicht gefunden wird (z.B. beim User),
     // nimm die eingebaute Ressource als Fallback
     if (!file.exists()) {
-        file.setFileName(":/main.qss");
+        file.setFileName(":/base.qss");
     }
 
     if (file.open(QFile::ReadOnly)) {

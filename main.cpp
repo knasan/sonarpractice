@@ -21,7 +21,12 @@ void myMessageHandler(QtMsgType type, const QMessageLogContext &context, const Q
     QString logPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(logPath);
 
-    QFile outFile(logPath + "/sonar_log.txt");
+    #ifdef QT_DEBUG
+        QFile outFile(logPath + "/sonar_log_debug.txt");
+    #else
+        QFile outFile(logPath + "/sonar_log.txt");
+    #endif
+
     // Append mode: New logs are appended at the bottom.
     if (outFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
         QTextStream ts(&outFile);
@@ -59,10 +64,8 @@ int main(int argc, char *argv[])
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 
     #ifdef QT_DEBUG
-        qDebug() << "in debug";
         QString dbPath = appDataDir + "/sonar_practice_debug.db";
     #else
-        qDebug() << "in release";
         qInstallMessageHandler(myMessageHandler);
         QString dbPath = appDataDir + "/sonar_practice.db";
     #endif
@@ -93,7 +96,6 @@ int main(int argc, char *argv[])
 
     if (isSetupNeeded(dbPath)) {
         qInfo() << "SonarPractice setup wizard started";
-        // a.setStyleSheet(loadQss(":/wizard.qss"));
         SetupWizard wizard;
 
         QFileInfo dbInfo(dbPath);
@@ -108,8 +110,6 @@ int main(int argc, char *argv[])
         if (wizard.exec() == QDialog::Rejected) {
             return 0;
         }
-    } else {
-        // a.setStyleSheet(loadQss(":/app.qss"));
     }
 
     // Database connection

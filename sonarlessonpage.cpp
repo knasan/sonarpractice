@@ -445,7 +445,7 @@ void SonarLessonPage::onTimerButtonClicked() {
         isTimerRunning_m = false;
         timerBtn_m->setText(tr("Start Timer"));
         timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-        //timerBtn_m->setStyleSheet("");
+        timerBtn_m->setStyleSheet("background-color: transparent;");
 
         addTimeToTable(minutes);
         lcdNumber_m->display("00:00");
@@ -478,6 +478,7 @@ void SonarLessonPage::onSongChanged(int index) {
     }
 
     isLoading_m = true;
+    isPlaceholderActive_m = true;
 
     currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
     // qDebug() << "[SonarLessonPage] onSongChanged index: " << index << " currentSonPath_m : " << currentSongPath_m;
