@@ -30,6 +30,19 @@ public:
         QString pathOrUrl;
     };
 
+    struct SongDetails
+    {
+        qlonglong id;
+        qlonglong songId;
+        QString title;
+        QString artist;
+        QString tuning;
+        QString filePath;
+        QString fullPath;
+        int bpm;
+        int practice_bpm;
+    };
+
     // Singleton & Lifecycle
     static DatabaseManager& instance();
     DatabaseManager(const DatabaseManager&) = delete;
@@ -37,7 +50,6 @@ public:
     explicit DatabaseManager(QObject *parent = nullptr) : QObject(parent) {}
     [[nodiscard]] bool initDatabase(const QString &dbPath);
     void closeDatabase();
-    QSqlDatabase database() const;
 
     // Setup & Metadata (Initialization & Versioning)
     [[nodiscard]] bool createInitialTables();
@@ -51,7 +63,8 @@ public:
     [[nodiscard]] QString getManagedPath();
     [[nodiscard]] qlonglong createSong(const QString &title,
                                        const QString &artist = "Unknown",
-                                       const QString &tuning = "Unknown");
+                                       const QString &tuning = "Unknown",
+                                       const int bpm = 0);
 
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
@@ -65,7 +78,6 @@ public:
     [[nodiscard]] bool deleteFileRecord(int fileId);
 
     // File queries
-    [[nodiscard]] QList<RelatedFile> getResourcesForSong(int songId);
     [[nodiscard]] QList<RelatedFile> getFilesByRelation(int fileId);
     [[nodiscard]] QList<RelatedFile> getRelatedFiles(const int songId, const int excludeFileId = 0);
 
@@ -80,11 +92,27 @@ public:
     [[nodiscard]] bool saveOrUpdateNote(int songId, QDate date, const QString &note);
     [[nodiscard]] bool updateSongNotes(int songId, const QString &notes, QDate date);
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
+    [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
+    [[nodiscard]] QList<DatabaseManager::SongDetails> loadData();
 
     // Statistics & Dashboard
     [[nodiscard]] QMap<int, QString> getPracticedSongsForDay(QDate date);
     [[nodiscard]] QString getPracticeSummaryForDay(QDate date);
     [[nodiscard]] QList<QDate> getAllPracticeDates();
+
+    [[nodiscard]] bool isReminderCompleted(int reminderId);
+    [[nodiscard]] bool addReminder(int songId,
+                                   int startBar,
+                                   int endBar,
+                                   int bpm,
+                                   bool isDaily,
+                                   bool isMonthly,
+                                   int weekday,
+                                   const QString &reminderDate);
+
+    [[nodiscard]] bool deleteReminder(int reminderId);
+
+    [[nodiscard]] QVariantList getRemindersForDate(const QDate &date);
 
     // Settings (configuration)
     [[nodiscard]] bool setSetting(const QString &key, const QVariant &value);
@@ -98,8 +126,6 @@ public:
 
 private:
     [[nodiscard]] int getOrCreateUserId(const QString &name, const QString &role = "student");
-
-    QSqlDatabase db_m;
 };
 
 #endif // DATABASEMANAGER_H

@@ -27,6 +27,7 @@ MappingPage::MappingPage(QWidget *parent) : BasePage(parent) {
     sourceModel_m = new QStandardItemModel(this);
 
     sourceView_m = new QTreeView(this);
+
     sourceView_m->setModel(sourceModel_m);
 
     // Target
@@ -219,8 +220,6 @@ bool MappingPage::eventFilter(QObject *obj, QEvent *event) {
             // Keep the focus in the field so the user can continue typing.
             searchLineEdit_m->selectAll();
 
-            // qDebug() << "Enter is used for search - Next button is blocked";
-
             return true; // IMPORTANT: If Qt says "Event complete", it does not pass to the Wizard!
         }
     }
@@ -377,7 +376,6 @@ void MappingPage::unmapItem() {
 }
 
 QStandardItem* MappingPage::reconstructPathInSource(const QString &fullPath) {
-    qDebug() << "[MappingPage] reconstructPathInSource fullPath: " << fullPath;
     if (fullPath.isEmpty()) {
         return sourceModel_m->invisibleRootItem();
     }
@@ -386,8 +384,7 @@ QStandardItem* MappingPage::reconstructPathInSource(const QString &fullPath) {
 
     // If it's a file, we'll use the folder path. If it's already a path, we'll use that.
     QString relativePath = fileInfo.isDir() ? fullPath : fileInfo.path();
-    qDebug() << "[MappingPage] reconstructPathInSource relativePath: " << fullPath;
-
+    
     // Normalization for Windows/Linux
     relativePath = QDir::fromNativeSeparators(relativePath);
 
@@ -500,8 +497,6 @@ bool MappingPage::validatePage() {
     QList<ImportTask> tasks;
     collectTasksFromModel(targetModel_m->item(ColName), "", tasks);
 
-    qDebug() << "[MappingPage] vilidatePage: tasks size: " << tasks.size();
-
     if (tasks.isEmpty()) {
         return QMessageBox::question(this, tr("Empty import"),
                                      tr("No files were selected for import. Continue?")) == QMessageBox::Yes;
@@ -529,10 +524,7 @@ bool MappingPage::validatePage() {
         connect(&processor, &ImportProcessor::progressUpdated, &progress, &QProgressDialog::setValue);
 
         // Carry out
-        qDebug() << "[MappingPage] executeImport in validatePage";
         success = processor.executeImport(tasks, musicBasePath, isManaged);
-        qDebug() << "[MappingPage] executeImport success: " << success;
-
     }
 
     if (success) {
@@ -592,7 +584,7 @@ void MappingPage::collectTasksFromModel(QStandardItem* parent, QString currentCa
 
             t.relativePath = currentCategoryPath + "/" + t.itemName;
 
-            qDebug() << "[MappingPage] collectTasksFromModel t.sourcePath: " << t.sourcePath;
+            /* qDebug() << "[MappingPage] collectTasksFromModel t.sourcePath: " << t.sourcePath;
             qDebug() << "[MappingPage] collectTasksFromModel t.itemName: " << t.itemName;
             qDebug() << "[MappingPage] collectTasksFromModel t.fileHash: " << t.fileHash;
             qDebug() << "[MappingPage] collectTasksFromModel t.fileSize: " << t.fileSize;
@@ -600,7 +592,7 @@ void MappingPage::collectTasksFromModel(QStandardItem* parent, QString currentCa
             qDebug() << "[MappingPage] collectTasksFromModel t.categoryPath: " << t.categoryPath;
             qDebug() << "[MappingPage] collectTasksFromModel t.relativePath: " << t.relativePath;
             qDebug() << "[MappingPage] collectTasksFromModel currentCategoryPath: " << currentCategoryPath;
-            qDebug() << "------------------------------------------------------------------------------------";
+            qDebug() << "------------------------------------------------------------------------------------"; */
 
             tasks.append(t);
         }

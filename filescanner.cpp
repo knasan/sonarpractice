@@ -75,13 +75,12 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters) {
     for (ScanBatch &batch : allBatches) {
         // If the file has already been marked as defective, we will no longer touch it.
         if (batch.status == StatusDefect) {
-            // stats.addDefect();
             continue;
         }
 
         if (batch.status == StatusAlreadyInDatabase) {
             batch.status = StatusAlreadyInDatabase;
-            continue; // Diese Dateien dürfen NICHT als StatusDuplicate markiert werden!
+            continue;
         }
 
         // Check if the hash occurs multiple times.
@@ -99,8 +98,6 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters) {
     if (!pendingBatches.isEmpty()) emit batchesFound(pendingBatches);
 
     qDebug() << "Scan completed after:" << timer.elapsed() / 1000.0 << "s";
-    // Finales Signal senden
-    // emit batchesFound(allBatches);
     emit finishWithAllBatches(allBatches, stats);
     emit finished(stats);
 

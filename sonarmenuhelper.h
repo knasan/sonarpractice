@@ -39,7 +39,7 @@ public:
         // QAction* importFileAction = importMenu->addAction(QObject::tr("File..."));
         // QAction* importDirAction = importMenu->addAction(QObject::tr("Directory..."));
 
-        // Connect zu einer Methode in deinem MainWindow, die den Dialog steuert
+        // Connect to a method in your MainWindow that controls the dialog.
         // QObject::connect(importDirAction, &QAction::triggered, window, &MainWindow::handleDirectoryImport);
         // ----------------------------------------------------------------------------------------------------
 

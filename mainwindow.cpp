@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent)
     dbManager_m = new DatabaseManager(this);
 
     // Prepare page
-    lessonPage_m = new SonarLessonPage(this, dbManager_m);
+    lessonPage_m = new SonarLessonPage(dbManager_m, this);
     libraryPage_m = new LibraryPage();
 
     // Create a central widget and layout

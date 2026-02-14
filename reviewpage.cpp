@@ -285,8 +285,6 @@ void ReviewPage::handleItemChanged(QStandardItem *item) {
     static bool isUpdating = false;
     if (isUpdating) return;
 
-    qDebug() << "[ReviewPage] handleItemChanged START";
-
     isUpdating = true;
 
     int groupId = item->data(RoleDuplicateId).toInt();
@@ -365,7 +363,6 @@ void ReviewPage::setAllCheckStates(Qt::CheckState state) {
 
 // block return by search line (don't delete this)
 bool ReviewPage::eventFilter(QObject *obj, QEvent *event) {
-    // qDebug() << "[ReviewPage] eventFilter START";
     if (obj == searchLineEdit_m && event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
@@ -375,8 +372,6 @@ bool ReviewPage::eventFilter(QObject *obj, QEvent *event) {
 
             // Keep the focus in the field so the user can continue typing.
             searchLineEdit_m->selectAll();
-
-            // qDebug() << "Enter is used for search - Next button is blocked";
 
             return true;
         }
@@ -388,14 +383,11 @@ bool ReviewPage::eventFilter(QObject *obj, QEvent *event) {
 // --- private --
 
 void ReviewPage::sideConnections() {
-    // qDebug() << "[ReviewPage] sideConnections START";
-
     // Signals connect
     connect(treeView_m, &QTreeView::customContextMenuRequested,
             this, &ReviewPage::showContextMenu);
 
     connect(collabsTree_m, &QCheckBox::checkStateChanged, this, [this](int state) {
-        // qDebug() << "checkStateChanged live in connect";
         if (state == Qt::Checked) {
             treeView_m->expandAll();
         } else {
@@ -476,8 +468,6 @@ void ReviewPage::updateUIStats() {
         return;
     }
 
-    qDebug() << "[ReviewPage] updateUIStats START";
-
     // qDebug() << "[ReviewPage] updateUIStats START";
     // Wir holen die Basis-Stats (für totalFiles, defects, etc.)
     // ReviewStats stats = wiz()->fileManager()->calculateStats(wiz()->filesModel());
@@ -530,8 +520,6 @@ void ReviewPage::updateUIStats() {
 void ReviewPage::updateItemVisuals(QStandardItem* nameItem, int status) {
     if (!nameItem) return;
 
-    qDebug() << "[ReviewPage] updateItemVisuals status:" << status;
-
     QStandardItemModel* model = wiz()->filesModel();
     QStandardItem* parent = nameItem->parent() ? nameItem->parent() : model->invisibleRootItem();
     QStandardItem* statusItem = parent->child(nameItem->row(), ColStatus);
@@ -570,7 +558,6 @@ void ReviewPage::updateItemVisuals(QStandardItem* nameItem, int status) {
 // =============================================================================
 
 ReviewStats ReviewPage::calculateGlobalStats() {
-    qDebug() << "[ReviewPage] calculateGlobalStats START";
     ReviewStats stats;
     QStandardItemModel* model = wiz()->filesModel();
 
@@ -581,7 +568,6 @@ ReviewStats ReviewPage::calculateGlobalStats() {
 }
 
 void ReviewPage::countItemsRecursive(QStandardItem* parent, ReviewStats &stats) const {
-    qDebug() << "[ReviewPage] countItemsRecursive START";
     for (int row = 0; row < parent->rowCount(); ++row) {
         QStandardItem* item = parent->child(row, ColName);
         if (!item) continue;
@@ -609,8 +595,6 @@ void ReviewPage::countItemsRecursive(QStandardItem* parent, ReviewStats &stats) 
 void ReviewPage::collectHashesRecursive(QStandardItem* parent, QStringList &hashes) {
     if (!parent) return;
 
-    qDebug() << "[ReviewPage] collectHashesRecursive START";
-
     for (int i = 0; i < parent->rowCount(); ++i) {
         QStandardItem* child = parent->child(i, ColName);
         if (!child) continue;
@@ -631,13 +615,10 @@ void ReviewPage::collectHashesRecursive(QStandardItem* parent, QStringList &hash
 
 // Delete Guard
 QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
-    qDebug() << "[ReviewPage] getUnrecognizedFiles START";
     QStringList unrecognized;
     QDir dir(folderPath);
 
     QStringList knownFilters = wiz()->getFileFilters();
-
-    qDebug() << "[ReviewPage] getUnrecognizedFiles knownFilters: " << knownFilters;
 
     QDirIterator it(folderPath, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
 
@@ -656,7 +637,6 @@ QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
 }
 
 bool ReviewPage::finishDialog() {
-    qDebug() << "[ReviewPage] finishDialog START";
     ReviewStats stats = wiz()->proxyModel_m->calculateVisibleStats();
     QStringList unresolvedDups = getUnresolvedDuplicateNames();
 
@@ -693,7 +673,6 @@ bool ReviewPage::finishDialog() {
     QPushButton *confirmBtn = msgBox.addButton(tr("Take over"), QMessageBox::AcceptRole);
     msgBox.addButton(tr("Correct"), QMessageBox::RejectRole);
 
-
     msgBox.exec();
 
     if (msgBox.clickedButton() == confirmBtn) {
@@ -724,8 +703,6 @@ void ReviewPage::addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameI
         return;
     }
 
-    qDebug() << "[ReviewPage] addDuplicateSectionToMenu START";
-
     QString fileName = nameIndex.data(Qt::DisplayRole).toString();
 
     // "Jump to Duplicate" submenu
@@ -737,7 +714,6 @@ void ReviewPage::addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameI
 
 void ReviewPage::addJumpToDuplicateActions(QMenu *jumpMenu, const QString &currentHash,
                                            const QString &currentPath) {
-    qDebug() << "[ReviewPage] addJumpToDuplicateActions START";
     QModelIndexList partners = findDuplicatePartners(currentHash);
     if (partners.isEmpty()) return;
 
@@ -753,7 +729,6 @@ void ReviewPage::addJumpToDuplicateActions(QMenu *jumpMenu, const QString &curre
 
 
 QModelIndexList ReviewPage::findDuplicatePartners(const QString &hash) {
-    qDebug() << "[ReviewPage] findDuplicatePartners START";
     return wiz()->filesModel()->match(
         wiz()->filesModel()->index(0, 0),
         RoleFileHash,
@@ -764,7 +739,6 @@ QModelIndexList ReviewPage::findDuplicatePartners(const QString &hash) {
 }
 
 void ReviewPage::jumpToDuplicate(const QModelIndex &sourceIndex) {
-    qDebug() << "[ReviewPage] jumpToDuplicate START";
     QModelIndex proxyIndex = wiz()->proxyModel_m->mapFromSource(sourceIndex);
     if (!proxyIndex.isValid()) return;
 
@@ -785,8 +759,6 @@ void ReviewPage::jumpToDuplicate(const QModelIndex &sourceIndex) {
 
 void ReviewPage::refreshDuplicateStatus(const QString &hash) {
     if (hash.isEmpty()) return;
-
-    qDebug() << "[ReviewPage] refreshDuplicateStatus START";
 
     QList<QStandardItem*> remainingItems;
     collectItemsByHashRecursive(wiz()->filesModel()->invisibleRootItem(), hash, remainingItems);
@@ -817,8 +789,6 @@ void ReviewPage::refreshDuplicateStatus(const QString &hash) {
 }
 
 void ReviewPage::collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result) {
-    qDebug() << "[ReviewPage] collectItemsByHashRecursive START";
-
     for (int i = 0; i < parent->rowCount(); ++i) {
         QStandardItem* child = parent->child(i, ColName);
         if (!child) continue;
@@ -835,7 +805,6 @@ void ReviewPage::collectItemsByHashRecursive(QStandardItem* parent, const QStrin
 
 
 QStringList ReviewPage::getUnresolvedDuplicateNames() {
-    qDebug() << "[ReviewPage] getUnresolvedDuplicateNames START";
     QMap<int, bool> groupHasSelection;
     QMap<int, QString> groupExampleName;
 
@@ -860,8 +829,6 @@ void ReviewPage::discardItemFromModel(const QModelIndex &proxyIndex) {
     QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
     QStandardItem *item = wiz()->filesModel()->itemFromIndex(sourceIndex);
     if (!item) return;
-
-    qDebug() << "[ReviewPage] discardItemFromModel START";
 
     QString name = item->text();
     bool isFolder = QFileInfo(item->data(RoleFilePath).toString()).isDir();
@@ -896,8 +863,6 @@ void ReviewPage::discardItemFromModel(const QModelIndex &proxyIndex) {
 }
 
 void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
-    qDebug() << "[ReviewPage] deleteItemPhysically START";
-
     // Retrieve source index (since we are using a proxy model)
     QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
     QStandardItem *item = wiz()->filesModel()->itemFromIndex(sourceIndex);
@@ -905,15 +870,12 @@ void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
     QString rawPath = item->data(RoleFilePath).toString();
     QString cleanPath = QDir::cleanPath(rawPath);
 
-    qDebug() << "[ReviewPage] Try folder check for:" << cleanPath;
     if (!item) return;
-
 
     QString fileHash = item->data(RoleFileHash).toString();
     QFileInfo fileInfo(cleanPath);
     bool isFolder = fileInfo.isDir();
 
-    qDebug() << "[ReviewPage] deleteItemPhysically isFolder: " << isFolder;
     if (isFolder) {
         QStringList unknown = getUnrecognizedFiles(cleanPath);
 
@@ -953,7 +915,7 @@ void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
             refreshDuplicateStatus(fileHash);
         }
 
-        qDebug() << "Successfully deleted: " << cleanPath;
+        qInfo() << "Successfully deleted: " << cleanPath;
     } else {
         QMessageBox::critical(this, tr("Error"), tr("The file could not be deleted."));
     }
@@ -962,7 +924,6 @@ void ReviewPage::deleteItemPhysically(const QModelIndex &proxyIndex) {
 void ReviewPage::addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &proxyIndex,
                                              const QString &currentPath) {
     if (currentPath.isEmpty()) return;
-    qDebug() << "[ReviewPage] addFileActionsSectionToMenu START";
 
     QFileInfo fileInfo(currentPath);
     if (fileInfo.isDir()) {
@@ -1002,19 +963,15 @@ void ReviewPage::addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &pro
 }
 
 void ReviewPage::addStandardActionsToMenu(QMenu *menu) {
-    qDebug() << "[ReviewPage] addStandardActionsToMenu START";
-
     menu->addAction(tr("Select all"), this, [this]() { setAllCheckStates(Qt::Checked); });
     menu->addAction(tr("Clear selection"), this, [this]() { setAllCheckStates(Qt::Unchecked); });
 }
-
 
 // =============================================================================
 // --- UTILS (Recursive Helpers)
 // =============================================================================
 
 void ReviewPage::recursiveCheckChilds(QStandardItem* parentItem, Qt::CheckState state) {
-    qDebug() << "[ReviewPage] recursiveCheckChilds START";
     for (int i = 0; i < parentItem->rowCount(); ++i) {
         QStandardItem* child = parentItem->child(i, ColName);
         if (child) {
@@ -1042,8 +999,6 @@ void ReviewPage::recursiveCheckChilds(QStandardItem* parentItem, Qt::CheckState 
 void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState state) {
     if (!item) return;
 
-    qDebug() << "[ReviewPage] setCheckStateRecursive START";
-
     if (item->column() == ColName) {
         if (item->data(RoleFileStatus).toInt() != StatusDefect) {
             item->setCheckState(state);
@@ -1065,7 +1020,6 @@ void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState stat
 }
 
 void ReviewPage::searchGroupRecursive(QStandardItem* parent, int groupId, QList<QStandardItem*>& results) {
-    qDebug() << "[ReviewPage] searchGroupRecursive START";
     for (int i = 0; i < parent->rowCount(); ++i) {
         // always search in the name column (ColName).
         QStandardItem* child = parent->child(i, ColName);
@@ -1085,8 +1039,6 @@ void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
                                       QMap<int, bool>& groupHasSelection,
                                       QMap<int, QString>& groupExampleName) {
     if (!parentItem) return;
-
-    qDebug() << "[ReviewPage] checkFolderRecursive START";
 
     for (int i = 0; i < parentItem->rowCount(); ++i) {
         QStandardItem* item = parentItem->child(i, ColName);
@@ -1111,11 +1063,9 @@ void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
     }
 }
 
-
 QStringList ReviewPage::getPathParts(const QString& fullPath) {
     QStringList* cached = pathPartsCache_m->object(fullPath);
     if (cached) return *cached;
-    qDebug() << "[ReviewPage] getPathParts START";
 
     QStringList parts = fullPath.split('/', Qt::SkipEmptyParts);
     pathPartsCache_m->insert(fullPath, new QStringList(parts));
@@ -1123,10 +1073,8 @@ QStringList ReviewPage::getPathParts(const QString& fullPath) {
 }
 
 bool ReviewPage::isRootExpanded() {
-    qDebug() << "[ReviewPage] isRootExpanded START";
     return treeView_m->isExpanded(treeView_m->model()->index(0, 0));
 }
-
 
 // =============================================================================
 // --- Debugging
@@ -1145,7 +1093,8 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
     QModelIndex realStatus = srcIdx.siblingAtColumn(ColStatus);
 
     QStandardItem* itemRealName = wiz()->filesModel()->itemFromIndex(realName);
-    if (!itemRealName) {
+    
+    /* if (!itemRealName) {
         qDebug() << "item ColName does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1157,10 +1106,10 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColName / RoleIsFolder : " << itemRealName->data(RoleIsFolder);
         qDebug() << "ColName / RoleItemType : " << itemRealName->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    }
+    } */
 
     QStandardItem* itemRealSize = wiz()->filesModel()->itemFromIndex(realSize);
-    if (!itemRealSize) {
+    /* if (!itemRealSize) {
         qDebug() << "item ColSize does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1172,10 +1121,10 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColSize / RoleIsFolder : " << itemRealSize->data(RoleIsFolder);
         qDebug() << "ColSize / RoleItemType : " << itemRealSize->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    }
+    } */
 
     QStandardItem* itemRealStatus = wiz()->filesModel()->itemFromIndex(realStatus);
-    if (!itemRealStatus) {
+    /* if (!itemRealStatus) {
         qDebug() << "item ColStatus does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1187,7 +1136,7 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColStatus / RoleIsFolder : " << itemRealStatus->data(RoleIsFolder);
         qDebug() << "ColStatus / RoleItemType : " << itemRealStatus->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    }
+    } */
 }
 
 void ReviewPage::debugItemInfo(QStandardItem* item, QString fromFunc) {

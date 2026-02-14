@@ -69,7 +69,6 @@ public:
         return *this;
     }
 
-    // In reviewstruct.h innerhalb der struct ReviewStats
     void add(const ReviewStats& other) {
         totalFiles_m    += other.totalFiles_m;
         totalBytes_m    += other.totalBytes_m;
@@ -92,7 +91,7 @@ public:
     [[nodiscard]] qlonglong totalBytes() const noexcept { return totalBytes_m; }
     [[nodiscard]] qlonglong savedBytes() const noexcept { return savedBytes_m; }
 
-    // ---- Zustandsänderungen (Business-Logik) ----
+    // ---- State changes (business logic) ----
     void addFile(qint64 size) {
         QMutexLocker locker(&mutex_m);
         totalFiles_m++;

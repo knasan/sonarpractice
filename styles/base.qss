@@ -1,4 +1,87 @@
-/* Base Dark Theme Stylesheet */
+/*
+ * =============================================
+ *  STYLESHEET: BASE DARK THEME (QSS)
+ * =============================================
+ *
+ *  Dieser Stylesheet definiert das Dark-Theme für die Anwendung.
+ *  Alle Stile sind objektbasiert (objectName) oder widgettyp-basiert.
+ *  Die Kommentare erklären die Verwendung der objectNames und deren Effekte.
+ *
+ *  =============================================
+ *  LEGENDE DER OBJECTNAMES:
+ *  =============================================
+ *
+ *  1. #timerButton
+ *     - Betrifft: Der Haupt-Timer-Button (Start/Stop).
+ *     - Stile: Hover, Running-Zustand (rot), Standard-Rahmen.
+ *
+ *  2. #homeButton, #libraryButton, #docsButton, #videosButton, #audioButton
+ *     - Betrifft: Navigation-Buttons (runde Icons am unteren Rand).
+ *     - Stile: Hover-Effekt (blau), Checked-Zustand (aktiviert).
+ *
+ *  3. #lessonCalendar
+ *     - Betrifft: Der Kalender-Widget (QCalendarWidget).
+ *     - Stile: Hintergrund, Navigation, Wochennummern, Auswahlfarbe.
+ *
+ *  4. CollapsibleSection QPushButton
+ *     - Betrifft: Buttons innerhalb von CollapsibleSections (z. B. "Timer starten").
+ *     - Stile: Runde Ecken, Hover, Pressed, Disabled.
+ *
+ *  5. CollapsibleSection QGroupBox
+ *     - Betrifft: Gruppenboxen in CollapsibleSections (z. B. Song-Informationen).
+ *     - Stile: Rahmen, Überschrift (blau), Hintergrund (hellgrau).
+ *
+ *  6. LCDTimer
+ *     - Betrifft: Die LCD-Anzeige des Timers.
+ *     - Stile: Hintergrund, Rahmen, Abrundung.
+ *
+ *  7. QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QListWidget
+ *     - Betrifft: Eingabefelder, Textfelder, Dropdowns, Listen.
+ *     - Stile: Hintergrund, Rahmen, Focus-Effekt.
+ *
+ *  8. QCheckBox
+ *     - Betrifft: Checkboxen (inkl. Hover, Checked, Disabled).
+ *     - Stile: Indikator (blau/transparent), Rahmen.
+ *
+ *  9. QScrollBar
+ *     - Betrifft: Scrollbars (vertikal).
+ *     - Stile: Handle, Hover-Effekt.
+ *
+ *  10. QMenuBar, QMenu
+ *      - Betrifft: Menüleiste und Dropdown-Menüs.
+ *      - Stile: Hintergrund, Auswahlfarbe.
+ *
+ *  11. QTableWidget, QTreeView, QTreeWidget
+ *      - Betrifft: Tabellen und Bäume.
+ *      - Stile: Hintergrund, Alternate-Rows, Gridlines.
+ *
+ *  =============================================
+ *  HINWEISE FÜR DESIGNER:
+ *  =============================================
+ *  - Alle Farben folgen einem Dark-Theme (Hauptfarbe: #1e1e1e).
+ *  - Hover-Effekte sind subtil (rgba-basiert).
+ *  - Buttons haben runde Ecken (border-radius: 15px).
+ *  - Überschriften in Gruppenboxen sind blau (#63C0FF).
+ *  - Disabled-Elemente haben reduzierte Kontraste.
+ *
+ *  =============================================
+ *  BEISPIEL: ANPASSUNGEN
+ *  =============================================
+ *  Um die Farbe eines Buttons zu ändern:
+ *  QPushButton#meinButton {
+ *      background-color: #ff5722;  // Orange
+ *  }
+ *
+ *  Um den Rahmen einer CollapsibleSection zu ändern:
+ *  CollapsibleSection {
+ *      border: 1px solid #ff9800;  // Orange
+ *  }
+ *
+ *  =============================================
+ *  ENDE DER LEGENDE
+ *  =============================================
+ */
+
 
 * {
     background-color: transparent;
@@ -285,3 +368,66 @@ QPushButton#homeButton:checked, QPushButton#libraryButton:checked {
     background-color: rgba(47, 168, 255, 0.2);
     border: 2px solid #2FA8FF;
 }
+
+/* ===== Timer Button Styles ===== */
+#timerButton {
+    min-width: 120px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid #7f8c8d;
+    background-color: transparent;
+    color: palette(text);
+}
+
+#timerButton:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+#timerButton:running {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    font-weight: bold;
+}
+
+#timerButton:running:hover {
+    background-color: #c0392b;
+}
+
+/* LCD Display */
+.LCDTimer {
+    background: palette(base);
+    border: 1px solid palette(mid);
+    border-radius: 4px;
+}
+
+
+/* ===== Song Information & Training ===== */
+CollapsibleSection QGroupBox {
+    background-color: #252A31;  /* ← Leicht hellgrau (innen) */
+    border: 1px solid #3d3d3d;   /* ← Rahmenfarbe */
+    border-radius: 8px;         /* ← Abgerundete Ecken */
+    margin-top: 5px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+/* Überschrift (blau) */
+CollapsibleSection QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 5px;
+    padding: 0px 5px;
+    color: #63C0FF;  /* ← Blau */
+    font-weight: bold;
+}
+
+/* Rahmenfarbe für die CollapsibleSection */
+CollapsibleSection {
+    border: 1px solid #3d3d3d;  /* ← Rahmenfarbe */
+    border-radius: 8px;         /* ← Abgerundete Ecken */
+}
+
+#reminderTable::item[isCompleted="true"] { color: green; }
+#reminderTable::item[isCompleted="false"] { color: red; }
