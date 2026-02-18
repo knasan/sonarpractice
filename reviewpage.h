@@ -2,6 +2,7 @@
 #define REVIEWPAGE_H
 
 #include "basepage.h"
+#include "filescanner.h"
 
 // Forward Declarations for faster compilation times
 class QCheckBox;
@@ -21,6 +22,7 @@ class ReviewPage : public BasePage {
 public:
     // Lifecycle (Constructor/Destructor)
     explicit ReviewPage(QWidget *parent = nullptr);
+    ~ReviewPage();
 
     // Reimplementations of base classes (interfaces)
     void initializePage() override;
@@ -44,6 +46,8 @@ private:
     void sideConnections();
     void updateUIStats();
     void updateItemVisuals(QStandardItem* nameItem, int status);
+
+    void cleanupScanResources();
 
     // Core logic (calculations & data processing)
     [[nodiscard]] ReviewStats calculateGlobalStats();
@@ -97,6 +101,11 @@ private:
     int totalDuplicatesCount_m{0};
     int totalDefectsCount_m{0};
     bool isConnectionsEstablished_m{false};
+
+    bool pageInitialized{false};
+    bool scanInProgress_m{false};
+    QThread *scanThread_m;
+    FileScanner *worker_m;
 
 };
 

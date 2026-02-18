@@ -107,125 +107,68 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
     layout->addLayout(statsContainerLayout);
 }
 
+ReviewPage::~ReviewPage() {
+    cleanupScanResources();
+    pathPartsCache_m->clear();
+    delete pathPartsCache_m;
+}
+
 // =============================================================================
 // --- PAGE FLOW (Initialization / Validation)
 // =============================================================================
 
 void ReviewPage::initializePage() {
-    treeView_m->setModel(wiz()->proxyModel_m);
-    treeView_m->setSortingEnabled(false);
+    static bool firstVisit = true;
+    if (firstVisit) {
+        wiz()->filesModel()->clear();
+        firstVisit = false;
+    }
 
-    // reset file model
-    wiz()->filesModel()->clear();
-    wiz()->setProxyModelHeader();
+    if(!pageInitialized) {
+        treeView_m->setModel(wiz()->proxyModel_m);
+        treeView_m->setSortingEnabled(false);
 
-    wiz()->proxyModel_m->setSourceModel(wiz()->filesModel());
-    wiz()->proxyModel_m->setDynamicSortFilter(true);
+        wiz()->setProxyModelHeader();
 
-    wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeAll);
-    wiz()->proxyModel_m->setFilterFixedString(QString());
-    wiz()->proxyModel_m->setFilterKeyColumn(0); //
-    wiz()->proxyModel_m->setFilterCaseSensitivity(Qt::CaseInsensitive); //
+        wiz()->proxyModel_m->setSourceModel(wiz()->filesModel());
+        wiz()->proxyModel_m->setDynamicSortFilter(true);
 
-    // Column optimization (important for visibility)
-    treeView_m->header()->setSectionResizeMode(QHeaderView::Interactive);
-    treeView_m->setColumnWidth(ColName, 1200); //
-    treeView_m->header()->setSectionResizeMode(ColName, QHeaderView::Interactive);
-    treeView_m->header()->setCascadingSectionResizes(true);
-    treeView_m->header()->setSectionResizeMode(ColSize, QHeaderView::Stretch);
-    treeView_m->header()->setSectionResizeMode(ColStatus, QHeaderView::Stretch);
+        wiz()->proxyModel_m->setFilterMode(FileFilterProxyModel::ModeAll);
+        wiz()->proxyModel_m->setFilterFixedString(QString());
+        wiz()->proxyModel_m->setFilterKeyColumn(0); //
+        wiz()->proxyModel_m->setFilterCaseSensitivity(Qt::CaseInsensitive); //
 
-    treeView_m->setEnabled(false);
+        // Column optimization (important for visibility)
+        treeView_m->header()->setSectionResizeMode(QHeaderView::Interactive);
+        treeView_m->setColumnWidth(ColName, 1200); //
+        treeView_m->header()->setSectionResizeMode(ColName, QHeaderView::Interactive);
+        treeView_m->header()->setCascadingSectionResizes(true);
+        treeView_m->header()->setSectionResizeMode(ColSize, QHeaderView::Stretch);
+        treeView_m->header()->setSectionResizeMode(ColStatus, QHeaderView::Stretch);
 
-    // Tell the search field that this class (this) is monitoring the events
-    searchLineEdit_m->installEventFilter(this);
-    searchLineEdit_m->setClearButtonEnabled(true); // add x in QLineEdit
+        treeView_m->setEnabled(false);
 
-    if (!isConnectionsEstablished_m) {
-        isConnectionsEstablished_m = true;
-        QThread* scanThread = new QThread(this);
-        FileScanner* worker = new FileScanner();
-        worker->moveToThread(scanThread);
+        // Tell the search field that this class (this) is monitoring the events
+        searchLineEdit_m->installEventFilter(this);
+        searchLineEdit_m->setClearButtonEnabled(true); // add x in QLineEdit
 
-        // --- CONNECTIONS ---
+
         sideConnections();
 
-        // Start signal
-        connect(this, &ReviewPage::requestScanStart, worker, &FileScanner::doScan);
+        pageInitialized=true;
+    }
+}
 
-        connect(worker, &FileScanner::batchesFound, this, [this](const QList<ScanBatch> &batches) {
-            wiz()->filesModel()->blockSignals(true);
-            wiz()->fileManager()->addBatchesToModel(batches);
-            wiz()->filesModel()->blockSignals(false);
-            summaryLabel_m->setText(tr("Index: %1").arg(batches.last().info.absoluteFilePath()));
-            statusLabel_m->setText(tr("Scanning ..."));
-        });
-
-        connect(worker, &FileScanner::progressStats, this, [this](const ReviewStats &stats) {
-            // qDebug() << "[ReviewPage] progressStats";
-            treeView_m->setEnabled(false);
-            statusLabel_m->setText(tr("%1 Data scanned ... ").arg(stats.totalFiles()));
-        });
-
-        connect(worker, &FileScanner::finished, this, [this, scanThread, worker](const ReviewStats &workerStats) {
-            // Copy the data from the worker to the wizard's global stats.
-            // ReviewStats has an assignment operator operator=
-            qDebug() << "[ReviewPage] Worker reports files:" << workerStats.totalFiles();
-
-            // Transfer data to the wizard
-            // wiz()->getFinalStats() When a reference is returned, we use the operator=
-            wiz()->getFinalStats() = workerStats;
-
-            auto *effector = new QGraphicsOpacityEffect(statusLabel_m);
-            statusLabel_m->setGraphicsEffect(effector);
-
-            // UI update with the now (hopefully) populated wizard stats
-            int count = workerStats.totalFiles();
-            statusLabel_m->setText(tr("Scan complete. %1 files found.").arg(count));
-
-            // A "delayed" fade-out: Wait 4 seconds, then fade for 1 second.
-            QTimer::singleShot(4000, this, [effector]() {
-                auto *anim = new QPropertyAnimation(effector, "opacity");
-                anim->setDuration(1000); // The fade lasts 1 second.
-                anim->setStartValue(1.0);
-                anim->setEndValue(0.0);
-                anim->setEasingCurve(QEasingCurve::OutCubic); // Gentle exit
-
-                //After the animation ends, really clear the text.
-                connect(anim, &QPropertyAnimation::finished, [anim]() {
-                    anim->deleteLater();
-                });
-
-                anim->start(QAbstractAnimation::DeleteWhenStopped);
-            });
-
-            // Unlock UI elements
-            wiz()->filesModel()->layoutChanged();
-            treeView_m->blockSignals(false);
-            updateUIStats();
-
-            treeView_m->setEnabled(true);
-            // treeView_m->expandAll();
-
-            // Cleanly close the thread
-            scanThread->quit();
-            scanThread->deleteLater();
-            worker->deleteLater();
-            isConnectionsEstablished_m = false;
-        });
-
-        connect(worker, &FileScanner::finishWithAllBatches, this, [this, scanThread](const QList<ScanBatch> &allBatches, const ReviewStats &stats) {
-            this->totalDuplicatesCount_m = stats.duplicates();
-            this->totalDefectsCount_m = stats.defects();
-            wiz()->fileManager()->updateStatuses(allBatches);
-        });
-
-        // Cleanup
-        connect(scanThread, &QThread::finished, worker, &QObject::deleteLater);
-        connect(scanThread, &QThread::finished, scanThread, &QObject::deleteLater);
-
-        scanThread->start();
-        emit requestScanStart(wiz()->getSelectedPaths(), wiz()->getFileFilters(), wiz());
+void ReviewPage::cleanupScanResources() {
+    if (scanThread_m && scanThread_m->isRunning()) {
+        scanThread_m->quit();
+        scanThread_m->wait();
+    }
+    if (worker_m) {
+        worker_m->deleteLater();
+    }
+    if (scanThread_m) {
+        scanThread_m->deleteLater();
     }
 }
 
@@ -452,6 +395,85 @@ void ReviewPage::sideConnections() {
     });
 
     connect(searchLineEdit_m, &QLineEdit::textChanged, searchTimer, qOverload<>(&QTimer::start));
+
+    if (!isConnectionsEstablished_m) {
+        scanThread_m = new QThread(this);
+        worker_m = new FileScanner();
+        worker_m->moveToThread(scanThread_m);
+        // Start signal
+        connect(this, &ReviewPage::requestScanStart, worker_m, &FileScanner::doScan);
+
+        connect(worker_m, &FileScanner::batchesFound, this, [this](const QList<ScanBatch> &batches) {
+            wiz()->filesModel()->blockSignals(true);
+            wiz()->fileManager()->addBatchesToModel(batches);
+            wiz()->filesModel()->blockSignals(false);
+            summaryLabel_m->setText(tr("Index: %1").arg(batches.last().info.absoluteFilePath()));
+            statusLabel_m->setText(tr("Scanning ..."));
+        });
+
+        connect(worker_m, &FileScanner::progressStats, this, [this](const ReviewStats &stats) {
+            treeView_m->setEnabled(false);
+            statusLabel_m->setText(tr("%1 Data scanned ... ").arg(stats.totalFiles()));
+        });
+
+        connect(worker_m, &FileScanner::finished, this, [this](const ReviewStats &workerStats) {
+            // Copy the data from the worker to the wizard's global stats.
+            // ReviewStats has an assignment operator operator=
+
+            // Transfer data to the wizard
+            wiz()->getFinalStats() = workerStats;
+            auto *effector = new QGraphicsOpacityEffect(statusLabel_m);
+            statusLabel_m->setGraphicsEffect(effector);
+            // UI update with the now (hopefully) populated wizard stats
+            int count = workerStats.totalFiles();
+            statusLabel_m->setText(tr("Scan complete. %1 files found.").arg(count));
+
+            // A "delayed" fade-out: Wait 4 seconds, then fade for 1 second.
+            QTimer::singleShot(4000, this, [effector]() {
+                auto *anim = new QPropertyAnimation(effector, "opacity");
+                anim->setDuration(1000); // The fade lasts 1 second.
+                anim->setStartValue(1.0);
+                anim->setEndValue(0.0);
+                anim->setEasingCurve(QEasingCurve::OutCubic); // Gentle exit
+
+                //After the animation ends, really clear the text.
+                connect(anim, &QPropertyAnimation::finished, [anim]() {
+                    anim->deleteLater();
+                });
+
+                anim->start(QAbstractAnimation::DeleteWhenStopped);
+            });
+
+            // Unlock UI elements
+            wiz()->filesModel()->layoutChanged();
+            treeView_m->blockSignals(false);
+            updateUIStats();
+
+            treeView_m->setEnabled(true);
+            // treeView_m->expandAll();
+
+            // Cleanly close the thread
+            scanThread_m->quit();
+            scanThread_m->deleteLater();
+            worker_m->deleteLater();
+            isConnectionsEstablished_m = false;
+        });
+
+        connect(worker_m, &FileScanner::finishWithAllBatches, this, [this](const QList<ScanBatch> &allBatches, const ReviewStats &stats) {
+            this->totalDuplicatesCount_m = stats.duplicates();
+            this->totalDefectsCount_m = stats.defects();
+            wiz()->fileManager()->updateStatuses(allBatches);
+        });
+
+        // Cleanup
+        connect(scanThread_m, &QThread::finished, worker_m, &QObject::deleteLater);
+        connect(scanThread_m, &QThread::finished, scanThread_m, &QObject::deleteLater);
+
+        scanThread_m->start();
+        emit requestScanStart(wiz()->getSelectedPaths(), wiz()->getFileFilters(), wiz());
+
+        isConnectionsEstablished_m = true;
+    }
 }
 
 void ReviewPage::updateUIStats() {
@@ -972,6 +994,9 @@ void ReviewPage::addStandardActionsToMenu(QMenu *menu) {
 // =============================================================================
 
 void ReviewPage::recursiveCheckChilds(QStandardItem* parentItem, Qt::CheckState state) {
+    if (!parentItem)
+        return;
+
     for (int i = 0; i < parentItem->rowCount(); ++i) {
         QStandardItem* child = parentItem->child(i, ColName);
         if (child) {
@@ -1093,8 +1118,8 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
     QModelIndex realStatus = srcIdx.siblingAtColumn(ColStatus);
 
     QStandardItem* itemRealName = wiz()->filesModel()->itemFromIndex(realName);
-    
-    /* if (!itemRealName) {
+
+    if (!itemRealName) {
         qDebug() << "item ColName does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1106,10 +1131,11 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColName / RoleIsFolder : " << itemRealName->data(RoleIsFolder);
         qDebug() << "ColName / RoleItemType : " << itemRealName->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    } */
+    }
 
-    QStandardItem* itemRealSize = wiz()->filesModel()->itemFromIndex(realSize);
-    /* if (!itemRealSize) {
+    QStandardItem *itemRealSize = wiz()->filesModel()->itemFromIndex(realSize);
+
+    if (!itemRealSize) {
         qDebug() << "item ColSize does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1121,10 +1147,11 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColSize / RoleIsFolder : " << itemRealSize->data(RoleIsFolder);
         qDebug() << "ColSize / RoleItemType : " << itemRealSize->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    } */
+    }
 
-    QStandardItem* itemRealStatus = wiz()->filesModel()->itemFromIndex(realStatus);
-    /* if (!itemRealStatus) {
+    QStandardItem *itemRealStatus = wiz()->filesModel()->itemFromIndex(realStatus);
+
+    if (!itemRealStatus) {
         qDebug() << "item ColStatus does not exist";
         qDebug() << "-------------------------------------------------------------------------";
     } else {
@@ -1136,7 +1163,7 @@ void ReviewPage::debugRoles(QModelIndex indexAtPos) {
         qDebug() << "ColStatus / RoleIsFolder : " << itemRealStatus->data(RoleIsFolder);
         qDebug() << "ColStatus / RoleItemType : " << itemRealStatus->data(RoleItemType);
         qDebug() << "-------------------------------------------------------------------------";
-    } */
+    }
 }
 
 void ReviewPage::debugItemInfo(QStandardItem* item, QString fromFunc) {
