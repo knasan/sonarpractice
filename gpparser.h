@@ -44,9 +44,10 @@ private:
     [[nodiscard]] static GPMetadata parseGP345(QDataStream &in, GPMetadata &meta);
 
     // void static parseBCF(const QString &zipPath);
-    // [[nodiscard]] static QByteArray unzipGPFile(const QString &filePath);
+    [[nodiscard]] static QByteArray unzipGPFile(const QString &filePath);
 
     [[nodiscard]] GPMetadata static parseXmlMetadata(const QByteArray &xmlData);
+
     [[nodiscard]] static QString scanTuning(QDataStream &in);
     [[nodiscard]] static QString identifyTuning(
         const QList<int> &

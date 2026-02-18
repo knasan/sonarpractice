@@ -152,7 +152,6 @@ void ReviewPage::initializePage() {
         searchLineEdit_m->installEventFilter(this);
         searchLineEdit_m->setClearButtonEnabled(true); // add x in QLineEdit
 
-
         sideConnections();
 
         pageInitialized=true;
@@ -279,7 +278,7 @@ void ReviewPage::handleItemChanged(QStandardItem *item) {
         recursiveCheckChilds(item, currentState);
     }
 
-    debugItemInfo(item, QString("handleItemChanged"));
+    // debugItemInfo(item, QString("handleItemChanged"));
 
     // Statistics Connect recalculates everything.
     wiz()->filesModel()->dataChanged(item->index(), item->index());
@@ -490,10 +489,6 @@ void ReviewPage::updateUIStats() {
         return;
     }
 
-    // qDebug() << "[ReviewPage] updateUIStats START";
-    // Wir holen die Basis-Stats (für totalFiles, defects, etc.)
-    // ReviewStats stats = wiz()->fileManager()->calculateStats(wiz()->filesModel());
-    // ReviewStats stats = wiz()->proxyModel_m->calculateVisibleStats();
     ReviewStats stats = calculateGlobalStats();
 
     // --- COLORS ---

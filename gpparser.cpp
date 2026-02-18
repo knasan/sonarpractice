@@ -1,8 +1,11 @@
 #include "gpparser.h"
 
 #include <QDebug>
+#include <QDomElement>
 #include <QFile>
 #include <QtEndian>
+
+#include "miniz.h"
 
 GpParser::GpParser() {}
 
@@ -353,6 +356,115 @@ QString GpParser::formatTuning(const QList<int> &notes)
     return result.join("");
 }
 
+QByteArray GpParser::unzipGPFile(const QString &filePath) {
+    mz_zip_archive zip_archive;
+    memset(&zip_archive, 0, sizeof(zip_archive));
+
+    if (!mz_zip_reader_init_file(&zip_archive, filePath.toUtf8().constData(), 0)) {
+        qCritical() << "Konnte GP-Datei nicht als ZIP öffnen:" << filePath;
+        return QByteArray();
+    }
+
+    size_t uncompressed_size;
+    void* p = mz_zip_reader_extract_file_to_heap(&zip_archive, "Content/Score.gpif", &uncompressed_size, 0);
+
+    if (!p) {
+        qCritical() << "Score.gpif nicht im Archiv gefunden oder Extraktion fehlgeschlagen!";
+        mz_zip_reader_end(&zip_archive);
+        return QByteArray();
+    }
+
+    QByteArray data(static_cast<const char*>(p), static_cast<int>(uncompressed_size));
+
+    mz_free(p);
+    mz_zip_reader_end(&zip_archive);
+
+    return data;
+}
+
+GpParser::GPMetadata GpParser::parseXmlMetadata(const QByteArray &xmlData) {
+    GPMetadata meta;
+    QDomDocument doc;
+
+    auto result = doc.setContent(xmlData);
+
+    if (!result) {
+        qDebug() << "XML Error:" << result.errorMessage
+                 << "in Line:" << result.errorLine
+                 << "in Column:" << result.errorColumn;
+        return meta;
+    }
+
+    QDomElement root = doc.documentElement();
+
+    auto titles = doc.elementsByTagName("Title");
+    meta.title =  titles.at(0).toElement().text();
+
+    auto subtitle = doc.elementsByTagName("Subtitle");
+    meta.subtitle = subtitle.at(0).toElement().text();
+
+    auto artists = doc.elementsByTagName("Artist");
+    meta.artist = artists.at(0).toElement().text();
+
+    auto album = doc.elementsByTagName("Album");
+    meta.album = album.at(0).toElement().text();
+
+    auto copyright = doc.elementsByTagName("Copyright");
+    meta.copyright = copyright.at(0).toElement().text();
+
+    // author
+    auto tab = doc.elementsByTagName("Tabber");
+    meta.author = tab.at(0).toElement().text();
+
+    auto instruction = doc.elementsByTagName("instruction");
+    meta.instruction = instruction.at(0).toElement().text();
+
+    auto notice = doc.elementsByTagName("Notices");
+    meta.notice = notice.at(0).toElement().text();
+
+    auto automations = doc.elementsByTagName("Automation");
+
+    for (int i = 0; i < automations.count(); ++i) {
+        QDomElement autoElem = automations.at(i).toElement();
+
+        if (autoElem.firstChildElement("Type").text() == "Tempo") {
+            QDomElement valueElem = autoElem.firstChildElement("Value");
+
+            if (!valueElem.isNull()) {
+                QString rawValue = valueElem.text().trimmed();
+
+                if (!rawValue.isEmpty()) {
+                    QStringList parts = rawValue.split(' ', Qt::SkipEmptyParts);
+
+                    if (!parts.isEmpty()) {
+                        QString bpmValue = parts.at(0);
+
+                        bool ok;
+                        double bpm = bpmValue.toDouble(&ok);
+                        if(ok) {
+                            meta.bpm = bpm;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Tuning
+    QStringList tuningStrings = doc.elementsByTagName("Pitches").at(0).toElement().text().split(' ', Qt::SkipEmptyParts);
+
+    QList<int> pitchList;
+
+    for (const QString &s : std::as_const(tuningStrings)) {
+        pitchList.append(s.toInt());
+    }
+
+    // qDebug() << "Tuning: " << identifyTuning(pitchList);
+    meta.tuning = identifyTuning(pitchList);
+    return meta;
+}
+
 // ---- PUBLIC ----
 GpParser::GPMetadata GpParser::parseMetadata(const QString &filePath)
 {
@@ -381,11 +493,9 @@ GpParser::GPMetadata GpParser::parseMetadata(const QString &filePath)
     }
 
     // V6/7
-    // Version verschluckt das B deswegen muss hier nach CFZ gesucht werden.
-    // BCFS = Unkomprimiert
-    // omprimiert mit einem LZ77-ähnlichen Algorithmus
+    // BCFS = uncompressed
+    // LZ77-like algorithm
     if (meta.version.startsWith("CFZ")) {
-        // wird derzeit nicht unterstützt, somti kann ich auf zlib bzw. QuaZip erstmal verzichten.
         meta.isValid = false;
     }
 
@@ -393,9 +503,9 @@ GpParser::GPMetadata GpParser::parseMetadata(const QString &filePath)
     // GP File
     // 'P' 'K' '\003' '\004' ist die Signatur für ZIP (GPX/GP7)
     if (magic[0] == 'P' && magic[1] == 'K') {
-        // benötigt QuaZip - in dieser Version verzichte ich erst mal darauf.
-        // Lokal habe ich nicht so viele Dateien
-        meta.isValid = false;
+        auto xmlData = unzipGPFile(filePath);
+        meta = parseXmlMetadata(xmlData);
+        meta.version = "Guitar Pro 6/7 (Compressed)";
     }
 
     file.close();
