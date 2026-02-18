@@ -109,7 +109,6 @@ ReviewPage::ReviewPage(QWidget *parent) : BasePage(parent)
 
 ReviewPage::~ReviewPage() {
     cleanupScanResources();
-    pathPartsCache_m->clear();
     delete pathPartsCache_m;
 }
 
@@ -159,20 +158,23 @@ void ReviewPage::initializePage() {
 }
 
 void ReviewPage::cleanupScanResources() {
-    if (scanThread_m && scanThread_m->isRunning()) {
-        scanThread_m->quit();
-        scanThread_m->wait();
-    }
+    if (!scanThread_m) return;
+
     if (worker_m) {
-        worker_m->deleteLater();
+        disconnect(worker_m, nullptr, this, nullptr);
     }
-    if (scanThread_m) {
-        scanThread_m->deleteLater();
+
+    if (scanThread_m->isRunning()) {
+        scanThread_m->quit();
+        if (!scanThread_m->wait(2000)) {
+        }
     }
+
+    worker_m = nullptr;
+    scanThread_m = nullptr;
 }
 
 bool ReviewPage::validatePage() {
-    qDebug() << "[ReviewPage] validatePage START";
     return finishDialog();
 }
 
@@ -181,10 +183,8 @@ bool ReviewPage::validatePage() {
 // =============================================================================
 
 void ReviewPage::showContextMenu(const QPoint &pos) {
-    qDebug() << "[ReviewPage] showContextMenu START";
     QModelIndex proxyIndex = treeView_m->indexAt(pos);
     if (!proxyIndex.isValid()) {
-        qDebug() << "index from model not valid";
         return;
     }
     // TODO: context menü für summaryLabel
@@ -192,15 +192,13 @@ void ReviewPage::showContextMenu(const QPoint &pos) {
 }
 
 void ReviewPage::showSummaryContextMenu(const QPoint &pos) {
-    qDebug() << "ShowSummaryContextMenu planed";
+    qInfo() << "ShowSummaryContextMenu planed";
 }
 
 void ReviewPage::showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid()) {
-        qDebug() << "index from model not valid";
         return;
     }
-    qDebug() << "[ReviewPage] showTreeContextMenu START";
     QModelIndex sourceIndex = wiz()->proxyModel_m->mapToSource(proxyIndex);
 
     QModelIndex nameIndex = sourceIndex.siblingAtColumn(ColName);
@@ -287,7 +285,6 @@ void ReviewPage::handleItemChanged(QStandardItem *item) {
 
 void ReviewPage::setAllCheckStates(Qt::CheckState state) {
     if (!wiz()->filesModel()) return;
-    qDebug() << "[ReviewPage] setAllCheckStates START";
     wiz()->filesModel()->blockSignals(true);
 
     // Iterate directly over the source model (including filtered items!).
@@ -399,10 +396,12 @@ void ReviewPage::sideConnections() {
         scanThread_m = new QThread(this);
         worker_m = new FileScanner();
         worker_m->moveToThread(scanThread_m);
+
         // Start signal
         connect(this, &ReviewPage::requestScanStart, worker_m, &FileScanner::doScan);
 
         connect(worker_m, &FileScanner::batchesFound, this, [this](const QList<ScanBatch> &batches) {
+            if (!wiz() || !wiz()->filesModel()) return;
             wiz()->filesModel()->blockSignals(true);
             wiz()->fileManager()->addBatchesToModel(batches);
             wiz()->filesModel()->blockSignals(false);
@@ -449,13 +448,7 @@ void ReviewPage::sideConnections() {
             updateUIStats();
 
             treeView_m->setEnabled(true);
-            // treeView_m->expandAll();
-
-            // Cleanly close the thread
-            scanThread_m->quit();
-            scanThread_m->deleteLater();
-            worker_m->deleteLater();
-            isConnectionsEstablished_m = false;
+            this->scanInProgress_m = false;
         });
 
         connect(worker_m, &FileScanner::finishWithAllBatches, this, [this](const QList<ScanBatch> &allBatches, const ReviewStats &stats) {

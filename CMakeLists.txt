@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(
   SonarPractice
-  VERSION 0.1
+  VERSION 0.2.3
   LANGUAGES CXX C)
 
 set(CMAKE_AUTOUIC ON)
@@ -11,6 +11,10 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+add_compile_definitions(APP_VERSION="${PROJECT_VERSION} alpha")
+add_compile_definitions(COMPILER_INFO="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+add_compile_definitions(BUILD_DATE="${CMAKE_DATE}")
 
 find_package(QT NAMES Qt6 REQUIRED COMPONENTS Widgets LinguistTools Test)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets LinguistTools

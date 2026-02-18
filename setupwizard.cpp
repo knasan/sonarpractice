@@ -55,17 +55,14 @@ SetupWizard::SetupWizard(QWidget *parent)
     // Available geometry (without taskbar!)
     QRect screenGeometry = screen->availableGeometry();
 
-    int screenWidth = screenGeometry.width();
-    int screenHeight = screenGeometry.height();
-
-    int finalHeight = qMin(700, screenHeight) - 150;
-    int finalWidth = qMin(1000, screenWidth) - 150;
     this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
     setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
 
-    // Set window size
-    setMinimumSize(600, 500);
-    resize(finalWidth , finalHeight);
+    int dynamicHeight = qMin(800, (int)(screenGeometry.height() * 0.7));
+    int dynamicWidth = qMin(1000, (int)(screenGeometry.width() * 0.7));
+
+    setMinimumSize(600, 500); // Absolute Untergrenze
+    resize(dynamicWidth, dynamicHeight); // Vernünftiger Startwert
     move(screenGeometry.center() - rect().center());
 
     //  Stil-Optionen setzen

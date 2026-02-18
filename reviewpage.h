@@ -104,8 +104,8 @@ private:
 
     bool pageInitialized{false};
     bool scanInProgress_m{false};
-    QThread *scanThread_m;
-    FileScanner *worker_m;
+    QThread *scanThread_m = nullptr;
+    FileScanner *worker_m = nullptr;
 
 };
 
