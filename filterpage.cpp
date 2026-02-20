@@ -19,8 +19,12 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     setTitle(tr("Configuration"));
     setSubTitle(tr("Settings for your repertoire."));
 
-    auto *layout = new QVBoxLayout(this);
+    setupLayout();
+    setupConnections();
+}
 
+void FilterPage::setupLayout() {
+    auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(30, 20, 30, 20);
     layout->setSpacing(15);
 
@@ -31,6 +35,7 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
     infoLabel->setContentsMargins(0, 0, 0, 10);
     layout->addWidget(infoLabel);
 
+    // TODO: generate infoLabel with const tr() strings with args.
     infoLabel->setText(tr("<h3>Select Data Management</h3>"
                           "<p>You decide how SonarPractice handles your files:</p>"
                           "<p>Manage option:</p>"
@@ -119,58 +124,142 @@ FilterPage::FilterPage(QWidget *parent) : BasePage(parent) {
 
     layout->addLayout(btnLayout);
 
-    if (!isConnectionsEstablished_m) {
-        isConnectionsEstablished_m = true;
-
-        // Connection to the slot addPath
-        connect(btnAddSource_m, &QPushButton::clicked, this, &FilterPage::addSourcePath);
-
-        // Connection to the slot removePath
-        connect(btnRemSource_m, &QPushButton::clicked, this, &FilterPage::removeSourcePath);
-
-        // Connection to the slot updateRemoveButtonState when click and selected
-        connect(listWidgetSource_m, &QListWidget::itemSelectionChanged, this, &FilterPage::updateRemoveSourceButtonState);
-
-        // --- LOGIC LINK ---
-        // Linking: Checkbox -> Activation of path selection
-        connect(cbManageData_m, &QCheckBox::toggled, lblTargetPath_m, &QLabel::setEnabled);
-        connect(cbManageData_m, &QCheckBox::toggled, btnSelectTargetPath_m, &QPushButton::setEnabled);
-
-        // Pairing: Button -> Call slot
-        connect(btnSelectTargetPath_m, &QPushButton::clicked, this, &FilterPage::addTargetPath);
-
-        // Visual update (change style)
-        connect(cbManageData_m, &QCheckBox::toggled, this, [this](bool checked) {
-            updateTargetPathStyle(checked);
-        });
-
-        connect(skipImport_m, &QCheckBox::toggled, this, [this](bool checked) {
-            if (checked) {
-                if (wiz()) wiz()->setButtonsState(true, true, true);
-            } else {
-                if (wiz()) wiz()->setButtonsState(true, false, true);
-            }
-        });
-    }
-
     registerField("manageData", cbManageData_m);
+    registerField("skipImport", skipImport_m);
     registerField("targetPath", lblTargetPath_m, "text");
 }
 
-void FilterPage::initializePage() {
-    SetupWizard *wiz = qobject_cast<SetupWizard*>(wizard());
-    if (wiz) {
-        cbManageData_m->setChecked(wiz->field("manageData").toBool());
-        lblTargetPath_m->setText(wiz->field("targetPath").toString());
-        updateTargetPathStyle(cbManageData_m->isChecked());
+void FilterPage::setupConnections() {
+    qDebug() << "[FilterPage] setupConnections";
+    // Connection to the slot addPath
+    connect(btnAddSource_m, &QPushButton::clicked, this, &FilterPage::addSourcePath);
+
+    // Connection to the slot removePath
+    connect(btnRemSource_m, &QPushButton::clicked, this, &FilterPage::removeSourcePath);
+
+    // --- LOGIC LINK ---
+
+    // Linking: Checkbox -> Activation skip import
+    connect(skipImport_m, &QCheckBox::toggled, this, &FilterPage::onSettingsChanged);
+
+    // Linking: Checkbox -> Activation of path selection
+    connect(cbManageData_m, &QCheckBox::toggled, this, &FilterPage::onSettingsChanged);
+
+    connect(cbManageData_m, &QCheckBox::toggled, lblTargetPath_m, &QLabel::setEnabled);
+    connect(cbManageData_m, &QCheckBox::toggled, btnSelectTargetPath_m, &QPushButton::setEnabled);
+
+    // Visual update (change style)
+    connect(cbManageData_m, &QCheckBox::toggled, this, [this](bool checked) {
+        updateTargetPathStyle(checked);
+    });
+
+    // Pfadauswahl
+    connect(btnSelectTargetPath_m, &QPushButton::clicked, this, &FilterPage::addTargetPath);
+
+    // Pairing: Button -> Call slot
+    connect(btnSelectTargetPath_m, &QPushButton::clicked, this, [this]() {
+        QString dir = QFileDialog::getExistingDirectory(this, tr("Zielverzeichnis wählen"));
+        if (!dir.isEmpty()) {
+            lblTargetPath_m->setText(dir);
+            onSettingsChanged();
+        }
+    });
+
+    // Connection to the slot updateRemoveButtonState when click and selected
+    connect(listWidgetSource_m, &QListWidget::itemSelectionChanged, this, &FilterPage::updateRemoveSourceButtonState);
+}
+
+void FilterPage::onSettingsChanged() {
+    // Aktiviert/Deaktiviert UI Elemente basierend auf Logik
+    const bool isSkipActive = skipImport_m->isChecked();
+    listWidgetSource_m->setEnabled(!isSkipActive);
+    btnAddSource_m->setEnabled(!isSkipActive);
+
+    // Triggert die Neu-Evaluierung von isComplete() im Wizard
+    emit completeChanged();
+}
+
+bool FilterPage::validatePage() {
+    auto *wiz = qobject_cast<SetupWizard*>(wizard());
+    if (!wiz) return false;
+
+    // 1. Spezialfall: Skip Import
+    if (skipImport_m && skipImport_m->isChecked()) {
+        return handleSkipImport(); // Hier wird intern wizard()->accept() gerufen
     }
+
+    // 2. Daten über Setter in den Wizard übertragen
+    wiz->setActiveFilters(getActiveFilters());
+
+    QStringList paths;
+    for(int i = 0; i < listWidgetSource_m->count(); ++i) {
+        paths << listWidgetSource_m->item(i)->text();
+    }
+
+    wiz->setSourcePaths(paths);
+
+    return true;
+}
+
+bool FilterPage::isComplete() const {
+    // Wenn Import übersprungen wird, ist die Seite immer "komplett"
+    if (skipImport_m && skipImport_m->isChecked()) {
+        return true;
+    }
+
+    // Wenn "Manage Data" aktiv ist, muss ein Pfad gewählt sein
+    if (cbManageData_m && cbManageData_m->isChecked()) {
+        if (lblTargetPath_m->text().isEmpty() || lblTargetPath_m->text() == tr("No path selected")) {
+            return false;
+        }
+    }
+
+    // Es müssen Dateien in der Liste sein
+    return listWidgetSource_m && listWidgetSource_m->count() > 0;
+}
+
+bool FilterPage::handleSkipImport() {
+    QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
+    QDir().mkpath(appDataDir);
+
+    // TODO: Define a Global Makro or function (DatabaseManager getDatabaseStorePath
+    #ifdef QT_DEBUG
+            QString finalDbPath = appDataDir + "/sonar_practice_debug.db";
+    #else
+            QString finalDbPath = appDataDir + "/sonar_practice.db";
+    #endif
+
+    if (!DatabaseManager::instance().initDatabase(finalDbPath)) {
+            QMessageBox::critical(this, "Error", "The database could not be initialized.");
+            return false;
+    }
+
+    auto &db = DatabaseManager::instance();
+
+    // C++20: Nutze strukturierte Bindings oder klare Logik für DB-Writes
+    bool success = true;
+    success &= db.setSetting("is_managed", false);
+    success &= db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
+
+    // Wenn 'Manage Data' doch angehakt war, aber übersprungen wurde:
+    if (field("manageData").toBool()) {
+        success &= db.setSetting("managed_path", field("targetPath").toString());
+    }
+
+    db.closeDatabase();
+
+    if (success) {
+        wizard()->accept(); // Schließt den Wizard erfolgreich ab
+    }
+
+    return success;
 }
 
 int FilterPage::nextId() const {
     if (skipImport_m->isChecked()) {
         return -1; // -1 signals: "This is the last page"
     }
-    return 2; // next page id
+    return SetupWizard::Page_Review;
 }
 
 void FilterPage::addTargetPath() {
@@ -314,81 +403,5 @@ void FilterPage::updateTargetPathStyle(bool checked) {
         lblTargetPath_m->setStyleSheet("color: #aaccff; border: 1px solid #666; padding: 5px;");
     } else {
         lblTargetPath_m->setStyleSheet("color: gray; border: 1px solid #444; padding: 5px;");
-    }
-}
-
-// The "Next" button is only active if the list is not empty.
-bool FilterPage::isComplete() const {
-    return listWidgetSource_m->count() > 0;
-}
-
-bool FilterPage::validatePage() {
-    if (this->property("isProcessing").toBool()) {
-        return true;
-    }
-
-    if (skipImport_m->isChecked()) {
-
-        this->setProperty("isProcessing", true);
-        QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-        QDir().mkpath(appDataDir);
-
-        #ifdef QT_DEBUG
-            QString finalDbPath = appDataDir + "/sonar_practice_debug.db";
-        #else
-            QString finalDbPath = appDataDir + "/sonar_practice.db";
-        #endif
-
-        if (!DatabaseManager::instance().initDatabase(finalDbPath)) {
-            QMessageBox::critical(this, "Error", "The database could not be initialized.");
-            return false;
-        }
-
-        auto &db = DatabaseManager::instance();
-
-        if (cbManageData_m->isChecked()) {
-            if (!db.setSetting("managed_path", QVariant(lblTargetPath_m->text()))) {
-                qCritical() << "CRITICAL: managed_path could not be saved to DB:" << lblTargetPath_m->text();
-            }
-
-            if (!db.setSetting("is_managed", QVariant(true))) {
-                qCritical() << "CRITICAL: isManaged could not be saved to DB:" << true;
-            }
-        }
-
-        if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {
-            qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
-        }
-
-        DatabaseManager::instance().closeDatabase();
-        wizard()->accept();
-        return true;
-
-    }
-
-    if (wiz()) {
-        wiz()->activeFilters_m = getActiveFilters();
-        wiz()->sourcePaths_m.clear();
-        for(int i = 0; i < listWidgetSource_m->count(); ++i) {
-            wiz()->sourcePaths_m << listWidgetSource_m->item(i)->text();
-        }
-        wiz()->setButtonsState(false, false, true);
-    }
-
-    QStringList paths = wiz()->getSelectedPaths();
-    QStringList filters = wiz()->getFileFilters();
-
-    wiz()->fileManager()->clearCaches();
-
-    wiz()->button(QWizard::NextButton)->setEnabled(false);
-    return true;
-}
-
-void FilterPage::cleanupPage() {
-    // cleanupPage call by back button
-    SetupWizard *wiz = qobject_cast<SetupWizard*>(wizard());
-    if (wiz) {
-        wiz->setField("manageData", cbManageData_m->isChecked());
-        wiz->setField("targetPath", lblTargetPath_m->text());
     }
 }

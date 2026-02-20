@@ -3,7 +3,7 @@
 #define FILESCANNER_H
 
 #include "reviewstruct.h"
-#include "setupwizard.h" // for using ScanBatch
+#include "sonarstructs.h"
 
 #include <QFileInfo>
 #include <QObject>
@@ -21,14 +21,16 @@ signals:
     void batchesFound(const QList<ScanBatch> &batches);
     void progressStats(const ReviewStats &stats);
     void finished(const ReviewStats &finalStats);
-    void finishWithAllBatches(const QList<ScanBatch> &allBatches, const ReviewStats &stats);
+    void finishWithAllBatches(const QList<ScanBatch> &allBatches, const ReviewStats &stats); // call in MainWindow
 
 public:
     void setExistingHashes(const QSet<QString> &hashes) { existingHashes_m = hashes; };
+    bool isScanning();
 
 private:
     std::atomic<bool> abort_m{false};
     QSet<QString> existingHashes_m;
+    bool isScanning_m{false};
 };
 
 #endif

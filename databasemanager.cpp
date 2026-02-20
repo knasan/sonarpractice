@@ -710,6 +710,9 @@ QSet<QString> DatabaseManager::getAllFileHashes()
 {
     QSet<QString> hashSet;
     QSqlDatabase db = QSqlDatabase::database();
+
+    if(!db.isOpen()) return hashSet;
+
     QSqlQuery query(db);
     query.prepare("SELECT file_hash FROM media_files");
 

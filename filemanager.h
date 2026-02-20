@@ -32,6 +32,8 @@ public:
 
     void updateStatuses(const QList<ScanBatch> &allBatches);
 
+    void setExistingHashes(const QSet<QString> &hashes) { existingHashes_m = hashes; };
+
 private:
     [[nodiscard]] QStandardItem* findItemByPath(const QString& filePath);
     QStandardItemModel* model_m;
@@ -39,6 +41,8 @@ private:
     QMap<int, QStringList> duplicateGroups_m;
     QHash<QString, QStandardItem*> pathCache_m;
     QHash<int, QStandardItem*> groupHeaderCache_m;
+
+    QSet<QString> existingHashes_m;
 
     void printModelStructure(QStandardItem *item, int level = 0) const;
 };

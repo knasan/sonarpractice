@@ -2,103 +2,71 @@
 #include "fnv1a.h"
 
 void FileScanner::doScan(const QStringList &paths, const QStringList &filters) {
-    QElapsedTimer timer;
-    timer.start();
-
+    isScanning_m = true;
     ReviewStats stats;
-    QList<ScanBatch> allBatches;
-    QMap<QString, int> groupMap;
+    QList<ScanBatch> allScannedFiles;
     QMap<QString, int> countMap;
+
+    QMap<QString, int> groupMap;
     int nextGroupId = 1;
 
-    QList<ScanBatch> pendingBatches;
-    int batchCounter = 0;
-
+    // 1. PHASE: Find and hash everything
     for (const QString &path : paths) {
-        QDirIterator it(path, filters, QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
-
+        QDirIterator it(QDir(path).absolutePath(), QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
         while (it.hasNext()) {
-            if (abort_m) {
-                emit finished(stats);
-                return;
-            }
+            if (abort_m) { emit finished(stats); return; }
             it.next();
             QFileInfo info = it.fileInfo();
 
-            if (info.isDir()) {
-                qDebug() << "[FileScanner] doScan - Skipping directory:" << info.absoluteFilePath();
-                continue;
-            }
+            // Filter Check
+            bool match = false;
+            for (const QString &f : filters) { if (QDir::match(f, info.fileName())) { match = true; break; } }
+            if (!match) continue;
+
+            bool isDefect = (info.size() == 0);
+            QString hash = isDefect ? "0" : FNV1a::calculate(info.absoluteFilePath());
+            bool alreadyInDb = existingHashes_m.contains(hash);
+
+            stats.addFile(info.size(), false, isDefect, alreadyInDb);
 
             ScanBatch data;
             data.info = info;
-            stats.addFile(info.size());
+            data.hash = hash;
 
-            if (info.size() == 0) {
-                data.status = StatusDefect;
-                data.hash = "0"; // Unique marker for empty files
-                stats.addDefect();
-            } else {
-                data.hash = FNV1a::calculate(info.absoluteFilePath());
-                if (existingHashes_m.contains(data.hash)) {
-                    data.status = StatusAlreadyInDatabase;
-                    stats.addAlreadyExists();
-                } else if (data.hash.isEmpty()) {
-                    data.status = StatusDefect;
-                    stats.addDefect();
-                } else {
-                    // Normal case: Hash is calculated
-                    if (!groupMap.contains(data.hash)) {
-                        groupMap.insert(data.hash, nextGroupId++);
-                    }
-                    data.groupId = groupMap.value(data.hash);
-                    countMap[data.hash]++; // IMPORTANT: This counts
-
-                    data.status = StatusReady; // By default, it's ready.
-                }
+            if (!groupMap.contains(data.hash)) {
+                groupMap.insert(data.hash, nextGroupId++);
             }
+            data.groupId = groupMap.value(data.hash);
+            countMap[data.hash]++; // IMPORTANT: This counts
 
-            pendingBatches.append(data);
-            batchCounter++;
+            data.status = alreadyInDb ? StatusAlreadyInDatabase : (isDefect ? StatusDefect : StatusReady);
 
-            // Notify the UI only every 20 files.
-            if (batchCounter >= 20) {
-                emit batchesFound(pendingBatches);
-                pendingBatches.clear();
-                batchCounter = 0;
-                QThread::msleep(1);
-            }
-            allBatches.append(data);
+            allScannedFiles.append(data);
+            countMap[hash]++;
         }
     }
 
-    for (ScanBatch &batch : allBatches) {
-        // If the file has already been marked as defective, we will no longer touch it.
-        if (batch.status == StatusDefect) {
-            continue;
-        }
-
-        if (batch.status == StatusAlreadyInDatabase) {
-            batch.status = StatusAlreadyInDatabase;
-            continue;
-        }
-
-        // Check if the hash occurs multiple times.
-        if (countMap.value(batch.hash) > 1) {
-            if (batch.status == StatusAlreadyInDatabase) {
-                batch.status = StatusAlreadyInDatabase;
-            } else {
-                batch.status = StatusDuplicate;
-            }
-            stats.addDuplicate();
-            continue;
+    // 2. PHASE: Mark duplicates
+    int finalDupCount = 0;
+    for (ScanBatch &batch : allScannedFiles) {
+        if (countMap.value(batch.hash) > 1 && batch.status == StatusReady) {
+            batch.status = StatusDuplicate;
+            finalDupCount++;
         }
     }
+    stats.duplicates = finalDupCount;
 
-    if (!pendingBatches.isEmpty()) emit batchesFound(pendingBatches);
+    // 3. PHASE: Send data to the UI in batches (for smooth loading)
+    const int batchSize = 50;
+    for (int i = 0; i < allScannedFiles.size(); i += batchSize) {
+        emit batchesFound(allScannedFiles.mid(i, batchSize));
+    }
 
-    qDebug() << "Scan completed after:" << timer.elapsed() / 1000.0 << "s";
-    emit finishWithAllBatches(allBatches, stats);
+    emit progressStats(stats);
     emit finished(stats);
+    isScanning_m = false;
+}
 
+bool FileScanner::isScanning() {
+    return isScanning_m;
 }

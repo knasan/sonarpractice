@@ -62,12 +62,13 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("SonarPractice");
 
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    qInstallMessageHandler(myMessageHandler);
+
 
 #ifdef QT_DEBUG
     QString dbPath = appDataDir + "/sonar_practice_debug.db";
 #else
     QString dbPath = appDataDir + "/sonar_practice.db";
+    qInstallMessageHandler(myMessageHandler);
 #endif
 
     QString qss =

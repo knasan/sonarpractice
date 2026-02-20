@@ -34,23 +34,43 @@ void FileFilterProxyModel::setFilterMode(FilterMode mode) {
 * @param sourceParent The parent index in the source model.
 * @return true if the row meets the criteria, otherwise false.
 */
+// bool FileFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
+//     QModelIndex index = sourceModel()->index(sourceRow, ColName, sourceParent);
+//     if (!filterRegularExpression().pattern().isEmpty()) {
+//         return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+//     }
+
+//     if (currentMode_m == ModeDuplicates) {
+//         int status = index.data(RoleFileStatus).toInt();
+//         return (status == StatusDuplicate);
+//     }
+
+//     if (currentMode_m == ModeErrors) {
+//         int status = index.data(RoleFileStatus).toInt();
+//         return (status == StatusDefect);
+//     }
+
+//     return true;
+// }
+
 bool FileFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const {
-    QModelIndex index = sourceModel()->index(sourceRow, ColName, sourceParent);
-    if (!filterRegularExpression().pattern().isEmpty()) {
-        return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+    QModelIndex index = sourceModel()->index(sourceRow, 0, sourceParent);
+    int status = sourceModel()->data(index, RoleFileStatus).toInt();
+
+    // 1. Dateien, die bereits in der DB sind, immer ausblenden
+    if (status == StatusAlreadyInDatabase) {
+        return false;
     }
 
+    // 2. Deine bestehende Filter-Logik nach Modus
     if (currentMode_m == ModeDuplicates) {
-        int status = index.data(RoleFileStatus).toInt();
-        return (status == StatusDuplicate);
+        return (status == ModeDuplicates);
+    } else if (currentMode_m == ModeErrors) {
+        return (status == ModeErrors);
     }
 
-    if (currentMode_m == ModeErrors) {
-        int status = index.data(RoleFileStatus).toInt();
-        return (status == StatusDefect);
-    }
-
-    return true;
+    // 3. Suche/RegExp (falls gesetzt)
+    return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
 /**
@@ -146,33 +166,74 @@ void FileFilterProxyModel::collectPathsRecursive(const QModelIndex &parent, QStr
 * @param parent The starting index for the statistical analysis.
 * @return A ReviewStats object containing the accumulated values.
 */
+// ReviewStats FileFilterProxyModel::calculateVisibleStats(const QModelIndex &parent) {
+//     ReviewStats stats;
+//     int rows = rowCount(parent);
+
+//     for (int i = 0; i < rows; ++i) {
+//         QModelIndex proxyIndex = index(i, ColName, parent);
+
+//         if (hasChildren(proxyIndex)) {
+//             stats.addFile(calculateVisibleStats(proxyIndex));
+//             continue;
+//         }
+
+//         int status = proxyIndex.data(RoleFileStatus).toInt();
+//         qint64 size = data(proxyIndex, RoleFileSizeRaw).toLongLong();
+
+//         if (status == StatusDuplicate) {
+//             stats.duplicates++;
+//         } else if (status == StatusDefect) {
+//             stats.defects++;
+//         }
+
+//         stats.totalFiles++;
+//         stats.totalBytes += size;
+
+//         if (data(proxyIndex, Qt::CheckStateRole).toInt() == Qt::Checked) {
+//             stats.selectedFiles++;
+//             stats.savedBytes += size;
+//         }
+//     }
+//     return stats;
+// }
+
 ReviewStats FileFilterProxyModel::calculateVisibleStats(const QModelIndex &parent) {
     ReviewStats stats;
     int rows = rowCount(parent);
 
     for (int i = 0; i < rows; ++i) {
+        // Wir nehmen den Index der ersten Spalte (ColName)
         QModelIndex proxyIndex = index(i, ColName, parent);
 
+        // --- FALL 1: Ordner (Rekursion) ---
         if (hasChildren(proxyIndex)) {
-            stats.add(calculateVisibleStats(proxyIndex));
+            // Wir berechnen die Stats des Unterordners...
+            ReviewStats subDirStats = calculateVisibleStats(proxyIndex);
+            // ...und fügen sie dem aktuellen Ergebnis hinzu
+            stats.merge(subDirStats);
             continue;
         }
 
-        int status = proxyIndex.data(RoleFileStatus).toInt();
+        // --- FALL 2: Datei ---
+        // Wir holen die Daten über das ProxyModel (damit Rollen & Filter stimmen)
+        int status = data(proxyIndex, RoleFileStatus).toInt();
         qint64 size = data(proxyIndex, RoleFileSizeRaw).toLongLong();
 
+        // Hier füllen wir das stats-Objekt manuell für die sichtbare Zeile
+        stats.totalFiles++;
+        stats.totalBytes += size;
+
         if (status == StatusDuplicate) {
-            stats.duplicates_m++;
+            stats.duplicates++;
         } else if (status == StatusDefect) {
-            stats.defects_m++;
+            stats.defects++;
         }
 
-        stats.totalFiles_m++;
-        stats.totalBytes_m += size;
-
+        // Prüfung der Checkbox (Wichtig für "X Dateien zum Import ausgewählt")
         if (data(proxyIndex, Qt::CheckStateRole).toInt() == Qt::Checked) {
-            stats.selectedFiles_m++;
-            stats.savedBytes_m += size;
+            stats.selectedFiles++;
+            stats.savedBytes += size;
         }
     }
     return stats;

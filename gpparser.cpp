@@ -276,8 +276,8 @@ QString GpParser::identifyTuning(const QList<int> &pitches)
 
     int size = sortedPitches.size();
 
-    qDebug() << "Size: " << size;
-    qDebug() << "SortedPitches: " << sortedPitches;
+    // qDebug() << "Size: " << size;
+    // qDebug() << "SortedPitches: " << sortedPitches;
 
     // 6-Saiter Standard & Transponiert
     if (size == 6) {

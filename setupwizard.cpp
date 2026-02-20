@@ -1,36 +1,34 @@
 #include "setupwizard.h"
 #include "filemanager.h"
+#include "filescanner.h"
 #include "welcomepage.h"
 #include "filterpage.h"
 #include "reviewpage.h"
+#include "databasemanager.h"
 #include "mappingpage.h"
 #include "filefilterproxymodel.h"
 
 #include <QScreen>
 #include <QGuiApplication>
-#include <QAbstractButton>
 #include <QMessageBox>
+#include <QDebug>
 
 SetupWizard::SetupWizard(QWidget *parent)
     : QWizard(parent)
 {
-    setObjectName("setupWizard");
-    setWindowFlags(windowFlags()
-                   | Qt::WindowMinimizeButtonHint
-                   | Qt::WindowMaximizeButtonHint
-                   | Qt::WindowCloseButtonHint);
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    setSizeGripEnabled(true);
+    fileScanner_m = new FileScanner(); // without this, no parent use in a thread
+    scannerThread_m = new QThread(this);
+    fileScanner_m->moveToThread(scannerThread_m);
 
-    setOption(QWizard::HaveHelpButton, true);
-    setButtonText(QWizard::HelpButton, tr("About Qt"));
+    setupModels();
+    setupUiLayout();
+    createPages();
+    setupConnections();
+}
 
-    // Link to the Help dialog
-    connect(this, &QWizard::helpRequested, this, [this]() {
-        QMessageBox::aboutQt(this, tr("About Qt"));
-    });
+SetupWizard::~SetupWizard() = default;
 
-    // --- Model Config ----
+void SetupWizard::setupModels() {
     filesModel_m = new QStandardItemModel(this);
     fileManager_m = new FileManager(this);
     fileManager_m->setModel(filesModel_m);
@@ -38,91 +36,61 @@ SetupWizard::SetupWizard(QWidget *parent)
     filesModel_m->setColumnCount(4);
     setProxyModelHeader();
 
-    // Instanzen
     proxyModel_m = new FileFilterProxyModel(this);
-
-    // The mapping (Source -> Proxy)
     proxyModel_m->setSourceModel(filesModel_m);
-
-    // Proxy configuration
     proxyModel_m->setDynamicSortFilter(true);
+}
 
-    // --- Setup Wizard -----
+void SetupWizard::setupUiLayout() {
     setWindowTitle(tr("SonarPractice Setup Assistant"));
+    setWindowFlags(windowFlags() | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
 
-    // Primary screen
-    QScreen *screen = QGuiApplication::primaryScreen();
-    // Available geometry (without taskbar!)
-    QRect screenGeometry = screen->availableGeometry();
-
-    this->setMaximumSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX);
-    setWindowFlags(windowFlags() | Qt::WindowMaximizeButtonHint | Qt::WindowMinimizeButtonHint);
-
-    int dynamicHeight = qMin(800, (int)(screenGeometry.height() * 0.7));
-    int dynamicWidth = qMin(1000, (int)(screenGeometry.width() * 0.7));
-
-    setMinimumSize(600, 500); // Absolute Untergrenze
-    resize(dynamicWidth, dynamicHeight); // Vernünftiger Startwert
-    move(screenGeometry.center() - rect().center());
-
-    //  Stil-Optionen setzen
-    // 'IndependentPages' ensures that pages are more clearly separated.
-    setOption(QWizard::IndependentPages, true);
-
-    // Explicitly focus on a modern style
+    setOption(QWizard::HaveHelpButton, true);
     setWizardStyle(QWizard::ModernStyle);
+    setButtonText(QWizard::HelpButton, tr("About Qt"));
 
-    connect(this, &QWizard::currentIdChanged, this, [this](int id) {
-        qDebug() << "SetupWizard currentIdChanged: " << id;
+    // Responsive design: Window size based on screen
+    if (const auto *screen = QGuiApplication::primaryScreen()) {
+        const QSize availableSize = screen->availableGeometry().size();
+        resize(availableSize.width() * 0.6, availableSize.height() * 0.7);
+    }
+}
 
-        if (id == 1) {
-            qDebug() << "initialize for Filterpage";
-            FilterPage *page = qobject_cast<FilterPage*>(currentPage());
-            if (page) {
-                page->initializePage();
-            }
-        }
-
-        if (id == 2) {
-            qDebug() << "initialize for ReviewPage";
-            ReviewPage *page = qobject_cast<ReviewPage*>(currentPage());
-            if (page) {
-                page->initializePage();
-            }
-        }
-
-        // id 3 ?
-    });
-
+void SetupWizard::createPages() {
+    // Instantiation
     welcomePage_m = new WelcomePage(this);
-    filterPage_m = new FilterPage(this);
-    reviewPage_m = new ReviewPage(this);
+    filterPage_m  = new FilterPage(this);
+    reviewPage_m  = new ReviewPage(this);
     mappingPage_m = new MappingPage(this);
 
-    addPage(welcomePage_m); // Id 0
-    addPage(filterPage_m);  // Id 1
-    addPage(reviewPage_m);  // Id 2
-    addPage(mappingPage_m); // Id 3
+    // Seiten mit den Enum-IDs hinzufügen
+    setPage(Page_Welcome, welcomePage_m);
+    setPage(Page_Filter,  filterPage_m);
+    setPage(Page_Review,  reviewPage_m);
+    setPage(Page_Mapping, mappingPage_m);
 }
 
-SetupWizard::~SetupWizard() {}
+void SetupWizard::setupConnections() {
+    // Help button (About Qt)
+    connect(this, &QWizard::helpRequested, this, [] {
+        QMessageBox::aboutQt(nullptr);
+    });
 
-void SetupWizard::setButtonsState(bool backEnabled, bool nextEnabled, bool cancelEnabled) {
-    if (auto *btn = button(QWizard::BackButton))   btn->setEnabled(backEnabled);
-    if (auto *btn = button(QWizard::NextButton))   btn->setEnabled(nextEnabled);
-    if (auto *btn = button(QWizard::CancelButton)) btn->setEnabled(cancelEnabled);
-
-    QCoreApplication::processEvents();
-}
-
-QStringList SetupWizard::getSelectedPaths() const {
-    return sourcePaths_m;
-}
-
-QStringList SetupWizard::getFileFilters() const {
-    return activeFilters_m;
+    connect(scannerThread_m, &QThread::finished, fileScanner_m, &QObject::deleteLater);
+    scannerThread_m->start();
 }
 
 void SetupWizard::setProxyModelHeader() {
-    filesModel_m->setHorizontalHeaderLabels({tr("Name"), tr("Size"), tr("Status"), tr("Group")});
+    filesModel_m->setHorizontalHeaderLabels({
+        tr("Name"), tr("Size"), tr("Status"), tr("Group")
+    });
+}
+
+void SetupWizard::prepareScannerWithDatabaseData() {
+    // If the database exists, load hashes
+    auto &db = DatabaseManager::instance();
+    QSet<QString> knwonHahes = db.getAllFileHashes();
+    if (fileScanner_m) {
+        fileManager_m->setExistingHashes(knwonHahes);
+    }
 }

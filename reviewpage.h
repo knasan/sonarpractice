@@ -2,111 +2,83 @@
 #define REVIEWPAGE_H
 
 #include "basepage.h"
-#include "filescanner.h"
+#include "reviewstruct.h" // for ReviewStats
 
-// Forward Declarations for faster compilation times
-class QCheckBox;
-class QComboBox;
-class QLineEdit;
-class QModelIndex;
-class QProgressBar;
-class QSortFilterProxyModel;
+// Forward Declarations (beschleunigt die Kompilierung)
 class QTreeView;
 class QLabel;
+class QLineEdit;
+class QRadioButton;
+class QCheckBox;
 class QStandardItem;
-class QSpinBox;
+class QModelIndex;
+class SetupWizard;
 
 class ReviewPage : public BasePage {
     Q_OBJECT
 
 public:
-    // Lifecycle (Constructor/Destructor)
     explicit ReviewPage(QWidget *parent = nullptr);
-    ~ReviewPage();
-
-    // Reimplementations of base classes (interfaces)
+    ~ReviewPage() override;
     void initializePage() override;
-    [[nodiscard]] bool validatePage() override;
-
-signals:
-    void requestScanStart(const QStringList &paths, const QStringList &filters, SetupWizard* wizard);
+    void cleanupPage() override;
+    [[nodiscard]] bool isComplete() const override;
 
 private slots:
     void showContextMenu(const QPoint &pos);
+    void handleItemChanged(QStandardItem *item);
+    void onFilterChanged();
+    void onScanProgressUpdated(const ReviewStats &stats);
+
     void showSummaryContextMenu(const QPoint &pos);
     void showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex);
-    void handleItemChanged(QStandardItem *item);
-    void setAllCheckStates(Qt::CheckState state);
-
-    bool eventFilter(QObject *obj, QEvent *event) override;
-
-private:
-
-    // Initialization & UI Update
-    void sideConnections();
-    void updateUIStats();
-    void updateItemVisuals(QStandardItem* nameItem, int status);
-
-    void cleanupScanResources();
-
-    // Core logic (calculations & data processing)
-    [[nodiscard]] ReviewStats calculateGlobalStats();
-    void countItemsRecursive(QStandardItem* parent, ReviewStats &stats) const;
-    void collectHashesRecursive(QStandardItem* parent, QStringList &hashes);
-    [[nodiscard]] QStringList getUnrecognizedFiles(const QString &folderPath);
-    [[nodiscard]] bool finishDialog();
-    void onItemChanged(QStandardItem *item);
-
-    // Duplicate handling (Thematically grouped)
     void addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameIndex, const QString &currentHash, const QString &currentPath);
+    void searchGroupRecursive(QStandardItem* parent, int groupId, QList<QStandardItem*>& results);
     void addJumpToDuplicateActions(QMenu *jumpMenu, const QString &currentHash, const QString &currentPath);
     [[nodiscard]] QModelIndexList findDuplicatePartners(const QString &hash);
     void jumpToDuplicate(const QModelIndex &sourceIndex);
-    void refreshDuplicateStatus(const QString &hash);
-    void collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result);
-    [[nodiscard]] QStringList getUnresolvedDuplicateNames();
+    void setCheckStateRecursive(QStandardItem* item, Qt::CheckState state);
 
-    // File & Model Operations
-    void discardItemFromModel(const QModelIndex &proxyIndex);
-    void deleteItemPhysically(const QModelIndex &proxyIndex);
+    void onItemChanged(QStandardItem *item);
+    bool eventFilter(QObject *obj, QEvent *event) override;
+
+    void setAllCheckStates(Qt::CheckState state);
+
+    void applySmartCheck();
+
+private:
+    void setupLayout();
+    void setupConnections();
+
+    void updateItemVisuals(QStandardItem* nameItem, int status);
     void addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &proxyIndex, const QString &currentPath);
     void addStandardActionsToMenu(QMenu *menu);
 
-    // Auxiliary functions (Recursive / Utility)
+    void discardItemFromModel(const QModelIndex &proxyIndex);
+    void collectHashesRecursive(QStandardItem* parent, QStringList &hashes);
+    void refreshDuplicateStatus(const QString &hash);
+    void updateUIStats(const ReviewStats &stats);
+    [[nodiscard]] ReviewStats calculateGlobalStats();
+    void countItemsRecursive(QStandardItem* parent, ReviewStats &stats) const;
+    void collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result);
+    void deleteItemPhysically(const QModelIndex &proxyIndex);
+    [[nodiscard]] QStringList getUnrecognizedFiles(const QString &folderPath);
+
+    // Helper functions for the checkbox logic (recursion)
     void recursiveCheckChilds(QStandardItem* parent, Qt::CheckState state);
-    void setCheckStateRecursive(QStandardItem* item, Qt::CheckState state);
-    void searchGroupRecursive(QStandardItem* parent, int groupId, QList<QStandardItem*>& results);
-    void checkFolderRecursive(QStandardItem* parentItem,
-                              QMap<int, bool>& groupHasSelection,
-                              QMap<int, QString>& groupExampleName);
-    [[nodiscard]] QStringList getPathParts(const QString& fullPath);
-    [[nodiscard]] bool isRootExpanded();
 
-    // Debugging
-    void debugRoles(QModelIndex indexAtPos);
-    void debugItemInfo(QStandardItem* item, QString fromFunc);
+    QTreeView* treeView_m{nullptr};
+    QLabel* summaryLabel_m{nullptr};
+    QLabel* statusLabel_m{nullptr};
+    QLineEdit* searchLineEdit_m{nullptr};
 
-    // Member variables
-    QLineEdit* searchLineEdit_m;
-    QRadioButton* radioAll_m;
-    QRadioButton* radioErrors_m;
-    QRadioButton* radioDup_m;
-    QCheckBox* collabsTree_m;
-    QCheckBox* expertModeCheck_m;
-    QTreeView* treeView_m;
-    QLabel* summaryLabel_m;
-    QLabel* statusLabel_m;
+    // Filter-Buttons
+    QRadioButton* radioAll_m{nullptr};
+    QRadioButton* radioErrors_m{nullptr};
+    QRadioButton* radioDuplicates_m{nullptr};
 
-    QCache<QString, QStringList>* pathPartsCache_m;
-    int totalDuplicatesCount_m{0};
-    int totalDefectsCount_m{0};
-    bool isConnectionsEstablished_m{false};
-
-    bool pageInitialized{false};
-    bool scanInProgress_m{false};
-    QThread *scanThread_m = nullptr;
-    FileScanner *worker_m = nullptr;
-
+    QCheckBox* collabsTree_m{nullptr};
+    QCheckBox* expertModeCheck_m{nullptr};
 };
 
 #endif // REVIEWPAGE_H
