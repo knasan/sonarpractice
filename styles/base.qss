@@ -87,7 +87,7 @@
     background-color: transparent;
     color: #e0e0e0;
     border: none;
-    selection-background-color: #2FA8FF; 
+    selection-background-color: #2FA8FF;
     selection-color: #08111f;
 }
 
@@ -103,19 +103,19 @@ QWidget {
 }
 
 QPushButton {
-   border-style: solid; 
-    
+   border-style: solid;
+
     background-color: rgba(255,255,255,0.06);
     border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 15px; 
-    
+    border-radius: 15px;
+
     padding: 8px 16px;
     font-weight: 650;
     color: #e0e0e0;
 }
 
 QPushButton:hover {
-    background-color: rgba(255,255,255,0.10); 
+    background-color: rgba(255,255,255,0.10);
     border: 1px solid rgba(255,255,255,0.15);
 }
 

@@ -20,7 +20,7 @@ public:
         alreadyInDb = other.alreadyInDb;
         ignoredBytes = other.ignoredBytes;
         totalBytes = other.totalBytes;
-        savedBytes = other.savedBytes;
+        selectedBytes = other.selectedBytes;
     }
 
     ReviewStats& operator=(const ReviewStats& other) {
@@ -36,22 +36,21 @@ public:
             alreadyInDb = other.alreadyInDb;
             ignoredBytes = other.ignoredBytes;
             totalBytes = other.totalBytes;
-            savedBytes = other.savedBytes;
+            selectedBytes = other.selectedBytes;
         }
         return *this;
     }
 
-    int totalFiles{0};
-    int selectedFiles{0};
-    int defects{0};
-    int duplicates{0};
-    int managed{0};
-    int ignoredFiles{0};
-    int alreadyInDb{0};
-
+    long long totalFiles{0};
+    long long selectedFiles{0};
+    long long defects{0};
+    long long duplicates{0};
+    long long managed{0};
+    long long ignoredFiles{0};
+    long long alreadyInDb{0};
     long long ignoredBytes{0};
     long long totalBytes{0};
-    long long savedBytes{0};
+    long long selectedBytes{0};
 
     void addFile(long long size, bool isDuplicate, bool isDefect, bool alreadyInDbParam = false) {
         QMutexLocker locker(&mutex_m);
@@ -88,14 +87,14 @@ public:
         alreadyInDb += other.alreadyInDb;
         ignoredBytes += other.ignoredBytes;
         totalBytes += other.totalBytes;
-        savedBytes += other.savedBytes;
+        selectedBytes += other.selectedBytes;
     }
 
     void reset() {
         QMutexLocker locker(&mutex_m);
         totalFiles = selectedFiles = defects = duplicates = 0;
         managed = ignoredFiles = alreadyInDb = 0;
-        ignoredBytes = totalBytes = savedBytes = 0;
+        ignoredBytes = totalBytes = selectedBytes = 0;
     }
 
 private:

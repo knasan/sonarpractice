@@ -2,7 +2,7 @@
 #define REVIEWPAGE_H
 
 #include "basepage.h"
-#include "reviewstruct.h" // for ReviewStats
+#include <QProgressBar>
 
 // Forward Declarations (beschleunigt die Kompilierung)
 class QTreeView;
@@ -28,12 +28,11 @@ private slots:
     void showContextMenu(const QPoint &pos);
     void handleItemChanged(QStandardItem *item);
     void onFilterChanged();
-    void onScanProgressUpdated(const ReviewStats &stats);
 
     void showSummaryContextMenu(const QPoint &pos);
     void showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex);
     void addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameIndex, const QString &currentHash, const QString &currentPath);
-    void searchGroupRecursive(QStandardItem* parent, int groupId, QList<QStandardItem*>& results);
+
     void addJumpToDuplicateActions(QMenu *jumpMenu, const QString &currentHash, const QString &currentPath);
     [[nodiscard]] QModelIndexList findDuplicatePartners(const QString &hash);
     void jumpToDuplicate(const QModelIndex &sourceIndex);
@@ -49,28 +48,25 @@ private slots:
 private:
     void setupLayout();
     void setupConnections();
+    void updateUIStats();
 
-    void updateItemVisuals(QStandardItem* nameItem, int status);
     void addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &proxyIndex, const QString &currentPath);
     void addStandardActionsToMenu(QMenu *menu);
 
     void discardItemFromModel(const QModelIndex &proxyIndex);
     void collectHashesRecursive(QStandardItem* parent, QStringList &hashes);
     void refreshDuplicateStatus(const QString &hash);
-    void updateUIStats(const ReviewStats &stats);
-    [[nodiscard]] ReviewStats calculateGlobalStats();
-    void countItemsRecursive(QStandardItem* parent, ReviewStats &stats) const;
+
     void collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result);
     void deleteItemPhysically(const QModelIndex &proxyIndex);
     [[nodiscard]] QStringList getUnrecognizedFiles(const QString &folderPath);
-
-    // Helper functions for the checkbox logic (recursion)
-    void recursiveCheckChilds(QStandardItem* parent, Qt::CheckState state);
 
     QTreeView* treeView_m{nullptr};
     QLabel* summaryLabel_m{nullptr};
     QLabel* statusLabel_m{nullptr};
     QLineEdit* searchLineEdit_m{nullptr};
+
+    QProgressBar* progressBar_m{nullptr};
 
     // Filter-Buttons
     QRadioButton* radioAll_m{nullptr};

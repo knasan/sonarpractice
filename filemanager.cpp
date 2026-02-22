@@ -236,7 +236,6 @@ void FileManager::clearCaches()
  */
 void FileManager::updateStatuses(const QList<ScanBatch> &allBatches)
 {
-    // qDebug() << "[FileManager] updateStatuses START";
     model_m->blockSignals(true);
 
     duplicateGroups_m.clear();
@@ -256,11 +255,9 @@ void FileManager::updateStatuses(const QList<ScanBatch> &allBatches)
             // This is where the color of duplicates is set for the first time.
             if (batch.status == StatusDuplicate)
             {
-                // qDebug() << "[FileManager] updateStatuses pathKey: " << pathKey;
                 duplicateGroups_m[batch.groupId].append(pathKey);
                 nameItem->setData(batch.status, RoleFileStatus);
                 nameItem->setData(batch.groupId, RoleDuplicateId);
-                nameItem->setCheckState(Qt::Unchecked);
 
                 // Change text in column 2 to "Duplicate".
                 QStandardItem *parent = nameItem->parent() ? nameItem->parent() : model_m->invisibleRootItem();
@@ -273,11 +270,11 @@ void FileManager::updateStatuses(const QList<ScanBatch> &allBatches)
             }
 
             // Add color for defects and duplicates - ready remains transparent.
-            if (batch.status == StatusDefect || batch.status == StatusDuplicate || batch.status == StatusManaged)
-            {
-                // qDebug() << "updateStatuses set color for status: " << getStatusText(batch.status);
-                nameItem->setBackground(baseColor);
-            }
+            // if (batch.status == StatusDefect || batch.status == StatusDuplicate || batch.status == StatusManaged)
+            // {
+            //     // qDebug() << "updateStatuses set color for status: " << getStatusText(batch.status);
+            //     nameItem->setBackground(baseColor);
+            // }
         }
     }
     model_m->blockSignals(false);
