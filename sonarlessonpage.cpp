@@ -17,6 +17,7 @@
 #include "fileutils.h"
 #include "reminderdialog.h"
 #include "uihelper.h"
+#include "songeditdialog.h"
 
 #include <QCalendarWidget>
 #include <QComboBox>
@@ -185,8 +186,6 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
         if (expanded) {
             sidebarLayout->setStretchFactor(remSection, 0);
         } else {
-            // Wenn eingeklappt: Tabelle nimmt keinen Platz mehr weg,
-            // Kalender (oder andere Widgets) füllen den Raum
             sidebarLayout->setStretchFactor(remSection, 0);
         }
     });
@@ -195,8 +194,6 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
         if (expanded) {
             sidebarLayout->setStretchFactor(calSection, 0);
         } else {
-            // Wenn eingeklappt: Tabelle nimmt keinen Platz mehr weg,
-            // Kalender (oder andere Widgets) füllen den Raum
             sidebarLayout->setStretchFactor(calSection, 0);
         }
     });
@@ -225,6 +222,8 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
 
     songSelector_m = new QComboBox(this);
     songSelector_m->setObjectName("songSelectorComboBox");
+    // songSelector_m->setEditable(true);
+    songSelector_m->setInsertPolicy(QComboBox::NoInsert);
     formLayout->addWidget(songSelector_m, 0, 1, 1, 3);
 
     // Line 1: Artist
@@ -269,11 +268,61 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     btnGpIcon_m->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
     formLayout->addWidget(btnGpIcon_m, 5, 0, 1, 1);
 
+    auto *btnEditDialog = new QPushButton(tr("Edit Song"), this);
+    btnEditDialog->setObjectName("songEditDialog");
+    formLayout->addWidget(btnEditDialog, 5, 1, 1, 1);
+
+    connect(btnEditDialog, &QPushButton::clicked, this, &SonarLessonPage::onEditSongClicked);
+
     auto *containerWidget = new QWidget(this);
     containerWidget->setLayout(formLayout);
     songInfoSection->addContentWidget(containerWidget);
 
     contentLayout->addWidget(songInfoSection);
+}
+
+void SonarLessonPage::onEditSongClicked() {
+    // 1. Daten des aktuell gewählten Songs holen (z.B. aus einer Member-Variable m_currentSongId)
+    // Nehmen wir an, du hast die Daten vorliegen:
+    int songId = getCurrentSongId();
+    QString title = title_m->text();
+    QString artist = artist_m->text();
+    QString tuning = tuningLabel_m->text();
+    int bpm = tempo_m->text().toInt();
+
+    // 2. Dialog instanziieren
+    SongEditDialog dialog(this);
+
+    // 3. Listen aus der DB holen für die Dropdowns
+    QStringList artists = DatabaseManager::instance().getAllArtists();
+    QStringList tunings = DatabaseManager::instance().getAllTunings();
+
+    // 4. Daten an den Dialog übergeben
+    dialog.setSongData(title, artist, tuning, bpm, artists, tunings);
+
+    // 5. Dialog anzeigen
+    if (dialog.exec() == QDialog::Accepted) {
+        // User hat OK geklickt -> Daten abgreifen
+        QString newTitle = dialog.title();
+        QString newArtistName = dialog.artist();
+        QString newTuningName = dialog.tuning();
+        int newBpm = dialog.bpm();
+
+        // 6. In der Datenbank speichern
+        // Zuerst IDs für Artist/Tuning holen (erstellt neue, falls nicht vorhanden)
+        int artistId = DatabaseManager::instance().getOrCreateArtist(newArtistName);
+        int tuningId = DatabaseManager::instance().getOrCreateTuning(newTuningName);
+
+        // Update-Funktion im DatabaseManager aufrufen
+        if(!DatabaseManager::instance().updateSong(songId, newTitle, artistId, tuningId, newBpm)) {
+            statusLabel_m->setText(savedMessageFailed_m);
+        } else {
+            showSaveMessage(savedMessage_m);
+        }
+
+        // 7. UI aktualisieren (z.B. Label oder Tabelle neu laden)
+        loadData();
+    }
 }
 
 void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
@@ -312,7 +361,6 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
     uiRefreshTimer_m = new QTimer(this);
 
     trainingLayout->addSpacerItem(new QSpacerItem(250, 0, QSizePolicy::Fixed));
-    trainingLayout->addWidget(timerBtn_m);
     trainingLayout->addWidget(lcdNumber_m);
 
     // 4.2. Beat and tempo settings
@@ -334,6 +382,7 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
 
     btnAddReminder_m = new QPushButton(tr("Add Reminder"));
     btnAddReminder_m->setObjectName("addReminderButton");
+    btnAddReminder_m->setFlat(true);
 
     trainingLayout->addWidget(new QLabel(tr("Beat of:")));
     trainingLayout->addWidget(beatOf_m);
@@ -342,6 +391,7 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
     trainingLayout->addWidget(new QLabel(tr("Tempo:")));
     trainingLayout->addWidget(practiceBpm_m);
 
+    trainingLayout->addWidget(timerBtn_m);
     trainingLayout->addWidget(btnAddReminder_m);
     trainingLayout->addStretch();
 
@@ -370,7 +420,7 @@ void SonarLessonPage::onAddReminderClicked()
         }
     }
 
-    ReminderDialog dlg = ReminderDialog(this);
+    ReminderDialog dlg(this, beatOf_m->value(), beatTo_m->value(), practiceBpm_m->value());
 
     dlg.setTargetSong(currentSongId, songName);
 
@@ -1046,7 +1096,7 @@ void SonarLessonPage::onSaveClicked() {
         notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toMarkdown(), selectedDate);
         if (notesSuccess) {
             isDirtyNotes_m = false;
-            showSaveMessage();
+            showSaveMessage(tr("Successfully saved"));
         }
     }
 
@@ -1055,9 +1105,8 @@ void SonarLessonPage::onSaveClicked() {
     updateReminderTable(calendar_m->selectedDate());
 }
 
-void SonarLessonPage::showSaveMessage() {
-    static QString msgSucess = tr("Successfully saved");
-    statusLabel_m->setText(msgSucess);
+void SonarLessonPage::showSaveMessage(QString message) {
+    statusLabel_m->setText(message);
     // show for 10 secons a saved message
     QTimer::singleShot(10000, this, [this]() { statusLabel_m->clear(); });
 }
@@ -1071,7 +1120,7 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
     bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
         isDirtyTable_m = false;
-        showSaveMessage();
+        showSaveMessage(savedMessage_m);
         updateButtonState();
     }
 
@@ -1302,8 +1351,7 @@ void SonarLessonPage::updateTableRow(int targetRow, int startBar, int endBar, in
     }
 
     sessionTable_m->setCurrentCell(targetRow, PracticeTable::PracticeColumn::Repetitions);
-    sessionTable_m->editItem(
-        sessionTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions));
+    sessionTable_m->editItem(sessionTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions));
 }
 
 int SonarLessonPage::findOrCreateEmptyTableRow()

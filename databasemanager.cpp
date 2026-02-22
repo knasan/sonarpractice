@@ -2095,3 +2095,62 @@ int DatabaseManager::getOrCreateUserId(const QString &name, const QString &role)
 
     return -1;
 }
+
+QStringList DatabaseManager::getAllArtists() {
+    QStringList artists;
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+    q.prepare("SELECT name FROM artists ORDER BY name ASC");
+
+    if (q.exec()) {
+        while (q.next()) {
+            artists << q.value(0).toString();
+        }
+    } else {
+        qCritical() << "[DatabaseManager] getAllArtists, error: " << q.lastError().text();
+        qDebug() << "[DatabaseManager] getAllArtists, fullquery: " << q.executedQuery();
+    }
+
+    return artists;
+}
+
+QStringList DatabaseManager::getAllTunings() {
+    QStringList tunings;
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+    q.prepare("SELECT name FROM tunings ORDER BY name ASC");
+
+    if (q.exec()) {
+        while (q.next()) {
+            tunings << q.value(0).toString();
+        }
+    } else {
+        qCritical() << "[DatabaseManager] getAllTunings, error: " << q.lastError().text();
+        qDebug() << "[DatabaseManager] getAllTunings, fullquery: " << q.executedQuery();
+    }
+
+    return tunings;
+}
+
+bool DatabaseManager::updateSong(int songId, const QString &title, int artistId, int tuningId, int bpm) {
+    QSqlQuery q;
+    q.prepare("UPDATE songs SET "
+              "title = :title, "
+              "artist_id = :artistId, "
+              "tuning_id = :tuningId, "
+              "base_bpm = :bpm "
+              "WHERE id = :id");
+
+    q.bindValue(":title", title);
+    q.bindValue(":artistId", artistId);
+    q.bindValue(":tuningId", tuningId);
+    q.bindValue(":bpm", bpm);
+    q.bindValue(":id", songId);
+
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] updateSong, error: " << q.lastError().text();
+        qDebug() << "[DatabaseManager] updateSong, fullquery: " << q.executedQuery();
+        return false;
+    }
+    return true;
+}

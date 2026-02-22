@@ -69,6 +69,8 @@ public:
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
     [[nodiscard]] QSet<QString> getAllFileHashes();
+    [[nodiscard]] QStringList getAllArtists();
+    [[nodiscard]] QStringList getAllTunings();
 
     // Linking
     [[nodiscard]] int linkFiles(const QList<int> &fileIds);
@@ -94,6 +96,8 @@ public:
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
     [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
     [[nodiscard]] QList<DatabaseManager::SongDetails> loadData();
+
+    [[nodiscard]] bool updateSong(int songId, const QString &title, int artistId, int tuningId, int bpm);
 
     // Statistics & Dashboard
     [[nodiscard]] QMap<int, QString> getPracticedSongsForDay(QDate date);

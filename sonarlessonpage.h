@@ -60,7 +60,7 @@ private:
     void loadJournalForDay(int songId, QDate date);
     void loadTableDataForDay(int songId, QDate date);
     void refreshTableDisplay(QDate date);
-    void showSaveMessage();
+    void showSaveMessage(QString message);
     void addSessionToTable(const PracticeSession &s, bool isReadOnly);
 
     void updateReminderTable(const QDate &date);
@@ -77,6 +77,9 @@ private:
     [[nodiscard]] QList<PracticeSession> collectTableData();
 
     [[nodiscard]] int getCurrentSongId();
+
+    QString savedMessage_m = tr("Successfully saved");
+    QString savedMessageFailed_m = tr("Saved failed");
 
     // UI Elements
     QComboBox *songSelector_m;
@@ -146,6 +149,7 @@ private slots:
     void onSongChanged(int songId);
     void onSaveClicked();
     void updateTimerDisplay();
+    void onEditSongClicked();
 
 public slots:
     void loadData();

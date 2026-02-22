@@ -9,7 +9,7 @@
 #include <QSpinBox>
 #include <QVBoxLayout>
 
-ReminderDialog::ReminderDialog(QWidget *parent)
+ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int practiceBpm)
     : QDialog(parent)
 {
     setWindowTitle(tr("Add Practice Reminder"));
@@ -28,14 +28,16 @@ ReminderDialog::ReminderDialog(QWidget *parent)
     // Felder initialisieren
     startBarSpin_m = new QSpinBox(this);
     startBarSpin_m->setMinimum(1);
+    startBarSpin_m->setValue(startBar);
 
     endBarSpin_m = new QSpinBox(this);
     endBarSpin_m->setMinimum(1);
+    endBarSpin_m->setValue(endBar);
 
     bpmSpin_m = new QSpinBox(this);
     bpmSpin_m->setMinimum(20);
     bpmSpin_m->setMaximum(300);
-    bpmSpin_m->setValue(60);
+    bpmSpin_m->setValue(practiceBpm);
 
     dailyCheck_m = new QCheckBox(tr("Repeat Daily"), this);
     monthlyCheck_m = new QCheckBox(tr("Repeat Monthly"), this);
@@ -64,24 +66,24 @@ ReminderDialog::ReminderDialog(QWidget *parent)
     formLayout->addRow(tr("Or on Weekday:"), weekdayCombo_m);
 
     // Buttons (OK / Cancel)
-
     connect(dialogButtons_m, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(dialogButtons_m, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
-    // 2. Alle relevanten Widgets mit der Validierung verbinden
+    // 2. Connect all relevant widgets to the validation
     connect(dailyCheck_m, &QCheckBox::toggled, this, &ReminderDialog::updateOkButtonState);
     connect(monthlyCheck_m, &QCheckBox::toggled, this, &ReminderDialog::updateOkButtonState);
     connect(weekdayCombo_m,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,
             &ReminderDialog::updateOkButtonState);
-    // Falls auch das Datum als "einmaliger Tag" zählt:
+
+    // If the date also counts as a "unique day":
     connect(dateEdit_m, &QDateEdit::dateChanged, this, &ReminderDialog::updateOkButtonState);
 
     mainLayout->addLayout(formLayout);
     mainLayout->addWidget(dialogButtons_m);
 
-    // Kleine Validierung: End-Takt automatisch mitziehen
+    // Minor validation: Automatically pull the end clock along.
     connect(startBarSpin_m, QOverload<int>::of(&QSpinBox::valueChanged), [this](int val) {
         if (endBarSpin_m->value() < val)
             endBarSpin_m->setValue(val);
@@ -121,7 +123,6 @@ void ReminderDialog::updateOkButtonState()
     bool hasMonthly = (monthlyCheck_m && monthlyCheck_m->isChecked());
     bool hasWeekday = (weekdayCombo_m->currentIndex() > 0);
 
-    // Die Kern-Frage: Hat der User IRGENDEIN Intervall gewählt?
     bool hasInterval = hasDaily || hasMonthly || hasWeekday;
 
     bool finalValid = false;

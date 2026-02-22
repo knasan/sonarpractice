@@ -354,8 +354,9 @@ QPushButton#homeButton, QPushButton#libraryButton, QPushButton#docsButton, QPush
     min-height: 45px;
     border-radius: 22px;
     padding: 0px;
-    background-color: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* background-color: transparent; */
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     qproperty-iconSize: 24px 24px;
 }
 
