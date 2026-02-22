@@ -164,6 +164,7 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
 
     // Reminder-Tabelle initialisieren
     reminderTable_m = new QTableWidget(this);
+    reminderTable_m->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     reminderTable_m->setObjectName("reminderTable");
     reminderTable_m->setColumnCount(4);
     reminderTable_m->setHorizontalHeaderLabels({tr("Song"), tr("Range"), tr("BPM"), tr("Status")});
@@ -179,7 +180,26 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
 
     sidebarLayout->addWidget(calSection);
     sidebarLayout->addWidget(remSection);
-    sidebarLayout->addStretch();
+
+    connect(remSection, &CollapsibleSection::toggled, this, [sidebarLayout, remSection](bool expanded) {
+        if (expanded) {
+            sidebarLayout->setStretchFactor(remSection, 0);
+        } else {
+            // Wenn eingeklappt: Tabelle nimmt keinen Platz mehr weg,
+            // Kalender (oder andere Widgets) füllen den Raum
+            sidebarLayout->setStretchFactor(remSection, 0);
+        }
+    });
+
+    connect(calSection, &CollapsibleSection::toggled, this, [sidebarLayout, calSection](bool expanded) {
+        if (expanded) {
+            sidebarLayout->setStretchFactor(calSection, 0);
+        } else {
+            // Wenn eingeklappt: Tabelle nimmt keinen Platz mehr weg,
+            // Kalender (oder andere Widgets) füllen den Raum
+            sidebarLayout->setStretchFactor(calSection, 0);
+        }
+    });
 
     mainLayout->addLayout(sidebarLayout, 1);
 }

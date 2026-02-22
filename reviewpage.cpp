@@ -613,8 +613,6 @@ void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
                                       QMap<int, QString>& groupExampleName) {
     if (!parentItem) return;
 
-    qDebug() << "[ReviewPage] checkFolderRecursive START";
-
     for (int i = 0; i < parentItem->rowCount(); ++i) {
         QStandardItem* item = parentItem->child(i, ColName);
         if (!item) continue;
@@ -925,11 +923,11 @@ void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState stat
     }
 
     if (item->column() == ColName) {
-        // Nur wenn es ein Defekt ist, darf es NICHT anwählbar sein
+        // It should only be unselectable if it is defective.
         if (item->data(RoleFileStatus).toInt() == StatusDefect) {
             item->setCheckState(Qt::Unchecked);
         } else {
-            item->setCheckState(state); // Setze den tatsächlich gewählten Status
+            item->setCheckState(state); // Set the actually selected status
         }
     } else {
         // If we end up here, we'll clear the column just to be safe.
