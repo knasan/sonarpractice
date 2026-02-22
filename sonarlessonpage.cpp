@@ -367,10 +367,12 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
     beatOf_m = new QSpinBox(this);
     beatOf_m->setObjectName("beatFromSpinBox");
     beatOf_m->setMinimum(1);
+    beatOf_m->setMaximum(9999);
 
     beatTo_m = new QSpinBox(this);
     beatTo_m->setObjectName("beatToSpinBox");
     beatTo_m->setMinimum(1);
+    beatTo_m->setMaximum(9999);
 
     practiceBpm_m = new QSpinBox(this);
     practiceBpm_m->setObjectName("bpmSpinBox");
