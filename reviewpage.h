@@ -23,6 +23,7 @@ public:
     void initializePage() override;
     void cleanupPage() override;
     [[nodiscard]] bool isComplete() const override;
+    [[nodiscard]] bool validatePage() override;
 
 private slots:
     void showContextMenu(const QPoint &pos);
@@ -56,6 +57,12 @@ private:
     void discardItemFromModel(const QModelIndex &proxyIndex);
     void collectHashesRecursive(QStandardItem* parent, QStringList &hashes);
     void refreshDuplicateStatus(const QString &hash);
+
+    bool finishDialog();
+    [[nodiscard]] QStringList getUnresolvedDuplicateNames();
+    void checkFolderRecursive(QStandardItem* parentItem,
+                                          QMap<int, bool>& groupHasSelection,
+                                          QMap<int, QString>& groupExampleName);
 
     void collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result);
     void deleteItemPhysically(const QModelIndex &proxyIndex);

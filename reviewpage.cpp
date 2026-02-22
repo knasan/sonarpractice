@@ -19,6 +19,9 @@
 #include <QMessageBox>
 #include <QCheckBox>
 #include <QKeyEvent>
+#include <QPushButton>
+#include <QAbstractButton>
+
 
 // =============================================================================
 // --- LIFECYCLE (Constructor / Destructor)
@@ -542,51 +545,98 @@ QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
     return unrecognized;
 }
 
-// bool ReviewPage::finishDialog() {
-//     ReviewStats stats = wiz()->proxyModel_m->calculateVisibleStats();
-//     QStringList unresolvedDups = getUnresolvedDuplicateNames();
+bool ReviewPage::finishDialog() {
+    ReviewStats stats = wiz()->proxyModel()->calculateCurrentStats();
+    QStringList unresolvedDups = getUnresolvedDuplicateNames();
 
-//     // The message text (HTML for better readability)
-//     QString msg = QString(
-//                       "<h3>" + tr("Import summary") + "</h3>"
-//                                                                    "<p><b>" + tr("In total:") + "</b> %1 (%2)</p>"
-//                                         "<p><b>" + tr("Take over:") + "</b> <span style='color:green;'>%3 (%4)</span></p>"
-//                                             "<p><b>" + tr("Defect:") + "</b> <span style='color:red;'>%5</span></p>"
-//                                         "<p><b>" + tr("Duplicates:") + "</b> %6</p>"
-//                       ).arg(QString::number(stats.totalFiles()),
-//                            FileUtils::formatBytes(stats.totalBytes()),
-//                            QString::number(stats.selectedFiles()),
-//                            FileUtils::formatBytes(stats.savedBytes()),
-//                            QString::number(stats.defects()),
-//                            QString::number(totalDuplicatesCount_m));
+    // The message text (HTML for better readability)
+    QString msg = QString(
+                      "<h3>" + tr("Import summary") + "</h3>"
+                                                                   "<p><b>" + tr("In total:") + "</b> %1 (%2)</p>"
+                                        "<p><b>" + tr("Take over:") + "</b> <span style='color:green;'>%3 (%4)</span></p>"
+                                            "<p><b>" + tr("Corrupted files found (were skipped):") + "</b> <span style='color:red;'>%5</span></p>"
+                                        "<p><b>" + tr("Found duplicate files (managed by you):") + "</b> %6</p>"
+                      ).arg(QString::number(stats.totalFiles),
+                           FileUtils::formatBytes(stats.totalBytes),
+                           QString::number(stats.selectedFiles),
+                           FileUtils::formatBytes(stats.selectedBytes),
+                           QString::number(stats.defects),
+                           QString::number(stats.selectedBytes));
 
-//     // Add warning for unresolved duplicates
-//     if (!unresolvedDups.isEmpty()) {
-//         msg += "<div style='margin-top:10px; padding:5px; border:1px solid orange;'>"
-//                "<b>" + tr("Attention: No duplicate was selected in %1 group(s):").arg(unresolvedDups.size()) + "</b><br/>"
-//                                                                                                           "<i>" + unresolvedDups.join(", ") + "</i></div>";
-//     }
+    // Add warning for unresolved duplicates
+    if (!unresolvedDups.isEmpty()) {
+        msg += "<div style='margin-top:10px; padding:5px; border:1px solid orange;'>"
+               "<b>" + tr("Attention: No duplicate was selected in %1 group(s):").arg(unresolvedDups.size()) + "</b><br/>"
+                                                                                                          "<i>" + unresolvedDups.join(", ") + "</i></div>";
+    }
 
-//     msg += "<p><br/>" + tr("Do you want to accept the selection as is?") + "</p>";
+    msg += "<p><br/>" + tr("Do you want to accept the selection as is?") + "</p>";
 
-//     // Show Dialog
-//     QMessageBox msgBox(this);
-//     msgBox.setWindowTitle(tr("Confirm import"));
-//     msgBox.setTextFormat(Qt::RichText);
-//     msgBox.setText(msg);
-//     msgBox.setIcon(QMessageBox::Question);
+    // Show Dialog
+    QMessageBox msgBox(this);
+    msgBox.setWindowTitle(tr("Confirm import"));
+    msgBox.setTextFormat(Qt::RichText);
+    msgBox.setText(msg);
+    msgBox.setIcon(QMessageBox::Question);
 
-//     QPushButton *confirmBtn = msgBox.addButton(tr("Take over"), QMessageBox::AcceptRole);
-//     msgBox.addButton(tr("Correct"), QMessageBox::RejectRole);
+    QPushButton *confirmBtn = msgBox.addButton(tr("Take over"), QMessageBox::AcceptRole);
+    msgBox.addButton(tr("Correct"), QMessageBox::RejectRole);
 
-//     msgBox.exec();
+    msgBox.exec();
 
-//     if (msgBox.clickedButton() == confirmBtn) {
-//         return true;
-//     }
+    if (msgBox.clickedButton() == static_cast<QAbstractButton*>(confirmBtn)) {
+        return true;
+    }
 
-//     return false;
-// }
+    return false;
+}
+
+QStringList ReviewPage::getUnresolvedDuplicateNames() {
+    qDebug() << "[ReviewPage] getUnresolvedDuplicateNames START";
+    QMap<int, bool> groupHasSelection;
+    QMap<int, QString> groupExampleName;
+
+    // Start the recursion at the root element.
+    checkFolderRecursive(wiz()->filesModel()->invisibleRootItem(), groupHasSelection, groupExampleName);
+
+    QStringList unresolved;
+    for (auto it = groupExampleName.begin(); it != groupExampleName.end(); ++it) {
+        if (!groupHasSelection.value(it.key(), false)) {
+            unresolved << it.value();
+        }
+    }
+    return unresolved;
+}
+
+void ReviewPage::checkFolderRecursive(QStandardItem* parentItem,
+                                      QMap<int, bool>& groupHasSelection,
+                                      QMap<int, QString>& groupExampleName) {
+    if (!parentItem) return;
+
+    qDebug() << "[ReviewPage] checkFolderRecursive START";
+
+    for (int i = 0; i < parentItem->rowCount(); ++i) {
+        QStandardItem* item = parentItem->child(i, ColName);
+        if (!item) continue;
+
+        int gId = item->data(RoleDuplicateId).toInt();
+
+        if (gId > 0) {
+            if (!groupExampleName.contains(gId)) {
+                groupExampleName[gId] = item->text();
+            }
+            int status = item->data(RoleFileStatus).toInt();
+            if (item->checkState() == Qt::Checked || status == StatusManaged) {
+                groupHasSelection[gId] = true;
+            }
+        }
+
+        // Dive deeper into the tree (folders have children)
+        if (item->hasChildren()) {
+            checkFolderRecursive(item, groupHasSelection, groupExampleName);
+        }
+    }
+}
 
 void ReviewPage::onItemChanged(QStandardItem *item) {
     if (!item) return;
@@ -894,4 +944,8 @@ void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState stat
         }
     }
     emit completeChanged();
+}
+
+bool ReviewPage::validatePage() {
+    return finishDialog();
 }
