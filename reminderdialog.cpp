@@ -28,10 +28,12 @@ ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int pr
     // Felder initialisieren
     startBarSpin_m = new QSpinBox(this);
     startBarSpin_m->setMinimum(1);
+    startBarSpin_m->setMaximum(9999);
     startBarSpin_m->setValue(startBar);
 
     endBarSpin_m = new QSpinBox(this);
     endBarSpin_m->setMinimum(1);
+    endBarSpin_m->setMaximum(9999);
     endBarSpin_m->setValue(endBar);
 
     bpmSpin_m = new QSpinBox(this);
