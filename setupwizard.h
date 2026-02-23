@@ -49,6 +49,9 @@ public:
 
     void prepareScannerWithDatabaseData();
 
+public slots:
+    void restartApp();
+
 private:
     void setupUiLayout();
     void setupModels();

@@ -17,7 +17,6 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QProcess>
 #include <unistd.h>
 
 /**
@@ -466,6 +465,9 @@ void MappingPage::cleanupEmptyFolders(QStandardItem *parent) {
 
 // -------------
 bool MappingPage::validatePage() {
+    static bool isRestart = false;
+    if(isRestart) return true;
+
     int remaining = countFiles(sourceModel_m->invisibleRootItem());
 
     if (remaining > 0) {
@@ -537,9 +539,11 @@ bool MappingPage::validatePage() {
         if (QFile::exists(finalDbPath)) QFile::remove(finalDbPath);
 
         if (QFile::rename(tempDbPath, finalDbPath)) {
-            QEventLoop loop;
-            QTimer::singleShot(2000, this, &MappingPage::restartApp);
-            loop.exec();
+            if(!isRestart) {
+                isRestart = true;
+                wiz()->restartApp();
+                _exit(0);
+            }
             return true;
         }
     } else {
@@ -550,24 +554,6 @@ bool MappingPage::validatePage() {
     // In case of an error, also close
     DatabaseManager::instance().closeDatabase();
     return true;
-}
-
-void MappingPage::restartApp() {
-    // 1. Pfad zur aktuellen ausführbaren Datei holen
-    QString appPath = QCoreApplication::applicationFilePath();
-    QStringList arguments = QCoreApplication::arguments();
-
-    // Das erste Argument ist meist der Pfad selbst, den entfernen wir
-    if (!arguments.isEmpty()) {
-        arguments.removeFirst();
-    }
-
-    // 2. Neue Instanz starten (losgelöst vom aktuellen Prozess)
-    QProcess::startDetached(appPath, arguments);
-
-    // 3. Aktuelle Instanz sauber beenden
-    QCoreApplication::quit();
-    _exit(0);
 }
 
 void MappingPage::collectTasksFromModel(QStandardItem* parent, QString currentCategoryPath, QList<ImportTask>& tasks) {

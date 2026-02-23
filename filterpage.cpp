@@ -153,29 +153,17 @@ void FilterPage::setupConnections() {
         updateTargetPathStyle(checked);
     });
 
-    // Pfadauswahl
+    // Path selection
     connect(btnSelectTargetPath_m, &QPushButton::clicked, this, &FilterPage::addTargetPath);
-
-    // Pairing: Button -> Call slot
-    connect(btnSelectTargetPath_m, &QPushButton::clicked, this, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, tr("Zielverzeichnis wählen"));
-        if (!dir.isEmpty()) {
-            lblTargetPath_m->setText(dir);
-            onSettingsChanged();
-        }
-    });
 
     // Connection to the slot updateRemoveButtonState when click and selected
     connect(listWidgetSource_m, &QListWidget::itemSelectionChanged, this, &FilterPage::updateRemoveSourceButtonState);
 }
 
 void FilterPage::onSettingsChanged() {
-    // Aktiviert/Deaktiviert UI Elemente basierend auf Logik
     const bool isSkipActive = skipImport_m->isChecked();
     listWidgetSource_m->setEnabled(!isSkipActive);
     btnAddSource_m->setEnabled(!isSkipActive);
-
-    // Triggert die Neu-Evaluierung von isComplete() im Wizard
     emit completeChanged();
 }
 
@@ -183,12 +171,12 @@ bool FilterPage::validatePage() {
     auto *wiz = qobject_cast<SetupWizard*>(wizard());
     if (!wiz) return false;
 
-    // 1. Spezialfall: Skip Import
+    // 1. Special case: Skip Import
     if (skipImport_m && skipImport_m->isChecked()) {
-        return handleSkipImport(); // Hier wird intern wizard()->accept() gerufen
+        return handleSkipImport(); // Internally, wizard()->accept() is called here.
     }
 
-    // 2. Daten über Setter in den Wizard übertragen
+    // 2.Transfer data via setter to the wizard
     wiz->setActiveFilters(getActiveFilters());
 
     QStringList paths;
@@ -202,23 +190,28 @@ bool FilterPage::validatePage() {
 }
 
 bool FilterPage::isComplete() const {
-    // Wenn Import übersprungen wird, ist die Seite immer "komplett"
+    // If import is skipped, the page is always "complete".
     if (skipImport_m && skipImport_m->isChecked()) {
         return true;
     }
 
-    // Wenn "Manage Data" aktiv ist, muss ein Pfad gewählt sein
+    // When "Manage Data" is active, a path must be selected.
     if (cbManageData_m && cbManageData_m->isChecked()) {
         if (lblTargetPath_m->text().isEmpty() || lblTargetPath_m->text() == tr("No path selected")) {
             return false;
         }
     }
 
-    // Es müssen Dateien in der Liste sein
+    // There must be files in the list.
     return listWidgetSource_m && listWidgetSource_m->count() > 0;
 }
 
 bool FilterPage::handleSkipImport() {
+    static bool isProcessing = false;
+    if (isProcessing) return true;
+
+    isProcessing = true;
+
     QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(appDataDir);
 
@@ -236,12 +229,12 @@ bool FilterPage::handleSkipImport() {
 
     auto &db = DatabaseManager::instance();
 
-    // C++20: Nutze strukturierte Bindings oder klare Logik für DB-Writes
+    // C++20: Use structured bindings or clear logic for DB writes
     bool success = true;
     success &= db.setSetting("is_managed", false);
     success &= db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
 
-    // Wenn 'Manage Data' doch angehakt war, aber übersprungen wurde:
+    // If 'Manage Data' was checked but skipped:
     if (field("manageData").toBool()) {
         success &= db.setSetting("managed_path", field("targetPath").toString());
     }
@@ -249,7 +242,8 @@ bool FilterPage::handleSkipImport() {
     db.closeDatabase();
 
     if (success) {
-        wizard()->accept(); // Schließt den Wizard erfolgreich ab
+        // wizard()->accept(); // Successfully completes the wizard
+        wiz()->restartApp();
     }
 
     return success;

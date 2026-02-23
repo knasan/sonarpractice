@@ -30,20 +30,18 @@ private:
     [[nodiscard]] bool validatePage() override;
     [[nodiscard]] int countFiles(QStandardItem* item);
 
+    QTreeView* sourceView_m;
+    QTreeView* targetView_m;
 
+    QStandardItemModel* sourceModel_m;
+    QStandardItemModel* targetModel_m;
 
-    QTreeView *sourceView_m;
-    QTreeView *targetView_m;
-
-    QStandardItemModel *sourceModel_m;
-    QStandardItemModel *targetModel_m;
-
-    QPushButton *btnMap_m;
-    QPushButton *btnUnmap_m;
-    QPushButton *btnNewGroup_m;
-    QPushButton *btnReset_m;
-    QLineEdit *searchLineEdit_m;
-    QCheckBox *collabsTree_m;
+    QPushButton* btnMap_m;
+    QPushButton* btnUnmap_m;
+    QPushButton* btnNewGroup_m;
+    QPushButton* btnReset_m;
+    QLineEdit* searchLineEdit_m;
+    QCheckBox* collabsTree_m;
 
     bool isConnectionsEstablished_m{false};
 
@@ -56,7 +54,6 @@ private slots:
     void resetMapping();
     void applyFilter(const QString &filterText);
     [[nodiscard]] bool filterItemRecursive(QStandardItem *item, const QString &filterText);
-    void restartApp();
 };
 
 #endif

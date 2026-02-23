@@ -74,9 +74,6 @@ void ReviewPage::initializePage() {
                               Qt::QueuedConnection,
                               Q_ARG(QStringList, wiz->sourcePaths()),
                               Q_ARG(QStringList, wiz->activeFilters()));
-
-
-
 }
 
 void ReviewPage::setupLayout() {

@@ -12,6 +12,7 @@
 #include <QGuiApplication>
 #include <QMessageBox>
 #include <QDebug>
+#include <QProcess>
 
 SetupWizard::SetupWizard(QWidget *parent)
     : QWizard(parent)
@@ -92,5 +93,28 @@ void SetupWizard::prepareScannerWithDatabaseData() {
     QSet<QString> knwonHahes = db.getAllFileHashes();
     if (fileScanner_m) {
         fileManager_m->setExistingHashes(knwonHahes);
+    }
+}
+
+void SetupWizard::restartApp() {
+    QString appPath = QCoreApplication::applicationFilePath();
+    QStringList arguments = QCoreApplication::arguments();
+
+    if (!arguments.isEmpty()) {
+        arguments.removeFirst();
+    }
+
+
+    if (scannerThread_m && scannerThread_m->isRunning()) {
+        scannerThread_m->quit();
+        scannerThread_m->wait(500);
+    }
+
+    bool success = QProcess::startDetached(appPath, arguments);
+
+    if (success) {
+        QCoreApplication::quit();
+    } else {
+        QMessageBox::critical(nullptr, "Error", "Could not restart application.");
     }
 }
