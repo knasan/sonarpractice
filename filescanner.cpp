@@ -1,5 +1,6 @@
 #include "filescanner.h"
 #include "fnv1a.h"
+#include "algorithm"
 
 bool FileScanner::isScanning() {
     return isScanning_m;
@@ -22,8 +23,9 @@ void FileScanner::doScan(const QStringList &paths, const QStringList &filters) {
             QFileInfo info = it.fileInfo();
 
             // Filter Check
-            bool match = false;
-            for (const QString &f : filters) { if (QDir::match(f, info.fileName())) { match = true; break; } }
+            bool match = std::any_of(filters.begin(), filters.end(), [&](const QString &f) {
+                return QDir::match(f, info.fileName());
+            });
             if (!match) continue;
 
 

@@ -55,6 +55,9 @@
  *      - Betrifft: Tabellen und Bäume.
  *      - Stile: Hintergrund, Alternate-Rows, Gridlines.
  *
+ *  12. notesTextEdit (Journal Notes, object name)
+ *      - Text Farbe: weiß oder hellgrau
+ *
  *  =============================================
  *  HINWEISE FÜR DESIGNER:
  *  =============================================
@@ -432,3 +435,4 @@ CollapsibleSection {
 
 #reminderTable::item[isCompleted="true"] { color: green; }
 #reminderTable::item[isCompleted="false"] { color: red; }
+#notesTextEdit { color: #C9D1DC; }

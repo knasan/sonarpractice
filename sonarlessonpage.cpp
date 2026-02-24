@@ -35,6 +35,7 @@
 #include <QTextEdit>
 #include <QLCDNumber>
 #include <QTimer>
+#include <QCompleter>
 
 // Move these to a separate header file or namespace
 namespace PracticeTable {
@@ -153,17 +154,17 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
     auto *sidebarLayout = new QVBoxLayout();
     sidebarLayout->setSpacing(10);
 
-    // 1. Kalender-Sektion
+    // 1. Calendar section
     auto *calSection = new CollapsibleSection(tr("Calendar"), true, true, this);
     calendar_m = new QCalendarWidget(this);
     calendar_m->setObjectName("lessonCalendar");
     calSection->addContentWidget(calendar_m);
 
-    // 2. Reminder-Sektion
+    // 2. Reminder section
     auto *remSection = new CollapsibleSection(tr("Today's Reminders"), true, true, this);
     remSection->setObjectName("sidebarSectionLabel");
 
-    // Reminder-Tabelle initialisieren
+    // Reminder-Table initialize
     reminderTable_m = new QTableWidget(this);
     reminderTable_m->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     reminderTable_m->setObjectName("reminderTable");
@@ -171,7 +172,7 @@ void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
     reminderTable_m->setHorizontalHeaderLabels({tr("Song"), tr("Range"), tr("BPM"), tr("Status")});
     reminderTable_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    // UI-Feinschliff für die Sidebar
+    // UI refinements for the sidebar
     reminderTable_m->verticalHeader()->setVisible(false);
     reminderTable_m->horizontalHeader()->setStretchLastSection(true);
     reminderTable_m->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -222,8 +223,16 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
 
     songSelector_m = new QComboBox(this);
     songSelector_m->setObjectName("songSelectorComboBox");
-    // songSelector_m->setEditable(true);
+    songSelector_m->setEditable(true);
     songSelector_m->setInsertPolicy(QComboBox::NoInsert);
+
+    QCompleter *completer = new QCompleter(songSelector_m->model(), this);
+    completer->setFilterMode(Qt::MatchContains);
+    completer->setCaseSensitivity(Qt::CaseInsensitive);
+    completer->setCompletionMode(QCompleter::PopupCompletion);
+
+    songSelector_m->setCompleter(completer);
+
     formLayout->addWidget(songSelector_m, 0, 1, 1, 3);
 
     // Line 1: Artist
@@ -282,45 +291,43 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
 }
 
 void SonarLessonPage::onEditSongClicked() {
-    // 1. Daten des aktuell gewählten Songs holen (z.B. aus einer Member-Variable m_currentSongId)
-    // Nehmen wir an, du hast die Daten vorliegen:
+    // 1. Retrieve data for the currently selected song
     int songId = getCurrentSongId();
     QString title = title_m->text();
     QString artist = artist_m->text();
     QString tuning = tuningLabel_m->text();
     int bpm = tempo_m->text().toInt();
 
-    // 2. Dialog instanziieren
+    // 2. Dialog
     SongEditDialog dialog(this);
 
-    // 3. Listen aus der DB holen für die Dropdowns
+    // 3. Retrieve lists from the database for the dropdowns.
     QStringList artists = DatabaseManager::instance().getAllArtists();
     QStringList tunings = DatabaseManager::instance().getAllTunings();
 
-    // 4. Daten an den Dialog übergeben
+    // 4. Pass data to dialog
     dialog.setSongData(title, artist, tuning, bpm, artists, tunings);
 
-    // 5. Dialog anzeigen
+    // 5. Show dialog
     if (dialog.exec() == QDialog::Accepted) {
-        // User hat OK geklickt -> Daten abgreifen
         QString newTitle = dialog.title();
         QString newArtistName = dialog.artist();
         QString newTuningName = dialog.tuning();
         int newBpm = dialog.bpm();
 
-        // 6. In der Datenbank speichern
-        // Zuerst IDs für Artist/Tuning holen (erstellt neue, falls nicht vorhanden)
+        // 6. Store in the database
+        // First, get IDs for Artist/Tuning (creates new ones if none exist)
         int artistId = DatabaseManager::instance().getOrCreateArtist(newArtistName);
         int tuningId = DatabaseManager::instance().getOrCreateTuning(newTuningName);
 
-        // Update-Funktion im DatabaseManager aufrufen
+        // Call up the update function in the DatabaseManager
         if(!DatabaseManager::instance().updateSong(songId, newTitle, artistId, tuningId, newBpm)) {
             statusLabel_m->setText(savedMessageFailed_m);
         } else {
             showSaveMessage(savedMessage_m);
         }
 
-        // 7. UI aktualisieren (z.B. Label oder Tabelle neu laden)
+        // 7. Update UI (e.g., reload labels or tables)
         loadData();
     }
 }
@@ -519,7 +526,7 @@ void SonarLessonPage::setupNotesSection(QVBoxLayout *contentLayout)
     toolbarLayout->addWidget(btnCheck_m);
     toolbarLayout->addStretch();
 
-    // --- NOTIZEN-EDITOR ---
+    // --- NOTES-EDITOR ---
     notesEdit_m = new QTextEdit();
     notesEdit_m->setObjectName("notesTextEdit");
     notesEdit_m->setPlaceholderText(tr("Write your practice notes here..."));
@@ -666,6 +673,7 @@ void SonarLessonPage::sitesConnects() {
 
         if (isPlaceholderActive_m && !notesEdit_m->toMarkdown().isEmpty()) {
             notesEdit_m->clear();
+            notesEdit_m->setAcceptRichText(false);
             isPlaceholderActive_m = false;
         } else if (!isPlaceholderActive_m && notesEdit_m->toMarkdown().isEmpty()) {
             dailyNotePlaceholder();
@@ -764,6 +772,7 @@ void SonarLessonPage::sitesConnects() {
         QTextCharFormat format;
         format.setFontWeight(notesEdit_m->fontWeight() == QFont::Bold ? QFont::Normal : QFont::Bold);
         notesEdit_m->mergeCurrentCharFormat(format);
+        notesEdit_m->setFocus();
     });
 
     // Italic Button
@@ -771,6 +780,7 @@ void SonarLessonPage::sitesConnects() {
         QTextCharFormat format;
         format.setFontItalic(!notesEdit_m->fontItalic());
         notesEdit_m->mergeCurrentCharFormat(format);
+        notesEdit_m->setFocus();
     });
 
     // Heading Buttons
@@ -812,6 +822,7 @@ void SonarLessonPage::sitesConnects() {
             [=, this](const QTextCharFormat &format) {
                 btnBold_m->setChecked(format.fontWeight() == QFont::Bold);
                 btnItalic_m->setChecked(format.fontItalic());
+                notesEdit_m->setFocus();
             });
 
     connect(timerBtn_m, &QPushButton::clicked, this, &SonarLessonPage::onTimerButtonClicked);
@@ -1095,7 +1106,12 @@ void SonarLessonPage::onSaveClicked() {
     }
 
     if (isDirtyNotes_m) {
-        notesSuccess = dbManager_m->updateSongNotes(songId, notesEdit_m->toMarkdown(), selectedDate);
+        QString dataToSave = notesEdit_m->toMarkdown();
+        dataToSave.replace("\\#", "#");
+        dataToSave.replace("\\-", "-");
+        dataToSave.replace("\\[", "[");
+        dataToSave.replace("\\]", "]");
+        notesSuccess = dbManager_m->updateSongNotes(songId, dataToSave, selectedDate);
         if (notesSuccess) {
             isDirtyNotes_m = false;
             showSaveMessage(tr("Successfully saved"));
@@ -1143,6 +1159,8 @@ void SonarLessonPage::dailyNotePlaceholder() {
                            "- " + questionTwo + "\n" +
                            "- " + questionThree + "\n" +
                            "- " + questionFour;
+    notesEdit_m->clear();
+    notesEdit_m->setAcceptRichText(false);
     notesEdit_m->setMarkdown(markdownList);
 }
 
@@ -1153,10 +1171,13 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 
     // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
+    notesEdit_m->clear();
+    notesEdit_m->setAcceptRichText(false);
     notesEdit_m->setMarkdown(dailyNote);
 
     if (!dailyNote.isEmpty()) {
-        notesEdit_m->setTextColor(Qt::white);
+        notesEdit_m->clear();
+        notesEdit_m->setAcceptRichText(false);
         notesEdit_m->setMarkdown(dailyNote);
         isPlaceholderActive_m = false;
     } else {
