@@ -242,9 +242,9 @@ bool DatabaseManager::createInitialTables()
                 "start_bar INTEGER, "
                 "end_bar INTEGER, "
                 "practiced_bpm INTEGER, "
-                "total_reps INTEGER, "         // NEU: Wie oft insgesamt gespielt
-                "successful_streaks INTEGER, " // NEU: Wie oft die 7er-Serie geschafft
-                "rating INTEGER, "             // Kannst du als "Gefühl" behalten (0-100)
+                "total_reps INTEGER, "         // Total number of times played
+                "successful_streaks INTEGER, " // How many times has the 7 series been achieved?
+                "rating INTEGER, "
                 "note_text TEXT, "
                 "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, "
                 "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) {
@@ -255,7 +255,7 @@ bool DatabaseManager::createInitialTables()
         return false;
     }
 
-    // 7. SETTINGS (Key-Value-Store für paths, flags)
+    // 7. SETTINGS (Key-Value-Store for paths, flags)
     if (!q.exec("CREATE TABLE IF NOT EXISTS settings ("
                 "key TEXT PRIMARY KEY, "
                 "value TEXT)")) {
@@ -317,11 +317,11 @@ bool DatabaseManager::createInitialTables()
      *      min_bpm: Minimum BPM
      *      min_minutes: Minimum exercise duration in minutes
      *
-     ****** This table is not yet in use, therefore it is not translated. ****
+     ****** This table is not yet in use ****
      * - reminder_completions:
-     *      Verknüpft einen Reminder mit einer Übungssession (practice_journal)
-     *      Wird automatisch erstellt, wenn die Bedingungen erfüllt sind
-     *      Dies wird noch nicht verwendet und bin am überlegen ob man dies überhaupt benötigt!
+     *      Link a reminder to a practice session (practice_journal)
+     *      It will be created automatically if the conditions are met.
+     *      This is not currently in use and I'm wondering if it's even necessary!
      */
 
     // 11. REMINDERS (Reminders for exercises)
@@ -329,12 +329,12 @@ bool DatabaseManager::createInitialTables()
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 "user_id INTEGER NOT NULL DEFAULT 1, "
                 "song_id INTEGER NOT NULL, "
-                "title TEXT, "                   // Titel des Reminders (optional)
-                "reminder_date DATE, "           // Datum für einmalige Erinnerungen
-                "weekday INTEGER, "              // Wochentag (0-6, 0=Sonntag)
-                "is_daily INTEGER DEFAULT 0, "   // Tägliche Erinnerung
-                "is_monthly INTEGER DEFAULT 0, " // Monatliche Erinnerung
-                "is_active INTEGER DEFAULT 1, "  // Aktiv/Inaktiv
+                "title TEXT, "                   // Reminder title (optional)
+                "reminder_date DATE, "           // Date for unique memories
+                "weekday INTEGER, "              // Day of the week (0-6, 0=Sunday)
+                "is_daily INTEGER DEFAULT 0, "   // Daily reminder
+                "is_monthly INTEGER DEFAULT 0, " // Monthly reminder
+                "is_active INTEGER DEFAULT 1, "  // Active/Inactive
                 "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                 "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, "
                 "FOREIGN KEY(song_id) REFERENCES songs(id) ON DELETE CASCADE)")) {
@@ -352,7 +352,7 @@ bool DatabaseManager::createInitialTables()
                 "start_bar INTEGER, "   // Start-Takt
                 "end_bar INTEGER, "     // End-Takt
                 "min_bpm INTEGER, "     // Mindest-BPM
-                "min_minutes INTEGER, " // Mindest-Übungsdauer in Minuten
+                "min_minutes INTEGER, " // Minimum exercise duration in minutes
                 "FOREIGN KEY(reminder_id) REFERENCES reminders(id) ON DELETE CASCADE)")) {
         qCritical()
             << "[DatabaseManager] create table reminder_completion_conditions failed, error: "
@@ -1000,12 +1000,22 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int song
     q.addBindValue(songId);
     q.addBindValue(songId);
 
+    bool isManaged = getSetting("is_managed", QString("false")) == "true";
+
     if (q.exec()) {
         while (q.next()) {
             RelatedFile rf;
             rf.id = q.value("id").toInt();
-            rf.fileName = q.value("file_path").toString();
+            rf.fileName = QFileInfo(q.value("file_path").toString()).fileName();
             rf.type = q.value("file_type").toString();
+            QString relpath = QFileInfo(q.value("file_path").toString()).filePath();
+            // qDebug() << "isManaged: " << isManaged << " with managed Path: " << getManagedPath();
+            if(isManaged) {
+                rf.absolutePath = QDir::cleanPath(getManagedPath() + "/" + relpath);
+            } else {
+                rf.absolutePath = QDir::cleanPath(relpath);
+            }
+            // qDebug() << "path: " << rf.relativePath;
             list.append(rf);
         }
     } else {
@@ -1059,11 +1069,11 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getRelatedFiles(const int s
         while (q.next()) {
             RelatedFile res;
             res.id = q.value(0).toInt();              // Correctly (id)
-            res.relativePath = q.value(1).toString(); // Correctly (file_path)
+            res.absolutePath = q.value(1).toString(); // Correctly (file_path)
             res.songId = songId;
 
             // Use the filename as the title if there is no title in the database.
-            QFileInfo fi(res.relativePath);
+            QFileInfo fi(res.absolutePath);
             res.fileName = fi.fileName();
             res.title = res.fileName; // Fallback, since 'title' is not in the SELECT statement
 
@@ -1125,7 +1135,7 @@ bool DatabaseManager::addPracticeSession(
     q.bindValue(":sid", songId);
     q.bindValue(":bpm", bpm);
     q.bindValue(":total", totalReps);
-    q.bindValue(":clean", cleanReps); // Deine "7-er Serie" Logik
+    q.bindValue(":clean", cleanReps); // How many times a repetition was mastered without making a mistake.
 
     if (!q.exec()) {
         db.rollback();
@@ -1317,34 +1327,44 @@ QList<PracticeSession> DatabaseManager::getLastSessions(int songId, int limit)
     QList<PracticeSession> sessions;
 
     QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery query(db);
+    QSqlQuery q(db);
 
     // Sort by date and ID in descending order to get the very latest entries.
-    query.prepare(
-        "SELECT practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
-        "FROM practice_journal "
-        "WHERE song_id = :songId "
-        "ORDER BY practice_date DESC, id DESC "
-        "LIMIT :limit");
 
-    query.bindValue(":songId", songId);
-    query.bindValue(":limit", limit);
+    QString sql = "SELECT practice_date, start_bar, end_bar, practiced_bpm, total_reps, successful_streaks "
+                  "FROM practice_journal "
+                  "WHERE song_id = :songId AND start_bar IS NOT NULL "
+                  "ORDER BY practice_date DESC, id DESC";
 
-    if (query.exec()) {
-        while (query.next()) {
+    // We only append LIMIT to the string if limit > 0.
+    if (limit > 0) {
+        sql += " LIMIT :limit";
+    }
+
+    q.prepare(sql);
+
+    q.bindValue(":songId", songId);
+
+    // We only append LIMIT to the string if limit > 0.
+    if (limit > 0) {
+        q.bindValue(":limit", limit);
+    }
+
+    if (q.exec()) {
+        while (q.next()) {
             PracticeSession s;
-            s.date = query.value("practice_date").toDate();
-            s.startBar = query.value("start_bar").toInt();
-            s.endBar = query.value("end_bar").toInt();
-            s.bpm = query.value("practiced_bpm").toInt();
-            s.reps = query.value("total_reps").toInt();
-            s.streaks = query.value("successful_streaks").toInt();
+            s.date = q.value("practice_date").toDate();
+            s.startBar = q.value("start_bar").toInt();
+            s.endBar = q.value("end_bar").toInt();
+            s.bpm = q.value("practiced_bpm").toInt();
+            s.reps = q.value("total_reps").toInt();
+            s.streaks = q.value("successful_streaks").toInt();
 
             sessions.prepend(s);
         }
     } else {
-        qCritical() << "[DatabaseManager] getLastSessions error:" << query.lastError().text();
-        qDebug() << "[DatabaseManager] getLastSessions fullquery:" << query.executedQuery();
+        qCritical() << "[DatabaseManager] getLastSessions error:" << q.lastError().text();
+        qDebug() << "[DatabaseManager] getLastSessions fullquery:" << q.executedQuery();
     }
     return sessions;
 }
@@ -1575,54 +1595,6 @@ DatabaseManager::SongDetails DatabaseManager::getSongDetails(qlonglong songId)
     return details;
 }
 
-QList<DatabaseManager::SongDetails> DatabaseManager::loadData()
-{
-    QList<SongDetails> songs;
-
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    QString sql = "SELECT DISTINCT "
-                  "mf.song_id, "
-                  "s.title, "
-                  "s.base_bpm, "
-                  "mf.file_path, "
-                  "a.name AS artist_name, "
-                  "t.name AS tuning_name "
-                  "FROM songs s "
-                  "INNER JOIN media_files mf ON s.id = mf.song_id "
-                  "LEFT JOIN artists a ON s.artist_id = a.id "
-                  "LEFT JOIN tunings t ON s.tuning_id = t.id "
-                  "WHERE mf.can_be_practiced = 1";
-    q.prepare(sql);
-
-    if (q.exec()) {
-        while (q.next()) {
-            SongDetails details;
-            details.songId = q.value("song_id").toInt();
-            QString rawPath = q.value("file_path").toString();
-            QString managedPath = getManagedPath();
-
-            QString path = managedPath.isEmpty() ? rawPath : QDir(managedPath).filePath(rawPath);
-            QString cleaned = QDir::cleanPath(path);
-
-            details.filePath = QFileInfo(cleaned).fileName();
-            details.fullPath = cleaned;
-
-            details.artist = q.value("artist_name").toString();
-            details.title = q.value("title").toString();
-            details.bpm = q.value("base_bpm").toInt();
-            details.tuning = q.value("tuning_name").toString();
-
-            songs.append(details);
-        }
-    } else {
-        qCritical() << "[DatabaseManager] loadData error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] loadData fullquery: " << q.executedQuery();
-    }
-    return songs;
-}
-
 // for combobox
 // Artist, Title, songId
 QList<DatabaseManager::SongDetails> DatabaseManager::getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly) {
@@ -1633,7 +1605,7 @@ QList<DatabaseManager::SongDetails> DatabaseManager::getFilteredFiles(bool gp, b
     if (gp)    extensions << FileUtils::getGuitarProFormats();
     if (audio) extensions << FileUtils::getAudioFormats();
     if (pdf)   extensions << FileUtils::getPdfFormats();
-    if (unlinkedOnly) extensions << FileUtils::getVideoFormats();
+    if (video) extensions << FileUtils::getVideoFormats();
 
     if (extensions.isEmpty()) return songs;
 
@@ -1901,7 +1873,7 @@ bool DatabaseManager::addReminder(int songId,
 
     QSqlQuery q(db);
 
-    // Wenn reminderDate leer ist, ist es ein wiederkehrender Reminder
+    // If reminderDate is empty, it is a recurring reminder.
     q.prepare(
         "INSERT INTO reminders (song_id, reminder_date, is_daily, is_monthly, weekday, is_active) "
         "VALUES (:sid, :rdate, :daily, :monthly, :wd, 1)");
@@ -1922,7 +1894,7 @@ bool DatabaseManager::addReminder(int songId,
 
     int reminderId = q.lastInsertId().toInt();
 
-    // 2. Bedingungen in 'reminder_completion_conditions'
+    // 2. Conditions in 'reminder_completion_conditions'
     q.prepare(
         "INSERT INTO reminder_completion_conditions (reminder_id, min_bpm, start_bar, end_bar) "
         "VALUES (:rid, :bpm, :sbar, :ebar)");
@@ -1994,6 +1966,91 @@ QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
         qDebug() << "[DatabaseManager] getRemindersForDate, fullquery: " << q.executedQuery();
     }
     return results;
+}
+
+ReminderDialog::ReminderData DatabaseManager::getReminder(int reminderId)
+{
+    ReminderDialog::ReminderData data;
+    data.songId = -1; // Fallback, falls nichts gefunden wird
+
+    QSqlQuery q;
+    q.prepare("SELECT r.song_id, r.is_daily, r.is_monthly, r.weekday, r.reminder_date, "
+              "c.start_bar, c.end_bar, c.min_bpm "
+              "FROM reminders r "
+              "LEFT JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
+              "WHERE r.id = :id");
+
+    q.bindValue(":id", reminderId);
+
+    if (q.exec() && q.next()) {
+        data.songId       = q.value(0).toInt();    // song_id
+
+        // First row-table (scheduling)
+        data.isDaily      = q.value(1).toBool();   // is_daily
+        data.isMonthly    = q.value(2).toBool();   // is_monthly
+        data.weekday      = q.value(3).toInt();    // weekday
+        data.reminderDate = q.value(4).toString(); // reminder_date
+
+        // Then the column table (conditions)
+        data.startBar     = q.value(5).toInt();    // start_bar
+        data.endBar       = q.value(6).toInt();    // end_bar
+        data.targetBpm    = q.value(7).toInt();    // min_bpm
+
+        // Debugging for control
+        // qDebug() << "Loaded ReminderId: " << reminderId << " - SongId:" << data.songId << "BPM:" << data.targetBpm
+        //          << "Bars:" << data.startBar << "-" << data.endBar;
+    } else {
+        qCritical() << "[DatabaseManager] getReminder failed: " << q.lastError().text();
+        qDebug() << "[DatabaseManager] getReminder fullquery: " << q.executedQuery();
+    }
+
+    return data;
+}
+
+bool DatabaseManager::updateReminder(int reminderId, const ReminderDialog::ReminderData &data) {
+    QSqlDatabase db = QSqlDatabase::database();
+    if (!db.transaction()) {
+        return false;
+    }
+
+    QSqlQuery q1(db);
+    // 1. Update the schedule in 'reminders'
+    q1.prepare("UPDATE reminders SET "
+               "is_daily = :d, is_monthly = :m, weekday = :w, reminder_date = :rd "
+               "WHERE id = :id");
+    q1.bindValue(":d", data.isDaily ? 1 : 0);
+    q1.bindValue(":m", data.isMonthly ? 1 : 0);
+    q1.bindValue(":w", data.weekday);
+    q1.bindValue(":rd", data.reminderDate);
+    q1.bindValue(":id", reminderId);
+
+    if (!q1.exec()) {
+        qCritical() << "[DatabaseManager] updateReminder (Table reminders) failed:" << q1.lastError().text();
+        db.rollback();
+        return false;
+    }
+
+    QSqlQuery q2(db);
+    // 2. Update of targets in 'reminder_completion_conditions'
+    // Use 'INSERT OR REPLACE' if the condition line does not already exist.
+    q2.prepare("UPDATE reminder_completion_conditions SET "
+               "start_bar = :s, "
+               "end_bar = :e, "
+               "min_bpm = :bpm "
+               "WHERE reminder_id = :id");
+
+    q2.bindValue(":s", data.startBar);
+    q2.bindValue(":e", data.endBar);
+    q2.bindValue(":bpm", data.targetBpm);
+    q2.bindValue(":id", reminderId);
+
+    if (!q2.exec()) {
+        qCritical() << "[DatabaseManager] updateReminder (Table conditions) failed:" << q2.lastError().text();
+        db.rollback();
+        return false;
+    }
+
+    return db.commit();
 }
 
 bool DatabaseManager::deleteReminder(int reminderId)

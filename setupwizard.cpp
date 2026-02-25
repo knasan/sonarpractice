@@ -64,7 +64,6 @@ void SetupWizard::createPages() {
     reviewPage_m  = new ReviewPage(this);
     mappingPage_m = new MappingPage(this);
 
-    // Seiten mit den Enum-IDs hinzufügen
     setPage(Page_Welcome, welcomePage_m);
     setPage(Page_Filter,  filterPage_m);
     setPage(Page_Review,  reviewPage_m);

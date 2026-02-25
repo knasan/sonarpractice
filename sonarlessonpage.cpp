@@ -15,7 +15,6 @@
 #include "collapsiblesection.h"
 #include "databasemanager.h"
 #include "fileutils.h"
-#include "reminderdialog.h"
 #include "uihelper.h"
 #include "songeditdialog.h"
 
@@ -36,6 +35,7 @@
 #include <QLCDNumber>
 #include <QTimer>
 #include <QCompleter>
+#include <QMessageBox>
 
 // Move these to a separate header file or namespace
 namespace PracticeTable {
@@ -71,7 +71,9 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     sitesConnects();
     initialLoadFromDb();
     updateButtonState();
+    onSongChanged(songSelector_m->currentIndex());
     updateReminderTable(QDate::currentDate());
+    updateEmptyTableMessage();
 }
 
 void SonarLessonPage::setupUI()
@@ -93,10 +95,10 @@ void SonarLessonPage::setupUI()
     // Training section
     setupTrainingSection(contentLayout);
 
-    // Notes section (JETZT ÜBER der Tabelle)
+    // Notes section
     setupNotesSection(contentLayout);
 
-    // Session table (JETZT UNTER den Notizen)
+    // Session table
     setupPracticeTable(contentLayout);
 
     // Footer
@@ -113,24 +115,44 @@ void SonarLessonPage::setupPracticeTable(QVBoxLayout *contentLayout)
     groupSession->setObjectName("practiceTableGroup");
     auto *sessionLayout = new QVBoxLayout(groupSession);
 
-    sessionTable_m = new QTableWidget(PracticeTable::DEFAULT_ROW_COUNT,
+    practiceTable_m = new QTableWidget(PracticeTable::DEFAULT_ROW_COUNT,
                                       PracticeTable::COLUMN_COUNT,
                                       this);
-    sessionTable_m->setObjectName("practiceSessionTable");
-    sessionTable_m->setAlternatingRowColors(true);
-    sessionTable_m->setHorizontalHeaderLabels({tr("Day"),
-                                               tr("Takt from"),
-                                               tr("Takt to"),
-                                               tr("Tempo (BPM)"),
-                                               tr("Repetitions"),
-                                               tr("Duration (Min)")});
-    sessionTable_m->horizontalHeader()->setObjectName("practiceTableHeader");
-    sessionTable_m->horizontalHeader()->setStretchLastSection(true);
-    sessionTable_m->verticalHeader()->setVisible(false);
-    sessionTable_m->verticalHeader()->setObjectName("practiceTableVerticalHeader");
-    sessionTable_m->setEditTriggers(QAbstractItemView::DoubleClicked
+    practiceTable_m->setObjectName("practiceSessionTable");
+    practiceTable_m->setAlternatingRowColors(true);
+
+    QStringList headers = {
+        tr("Day"), tr("Takt from"), tr("Takt to"),
+        tr("Tempo (BPM)"), tr("Success Streak"), tr("Duration (Min)")
+    };
+
+    practiceTable_m->setHorizontalHeaderLabels(headers);
+    practiceTable_m->model()->setHeaderData(0, Qt::Horizontal, tr("Date of the exercise session"), Qt::ToolTipRole);
+    practiceTable_m->model()->setHeaderData(1, Qt::Horizontal, tr("Starting beat number of the section"), Qt::ToolTipRole);
+    practiceTable_m->model()->setHeaderData(2, Qt::Horizontal, tr("End bar number of the section"), Qt::ToolTipRole);
+    practiceTable_m->model()->setHeaderData(3, Qt::Horizontal, tr("Set speed in beats per minute"), Qt::ToolTipRole);
+    practiceTable_m->model()->setHeaderData(4, Qt::Horizontal,
+                                            tr("Maximum number of consecutive error-free repetitions.\n"
+                                                "This number shows how confidently you have mastered the section."),
+                                            Qt::ToolTipRole);
+
+    practiceTable_m->model()->setHeaderData(5, Qt::Horizontal, tr("Total duration of this exercise unit"), Qt::ToolTipRole);
+
+    practiceTable_m->horizontalHeader()->setObjectName("practiceTableHeader");
+    practiceTable_m->horizontalHeader()->setStretchLastSection(true);
+
+    practiceTable_m->verticalHeader()->setVisible(false);
+    practiceTable_m->verticalHeader()->setObjectName("practiceTableVerticalHeader");
+
+    practiceTable_m->setEditTriggers(QAbstractItemView::DoubleClicked
                                     | QAbstractItemView::EditKeyPressed);
-    sessionTable_m->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    practiceTable_m->setSelectionBehavior(QAbstractItemView::SelectRows);
+
+    QHeaderView* header = practiceTable_m->horizontalHeader();
+    header->setSectionResizeMode(QHeaderView::Interactive);
+    header->setSectionResizeMode(4, QHeaderView::Stretch);
+    header->setSectionResizeMode(5, QHeaderView::Stretch);
 
     // 4. Buttons
     auto *buttonLayout = new QHBoxLayout();
@@ -147,13 +169,42 @@ void SonarLessonPage::setupPracticeTable(QVBoxLayout *contentLayout)
     buttonLayout->addWidget(addBtn);
     buttonLayout->addWidget(removeBtn);
 
-    sessionLayout->addWidget(sessionTable_m);
+    sessionLayout->addWidget(practiceTable_m);
     sessionLayout->addLayout(buttonLayout);
     practiceSection->addContentWidget(groupSession);
     contentLayout->addWidget(practiceSection);
 
     connect(addBtn, &QPushButton::clicked, this, &SonarLessonPage::addTableRow);
     connect(removeBtn, &QPushButton::clicked, this, &SonarLessonPage::removeTableRow);
+}
+
+void SonarLessonPage::updatePracticeTable(const QList<PracticeSession>& sessions) {
+    practiceTable_m->setRowCount(0);
+
+    for (const auto &s : sessions) {
+        int row = practiceTable_m->rowCount();
+        practiceTable_m->insertRow(row);
+
+        // Spalte 0: Datum
+        practiceTable_m->setItem(row, 0, new QTableWidgetItem(s.date.toString("dd.MM.yyyy")));
+
+        // Spalte 1: Bereich
+        practiceTable_m->setItem(row, 1, new QTableWidgetItem(QString("%1 - %2").arg(s.startBar).arg(s.endBar)));
+
+        // Spalte 2: BPM
+        practiceTable_m->setItem(row, 2, new QTableWidgetItem(QString::number(s.bpm)));
+
+        // Spalte 3: Reps
+        practiceTable_m->setItem(row, 4, new QTableWidgetItem(QString::number(s.reps)));
+
+        // Spalte 4: Streaks
+        practiceTable_m->setItem(row, 5, new QTableWidgetItem(QString::number(s.streaks)));
+
+        for(int i = 0; i < practiceTable_m->columnCount(); ++i) {
+            if(auto item = practiceTable_m->item(row, i))
+                item->setTextAlignment(Qt::AlignCenter);
+        }
+    }
 }
 
 void SonarLessonPage::setupSidebar(QHBoxLayout *mainLayout)
@@ -224,7 +275,7 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     formLayout->setSpacing(20);
 
     // Line 0: Song Selector
-    QLabel *songLabel = new QLabel(tr("Song (GuitarPro):"), this);
+    QLabel *songLabel = new QLabel(tr("Selected Repertoire:"), this);
     songLabel->setObjectName("songInfoLabel");
     formLayout->addWidget(songLabel, 0, 0, 1, 1);
 
@@ -267,15 +318,10 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     btnFilterDocument_m->setObjectName("filterToolButton");
     btnFilterDocument_m->setCheckable(true);
 
-    btnFilterUnlinked_m = new QToolButton(this);
-    btnFilterUnlinked_m->setObjectName("filterToolButton");
-    btnFilterUnlinked_m->setCheckable(true);
-
     setupFilterButton(btnFilterGp_m, ":gp.png", tr("GuitarPro Filter"));
     setupFilterButton(btnFilterAudio_m, ":audio.png", tr("Audio Filter"));
     setupFilterButton(btnFilterVideo_m, ":video.png", tr("Video Filter"));
     setupFilterButton(btnFilterDocument_m, ":doc.png", tr("Dokument Filter"));
-    setupFilterButton(btnFilterUnlinked_m, ":unlinked.png", tr("Unlinked Filter"));
 
     // Enable GP by default
     btnFilterGp_m->setChecked(true);
@@ -287,7 +333,6 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     filterLayout->addWidget(btnFilterAudio_m);
     filterLayout->addWidget(btnFilterVideo_m);
     filterLayout->addWidget(btnFilterDocument_m);
-    filterLayout->addWidget(btnFilterUnlinked_m);
 
     formLayout->addWidget(songSelector_m, 0, 1, 1, 1);
 
@@ -360,8 +405,8 @@ void SonarLessonPage::onEditSongClicked() {
     SongEditDialog dialog(this);
 
     // 3. Retrieve lists from the database for the dropdowns.
-    QStringList artists = DatabaseManager::instance().getAllArtists();
-    QStringList tunings = DatabaseManager::instance().getAllTunings();
+    QStringList artists = dbManager_m->getAllArtists();
+    QStringList tunings = dbManager_m->getAllTunings();
 
     // 4. Pass data to dialog
     dialog.setSongData(title, artist, tuning, bpm, artists, tunings);
@@ -375,11 +420,11 @@ void SonarLessonPage::onEditSongClicked() {
 
         // 6. Store in the database
         // First, get IDs for Artist/Tuning (creates new ones if none exist)
-        int artistId = DatabaseManager::instance().getOrCreateArtist(newArtistName);
-        int tuningId = DatabaseManager::instance().getOrCreateTuning(newTuningName);
+        int artistId = dbManager_m->getOrCreateArtist(newArtistName);
+        int tuningId = dbManager_m->getOrCreateTuning(newTuningName);
 
         // Call up the update function in the DatabaseManager
-        if(!DatabaseManager::instance().updateSong(songId, newTitle, artistId, tuningId, newBpm)) {
+        if(!dbManager_m->updateSong(songId, newTitle, artistId, tuningId, newBpm)) {
             statusLabel_m->setText(savedMessageFailed_m);
         } else {
             showSaveMessage(savedMessage_m);
@@ -560,6 +605,30 @@ void SonarLessonPage::onAddReminderClicked()
     }
 }
 
+void SonarLessonPage::onEditReminder(int reminderId, const QString title) {
+    // 1. Hol die Daten aus der Liste/DB
+    ReminderDialog::ReminderData oldData = dbManager_m->getReminder(reminderId);
+
+    ReminderDialog dlg(this);
+    dlg.setWindowTitle(tr("Edit Reminder"));
+
+    dlg.setReminderData(oldData);
+
+    dlg.setTargetSong(oldData.songId, title);
+
+    if (dlg.exec() == QDialog::Accepted) {
+        ReminderDialog::ReminderData newData = dlg.getResults();
+
+        if(!dbManager_m->updateReminder(reminderId, newData)) {
+            showSaveMessage(savedMessageFailed_m);
+        } else {
+            showSaveMessage(savedMessage_m);
+        }
+
+        updateReminderTable(calendar_m->selectedDate());
+    }
+}
+
 void SonarLessonPage::updateReminderTable(const QDate &date)
 {
     reminderTable_m->setRowCount(0);
@@ -579,6 +648,7 @@ void SonarLessonPage::updateReminderTable(const QDate &date)
 
         itemSong->setData(ReminderRole::ReminderIdRole, r["id"].toInt());
         itemSong->setData(ReminderRole::ReminderFileIdRole, r["songId"].toInt());
+        itemSong->setData(ReminderRole::ReminderSongTitle, r["title"].toString());
 
         itemStatus->setData(Qt::UserRole, done);
 
@@ -700,10 +770,10 @@ void SonarLessonPage::setupResourceButtons()
     btnPdfIcon_m = createResourceButton("docsButton",
                                         ":/file-stack.svg",
                                         tr("Open linked PDF files"));
-    btnVideoIcon_m = createResourceButton("videoButton",
+    btnVideoIcon_m = createResourceButton("videosButton",
                                           ":/list-video.svg",
                                           tr("Open linked video files"));
-    btnAudioIcon_m = createResourceButton("audioButton",
+    btnAudioIcon_m = createResourceButton("audiosButton",
                                           ":/audio-lines.svg",
                                           tr("Open linked audio tracks"));
 
@@ -752,7 +822,6 @@ void SonarLessonPage::sitesConnects() {
     }
 
     // Establish connection: When a song is changed in the ComboBox
-
     isConnectionsEstablished_m = true;
 
     connect(btnGpIcon_m, &QPushButton::clicked, this, [this]() {
@@ -792,15 +861,23 @@ void SonarLessonPage::sitesConnects() {
         blockSignal = false;
     });
 
-    // In the setup area:
-    connect(sessionTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
+    connect(notesEdit_m,
+            &QTextEdit::currentCharFormatChanged,
+            this,
+            [=, this](const QTextCharFormat &format) {
+                btnBold_m->setChecked(format.fontWeight() == QFont::Bold);
+                btnItalic_m->setChecked(format.fontItalic());
+                notesEdit_m->setFocus();
+            });
+
+    connect(practiceTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
 
         int row = item->row();
         bool rowComplete = true;
 
         // Check all columns to see if they contain text.
-        for (int col = 0; col < sessionTable_m->columnCount(); ++col) {
-            QTableWidgetItem *checkItem = sessionTable_m->item(row, col);
+        for (int col = 0; col < practiceTable_m->columnCount(); ++col) {
+            QTableWidgetItem *checkItem = practiceTable_m->item(row, col);
             if (!checkItem || checkItem->text().trimmed().isEmpty()) {
                 rowComplete = false;
                 break;
@@ -810,6 +887,18 @@ void SonarLessonPage::sitesConnects() {
         if (rowComplete) {
             isDirtyTable_m = true;
             updateButtonState();
+        }
+    });
+
+    practiceTable_m->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(practiceTable_m, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos){
+        QMenu menu(this);
+        QAction* fullHistory = menu.addAction(tr("Load full history"));
+
+        QAction* selected = menu.exec(practiceTable_m->mapToGlobal(pos));
+        if (selected == fullHistory) {
+            auto allSessions = dbManager_m->getLastSessions(getCurrentSongId(), 0);
+            updatePracticeTable(allSessions);
         }
     });
 
@@ -829,7 +918,6 @@ void SonarLessonPage::sitesConnects() {
 
     calendar_m->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    // Context menu-Slot
     connect(calendar_m,
             &QCalendarWidget::customContextMenuRequested,
             this,
@@ -874,7 +962,7 @@ void SonarLessonPage::sitesConnects() {
                         // 1. Search in the SOURCE MODE (RAM), as EVERYTHING is located there, regardless of whether it's filtered or not.
                         QModelIndexList matches = sourceModel_m->match(
                             sourceModel_m->index(0, 0),
-                            SelectorRole::FileIdRole, // Wir suchen die Dateie-ID
+                            SelectorRole::FileIdRole,
                             songId,
                             1,
                             Qt::MatchExactly
@@ -956,15 +1044,6 @@ void SonarLessonPage::sitesConnects() {
         notesEdit_m->setFocus();
     });
 
-    connect(notesEdit_m,
-            &QTextEdit::currentCharFormatChanged,
-            this,
-            [=, this](const QTextCharFormat &format) {
-                btnBold_m->setChecked(format.fontWeight() == QFont::Bold);
-                btnItalic_m->setChecked(format.fontItalic());
-                notesEdit_m->setFocus();
-            });
-
     connect(timerBtn_m, &QPushButton::clicked, this, &SonarLessonPage::onTimerButtonClicked);
 
     connect(refreshTimer_m, &QTimer::timeout, this, &SonarLessonPage::updateTimerDisplay);
@@ -982,14 +1061,23 @@ void SonarLessonPage::sitesConnects() {
         int reminderId = firstColItem->data(ReminderIdRole).toInt();
         int fileId     = firstColItem->data(ReminderFileIdRole).toInt();
 
+        QString songTitle = firstColItem->data(ReminderSongTitle).toString();
+
         QMenu menu(this);
         QAction *loadAction = menu.addAction(tr("Select Entry"));
         QAction *openAction = menu.addAction(tr("Open Entry"));
+        menu.addSeparator();
+        QAction* editAct = menu.addAction(tr("Edit Reminder"));
         menu.addSeparator();
         QAction *deleteAction = menu.addAction(tr("Delete Reminder"));
 
         QAction *selectedAction = menu.exec(reminderTable_m->mapToGlobal(pos));
         if (!selectedAction) return;
+
+        if(selectedAction == editAct) {
+            onEditReminder(reminderId, songTitle);
+        }
+        menu.addSeparator();
 
         if (selectedAction == loadAction || selectedAction == openAction) {
             // (Toggles filter and selects in ComboBox)
@@ -1002,8 +1090,13 @@ void SonarLessonPage::sitesConnects() {
                 }
             }
         } else if (selectedAction == deleteAction) {
-            if (dbManager_m->deleteReminder(reminderId)) {
-                updateReminderTable(calendar_m->selectedDate());
+            auto res = QMessageBox::warning(this, tr("Confirm deletion"),
+                                            tr("Do you really want to delete this reminder?"),
+                                            QMessageBox::Yes | QMessageBox::No);
+            if(res == QMessageBox::Yes) {
+                if (dbManager_m->deleteReminder(reminderId)) {
+                    updateReminderTable(calendar_m->selectedDate());
+                }
             }
         }
     });
@@ -1088,6 +1181,33 @@ void SonarLessonPage::onSongChanged(int index) {
     // File path for the "Open Song" button
     currentSongPath_m = proxyModel_m->data(proxyIndex, PathRole).toString();
     btnGpIcon_m->setEnabled(!currentSongPath_m.isEmpty());
+
+    QModelIndex sourceIndex = proxyModel_m->mapToSource(proxyIndex);
+
+    int sId = 0;
+
+    if (sourceIndex.isValid()) {
+        sId = sourceIndex.data(SelectorRole::SongIdRole).toInt();
+        auto recentSessions = dbManager_m->getLastSessions(sId, 3);
+        updatePracticeTable(recentSessions);
+    }
+
+    QList<DatabaseManager::RelatedFile> allFiles = dbManager_m->getFilesByRelation(sId);
+    QList<DatabaseManager::RelatedFile> gpFiles, audioFiles, videoFiles, pdfFiles;
+
+    for (const auto& file : std::as_const(allFiles)) {
+        QString ext = "*." + QFileInfo(file.fileName).suffix().toLower();
+        if (FileUtils::getGuitarProFormats().contains(ext)) gpFiles << file;
+        else if (FileUtils::getAudioFormats().contains(ext)) audioFiles << file;
+        else if (FileUtils::getVideoFormats().contains(ext)) videoFiles << file;
+        else if (FileUtils::getPdfFormats().contains(ext)) pdfFiles << file;
+    }
+
+    setupResourceButton(btnPdfIcon_m, pdfFiles);
+    setupResourceButton(btnAudioIcon_m, audioFiles);
+    setupResourceButton(btnVideoIcon_m, videoFiles);
+
+    updateEmptyTableMessage();
 }
 
 void SonarLessonPage::setupResourceButton(QPushButton *btn,
@@ -1119,7 +1239,7 @@ void SonarLessonPage::setupResourceButton(QPushButton *btn,
 void SonarLessonPage::setupSingleFileButton(QPushButton *btn,
                                             const DatabaseManager::RelatedFile &file)
 {
-    QString fullPath = QDir::cleanPath(file.relativePath);
+    QString fullPath = QDir::cleanPath(file.absolutePath);
     connect(btn, &QPushButton::clicked, this, [this, fullPath]() {
         UIHelper::openFileWithFeedback(this, fullPath);
     });
@@ -1133,7 +1253,7 @@ void SonarLessonPage::setupMultiFileButton(QPushButton *btn,
         QString cleanName = QFileInfo(file.fileName).baseName();
         QAction *action = menu->addAction(cleanName);
 
-        QString fullPath = QDir::cleanPath(file.relativePath);
+        QString fullPath = QDir::cleanPath(file.absolutePath);
 
         connect(action, &QAction::triggered, this, [this, fullPath]() {
             qInfo() << "[SonarLessonPage] setupResourceButton - fullPath: " << fullPath;
@@ -1321,13 +1441,13 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
  */
 QList<PracticeSession> SonarLessonPage::collectTableData() {
     QList<PracticeSession> sessions;
-    for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
-        auto itemStart = sessionTable_m->item(i, PracticeTable::PracticeColumn::BeatFrom); // beat of
-        auto itemEnd = sessionTable_m->item(i, PracticeTable::PracticeColumn::BeatTo); // beat until
-        auto itemBpm = sessionTable_m->item(i, PracticeTable::PracticeColumn::BPM);    // BPM
-        auto itemReps = sessionTable_m
+    for (int i = 0; i < practiceTable_m->rowCount(); ++i) {
+        auto itemStart = practiceTable_m->item(i, PracticeTable::PracticeColumn::BeatFrom); // beat of
+        auto itemEnd = practiceTable_m->item(i, PracticeTable::PracticeColumn::BeatTo); // beat until
+        auto itemBpm = practiceTable_m->item(i, PracticeTable::PracticeColumn::BPM);    // BPM
+        auto itemReps = practiceTable_m
                             ->item(i, PracticeTable::PracticeColumn::Repetitions); // Repetitions
-        auto itemStreaks = sessionTable_m
+        auto itemStreaks = practiceTable_m
                                ->item(i, PracticeTable::PracticeColumn::Duration); // Length of time
 
         if (itemStart && !itemStart->text().isEmpty() && itemEnd && !itemEnd->text().isEmpty()) {
@@ -1383,7 +1503,7 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
 }
 
 void SonarLessonPage::refreshTableDisplay(QDate date) {
-    sessionTable_m->setRowCount(0);
+    practiceTable_m->setRowCount(0);
     bool isToday = (date == QDate::currentDate());
 
     // First, the references (the last two, if they are not from today)
@@ -1400,18 +1520,18 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
 
     // If selected today: The empty input line
     if (isToday) {
-        int lastRow = sessionTable_m->rowCount();
-        sessionTable_m->insertRow(lastRow);
+        int lastRow = practiceTable_m->rowCount();
+        practiceTable_m->insertRow(lastRow);
 
         auto* itemDate = new QTableWidgetItem(date.toString("dd.MM.yyyy"));
         itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable);
-        sessionTable_m->setItem(lastRow, 0, itemDate);
+        practiceTable_m->setItem(lastRow, 0, itemDate);
     }
 }
 
 void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnly) {
-    int row = sessionTable_m->rowCount();
-    sessionTable_m->insertRow(row);
+    int row = practiceTable_m->rowCount();
+    practiceTable_m->insertRow(row);
 
     auto* itemDate = new QTableWidgetItem(s.date.toString("dd.MM.yyyy"));
     itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable); // Date never editable
@@ -1419,7 +1539,7 @@ void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnl
     if (isReadOnly) {
         itemDate->setForeground(Qt::gray);
     }
-    sessionTable_m->setItem(row, PracticeTable::PracticeColumn::Date, itemDate);
+    practiceTable_m->setItem(row, PracticeTable::PracticeColumn::Date, itemDate);
 
     QList<QString> values = {QString::number(s.startBar),
                              QString::number(s.endBar),
@@ -1433,7 +1553,7 @@ void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnl
             item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
             item->setForeground(Qt::gray);
         }
-        sessionTable_m->setItem(row, i + 1, item); // i+1 because of the date in column 0
+        practiceTable_m->setItem(row, i + 1, item); // i+1 because of the date in column 0
     }
 }
 
@@ -1452,8 +1572,8 @@ void SonarLessonPage::syncCurrentSessionToTable(int startBar, int endBar, int bp
 
 void SonarLessonPage::updateTableRow(int targetRow, int startBar, int endBar, int bpm, int minutes)
 {
-    for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
-        QTableWidgetItem* itemDuration = sessionTable_m
+    for (int i = 0; i < practiceTable_m->rowCount(); ++i) {
+        QTableWidgetItem* itemDuration = practiceTable_m
                                              ->item(i, PracticeTable::PracticeColumn::Duration);
         if (!itemDuration || itemDuration->text().isEmpty()) {
             targetRow = i;
@@ -1462,55 +1582,55 @@ void SonarLessonPage::updateTableRow(int targetRow, int startBar, int endBar, in
     }
 
     if (targetRow < 0) {
-        targetRow = sessionTable_m->rowCount();
-        sessionTable_m->insertRow(targetRow);
+        targetRow = practiceTable_m->rowCount();
+        practiceTable_m->insertRow(targetRow);
 
         auto *itemDate = new QTableWidgetItem(QDate::currentDate().toString("dd.MM.yyyy"));
         itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable);
-        sessionTable_m->setItem(targetRow, PracticeTable::PracticeColumn::Date, itemDate);
+        practiceTable_m->setItem(targetRow, PracticeTable::PracticeColumn::Date, itemDate);
     }
 
-    sessionTable_m->setItem(targetRow,
+    practiceTable_m->setItem(targetRow,
                             PracticeTable::PracticeColumn::BeatFrom,
                             new QTableWidgetItem(QString::number(beatOf_m->value())));
-    sessionTable_m->setItem(targetRow,
+    practiceTable_m->setItem(targetRow,
                             PracticeTable::PracticeColumn::BeatTo,
                             new QTableWidgetItem(QString::number(beatTo_m->value())));
-    sessionTable_m->setItem(targetRow,
+    practiceTable_m->setItem(targetRow,
                             PracticeTable::PracticeColumn::BPM,
                             new QTableWidgetItem(QString::number(practiceBpm_m->value())));
 
     auto *itemDuration = new QTableWidgetItem(QString::number(minutes));
     itemDuration->setTextAlignment(Qt::AlignCenter);
-    sessionTable_m->setItem(targetRow, PracticeTable::PracticeColumn::Duration, itemDuration);
+    practiceTable_m->setItem(targetRow, PracticeTable::PracticeColumn::Duration, itemDuration);
 
-    if (!sessionTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions)) {
-        sessionTable_m->setItem(targetRow,
+    if (!practiceTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions)) {
+        practiceTable_m->setItem(targetRow,
                                 PracticeTable::PracticeColumn::Repetitions,
                                 new QTableWidgetItem(""));
     }
 
-    sessionTable_m->setCurrentCell(targetRow, PracticeTable::PracticeColumn::Repetitions);
-    sessionTable_m->editItem(sessionTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions));
+    practiceTable_m->setCurrentCell(targetRow, PracticeTable::PracticeColumn::Repetitions);
+    practiceTable_m->editItem(practiceTable_m->item(targetRow, PracticeTable::PracticeColumn::Repetitions));
 }
 
 int SonarLessonPage::findOrCreateEmptyTableRow()
 {
-    for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
+    for (int i = 0; i < practiceTable_m->rowCount(); ++i) {
         if (isRowEmpty(i)) {
             return i;
         }
     }
 
     // Create new row if none empty
-    sessionTable_m->insertRow(sessionTable_m->rowCount());
-    return sessionTable_m->rowCount() - 1;
+    practiceTable_m->insertRow(practiceTable_m->rowCount());
+    return practiceTable_m->rowCount() - 1;
 }
 
 bool SonarLessonPage::isRowEmpty(int row)
 {
-    for (int col = 0; col < sessionTable_m->columnCount(); ++col) {
-        QTableWidgetItem* item = sessionTable_m->item(row, col);
+    for (int col = 0; col < practiceTable_m->columnCount(); ++col) {
+        QTableWidgetItem* item = practiceTable_m->item(row, col);
         if (item && !item->text().trimmed().isEmpty()) {
             return false;
         }
@@ -1520,20 +1640,20 @@ bool SonarLessonPage::isRowEmpty(int row)
 
 void SonarLessonPage::addTableRow()
 {
-    if (!sessionTable_m)
+    if (!practiceTable_m)
         return;
 
-    int newRow = sessionTable_m->rowCount();
-    sessionTable_m->insertRow(newRow);
+    int newRow = practiceTable_m->rowCount();
+    practiceTable_m->insertRow(newRow);
 
-    sessionTable_m->setItem(newRow, 0, new QTableWidgetItem(QDate::currentDate().toString()));
+    practiceTable_m->setItem(newRow, 0, new QTableWidgetItem(QDate::currentDate().toString()));
 }
 
 void SonarLessonPage::removeTableRow()
 {
-    if (!sessionTable_m)
+    if (!practiceTable_m)
         return;
-    sessionTable_m->removeRow(sessionTable_m->currentRow());
+    practiceTable_m->removeRow(practiceTable_m->currentRow());
 }
 
 void SonarLessonPage::initialLoadFromDb() {
@@ -1546,19 +1666,16 @@ void SonarLessonPage::initialLoadFromDb() {
         QString display;
 
         // 1. Check if the artist and title fields are filled in appropriately.
-        bool hasArtist = !song.artist.isEmpty() && song.artist.toLower() != "unknown";
-        bool hasTitle  = !song.title.isEmpty()  && song.title.toLower()  != "unknown";
+        // bool hasArtist = !song.artist.isEmpty() && song.artist.toLower() != "unknown artist";
+        // bool hasTitle  = !song.title.isEmpty()  && song.title.toLower()  != "unknown";
+        // if (hasArtist && hasTitle) {
+        //     display = song.artist + " - " + song.title + " (" + QFileInfo(song.fullPath).fileName() + ")";
+        // } else {
+        //     // 2.Fallback: If everything is "Unknown", we take the filename.
+        //     display = QFileInfo(song.fullPath).fileName();
+        // }
 
-        if (hasArtist && hasTitle) {
-            display = song.artist + " - " + song.title;
-        } else if (hasTitle) {
-            display = song.title;
-        } else if (hasArtist) {
-            display = song.artist + " - (Unknown Title)";
-        } else {
-            // 2.Fallback: If everything is "Unknown", we take the filename.
-            display = QFileInfo(song.fullPath).fileName();
-        }
+        display = QFileInfo(song.fullPath).fileName();
 
         QStandardItem* item = new QStandardItem(display);
         item->setData(QVariant::fromValue(song.id), SelectorRole::FileIdRole);
@@ -1575,4 +1692,18 @@ void SonarLessonPage::initialLoadFromDb() {
     isLoading_m = false;
 
     onFilterToggled();
+}
+
+void SonarLessonPage::updateEmptyTableMessage() {
+    if (practiceTable_m->rowCount() == 0) {
+        practiceTable_m->setRowCount(1);
+        practiceTable_m->setSpan(0, 0, 1, practiceTable_m->columnCount());
+
+        QTableWidgetItem *item = new QTableWidgetItem(tr("No data available. Press 'Start Timer' to begin..."));
+        item->setTextAlignment(Qt::AlignCenter);
+        item->setForeground(Qt::gray); // Text ausgegraut
+        item->setFlags(Qt::NoItemFlags); // Nicht anklickbar machen
+
+        practiceTable_m->setItem(0, 0, item);
+    }
 }

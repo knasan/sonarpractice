@@ -329,9 +329,9 @@ QString GpParser::identifyTuning(const QList<int> &pitches)
             return "Bass Drop D";
     }
 
-    // Fallback: Benennung nach der TATSÄCHLICH tiefsten Note
+    // Fallback: Naming according to the ACTUAL lowest note
     const QStringList noteNames = {"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"};
-    int lowPitch = sortedPitches.first(); // .first() ist jetzt garantiert die tiefste Saite
+    int lowPitch = sortedPitches.first();
     return QString("Custom (%1)").arg(noteNames.at(lowPitch % 12));
 }
 
@@ -501,7 +501,7 @@ GpParser::GPMetadata GpParser::parseMetadata(const QString &filePath)
 
     // V6
     // GP File
-    // 'P' 'K' '\003' '\004' ist die Signatur für ZIP (GPX/GP7)
+    // 'P' 'K' '\003' '\004' is the signature for ZIP (GPX/GP7)
     if (magic[0] == 'P' && magic[1] == 'K') {
         auto xmlData = unzipGPFile(filePath);
         meta = parseXmlMetadata(xmlData);

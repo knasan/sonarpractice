@@ -15,7 +15,7 @@
  *     - Betrifft: Der Haupt-Timer-Button (Start/Stop).
  *     - Stile: Hover, Running-Zustand (rot), Standard-Rahmen.
  *
- *  2. #homeButton, #libraryButton, #docsButton, #videosButton, #audioButton
+ *  2. #homeButton, #libraryButton, #docsButton, #videosButton, #audiosButton
  *     - Betrifft: Navigation-Buttons (runde Icons am unteren Rand).
  *     - Stile: Hover-Effekt (blau), Checked-Zustand (aktiviert).
  *
@@ -57,6 +57,7 @@
  *
  *  12. notesTextEdit (Journal Notes, object name)
  *      - Text Farbe: weiß oder hellgrau
+ *      - objectName für button: notesBoldButton, notesItalicButton, notesUnderlineButton, notesHeader1Button, notesHeader2Button
  *
  *  =============================================
  *  HINWEISE FÜR DESIGNER:
@@ -351,7 +352,7 @@ QCalendarWidget#lessonCalendar QMenu {
     border: 1px solid #3d3d3d;
 }
 
-QPushButton#homeButton, QPushButton#libraryButton, QPushButton#docsButton, QPushButton#videosButton, QPushButton#audioButton {
+QPushButton#homeButton, QPushButton#libraryButton, QPushButton#docsButton, QPushButton#videosButton, QPushButton#audiosButton {
     min-width: 45px;
     max-width: 45px;
     min-height: 45px;

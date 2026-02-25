@@ -68,7 +68,7 @@ private:
         const QString txtQtVersion = tr("Qt version");
         const QString txtBuildTime = tr("Build time");
         const QString txtOS        = tr("OS");
-        const QString txtMsg = tr("I hope SonarPractice helps you with your daily music exercises!"); // Ich hoffe SonarPractice hilft dir bei deinen täglichen Musik-Übungen!
+        const QString txtMsg = tr("I hope SonarPractice helps you with your daily music exercises!");
         const QString txtBmac = tr("Buy me a coffee");
 
         QString linkColor = "#00bfff";

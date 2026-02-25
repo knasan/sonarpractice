@@ -1,6 +1,8 @@
 #ifndef DATABASEMANAGER_H
 #define DATABASEMANAGER_H
 
+#include "reminderdialog.h"
+
 #include <QSqlDatabase>
 #include <QString>
 #include <QObject>
@@ -23,7 +25,7 @@ public:
         int id{0};
         int songId{0};
         QString fileName;
-        QString relativePath;
+        QString absolutePath;
         QString type;
         QString title;
         QString pathOrUrl;
@@ -95,7 +97,7 @@ public:
     [[nodiscard]] bool updateSongNotes(int songId, const QString &notes, QDate date);
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
     [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
-    [[deprecated("use getFilteredFiles now")]] QList<DatabaseManager::SongDetails> loadData();
+
     [[nodiscard]] QList<DatabaseManager::SongDetails> getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly);
 
     [[nodiscard]] bool updateSong(int songId, const QString &title, int artistId, int tuningId, int bpm);
@@ -115,9 +117,11 @@ public:
                                    int weekday,
                                    const QString &reminderDate);
 
+    [[nodiscard]] bool updateReminder(int reminderId, const ReminderDialog::ReminderData &data);
     [[nodiscard]] bool deleteReminder(int reminderId);
 
     [[nodiscard]] QVariantList getRemindersForDate(const QDate &date);
+    [[nodiscard]] ReminderDialog::ReminderData getReminder(int reminderId);
 
     // Settings (configuration)
     [[nodiscard]] bool setSetting(const QString &key, const QVariant &value);

@@ -30,7 +30,7 @@
 LibraryPage::LibraryPage(QWidget *parent, DatabaseManager *dbManager)
     : QWidget(parent), dbManager_m(dbManager)
 {
-    // UI initialisieren
+    // UI initialize
     setupUI();
 
     // Place the master model on media_files
@@ -440,36 +440,6 @@ void LibraryPage::showCatalogContextMenu(const QPoint &pos)
         handleDeleteFiles(selectedIndexes);
     }
 }
-
-// DELETE for Singe File
-// void LibraryPage::handleDeleteFile(const QModelIndex &index, const QString &path, int fileId) {
-//     auto res = QMessageBox::warning(this, tr("Delete File"),
-//                                     tr("Are you sure you want to move this file to the trash and remove it from the database?\n\n%1").arg(path),
-//                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
-
-//     if (res != QMessageBox::Yes) return;
-
-//     // 1. Aus dem Dateisystem löschen (Papierkorb)
-//     if (QFile::exists(path)) {
-//         if (!QFile::moveToTrash(path)) {
-//             QMessageBox::critical(this, tr("Error"), tr("Could not move file to trash."));
-//             return;
-//         }
-//     } else {
-//         qDebug() << "File already gone from disk, proceeding with DB cleanup.";
-//     }
-
-//     // 2. Aus der Datenbank entfernen
-//     if (dbManager_m->deleteFileRecord(fileId)) {
-//         // 3. Aus dem UI-Model entfernen, ohne den ganzen Katalog neu zu laden
-//         catalogModel_m->removeRow(index.row());
-
-//         // Optional: Rechts die Details leeren, falls die gelöschte Datei ausgewählt war
-//         detailWidget_m->setEnabled(false);
-//     } else {
-//         QMessageBox::critical(this, tr("Database Error"), tr("Failed to remove file from database."));
-//     }
-// }
 
 // Delete for multi selected files
 void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes)

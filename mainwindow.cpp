@@ -84,8 +84,6 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget_m->addWidget(lessonPage_m);   // Index 0
     stackedWidget_m->addWidget(libraryPage_m);  // Index 1
 
-    // connect(this, &MainWindow::dataChanged, lessonPage_m, &SonarLessonPage::loadData);
-
     connect(this, &MainWindow::dataChanged, libraryPage_m, &LibraryPage::markAsDirty);
 
     layout->addWidget(stackedWidget_m);
@@ -109,37 +107,35 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() {}
 
-/*void MainWindow::reloadStyle() {
-    qDebug() << "Load Style";
-    QFile file(":/base.qss"); // Pfad zu deiner Ressource
-    if (file.open(QFile::ReadOnly)) {
-        QString styleSheet = QLatin1String(file.readAll());
-        qApp->setStyleSheet(styleSheet);
-        file.close();
-        qDebug() << "Style reloaded!";
-    }
-}*/
-
 void MainWindow::reloadStyle() {
-    // 1. Pfad zu deiner echten Datei auf der Festplatte (NICHT die Ressource)
-    // Ersetze den Pfad durch deinen tatsächlichen Pfad zur Datei!
-    QString diskPath = "C:/Users/smk/Develop/03_Projects/SonarPractice/styles/base.qss";
-
-    QFile file(diskPath);
-
-    // Falls die Datei auf der Platte nicht gefunden wird (z.B. beim User),
-    // nimm die eingebaute Ressource als Fallback
-    if (!file.exists()) {
-        file.setFileName(":/base.qss");
-    }
-
+    qInfo() << "Load Style";
+    QFile file(":/base.qss");
     if (file.open(QFile::ReadOnly)) {
         QString styleSheet = QLatin1String(file.readAll());
         qApp->setStyleSheet(styleSheet);
         file.close();
-        qDebug() << "Style reloaded from:" << file.fileName();
+        qInfo() << "Style reloaded!";
     }
 }
+
+// void MainWindow::reloadStyle() {
+//     QString diskPath = "C:/Users/smk/Develop/03_Projects/SonarPractice/styles/base.qss";
+
+//     QFile file(diskPath);
+
+//     // Falls die Datei auf der Platte nicht gefunden wird (z.B. beim User),
+//     // nimm die eingebaute Ressource als Fallback
+//     if (!file.exists()) {
+//         file.setFileName(":/base.qss");
+//     }
+
+//     if (file.open(QFile::ReadOnly)) {
+//         QString styleSheet = QLatin1String(file.readAll());
+//         qApp->setStyleSheet(styleSheet);
+//         file.close();
+//         qDebug() << "Style reloaded from:" << file.fileName();
+//     }
+// }
 
 void MainWindow::onImportFileTriggered() {
 

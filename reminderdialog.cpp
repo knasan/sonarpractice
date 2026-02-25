@@ -56,9 +56,8 @@ ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int pr
 
     dateEdit_m = new QDateEdit(QDate::currentDate());
     dateEdit_m->setCalendarPopup(true);
-    dateEdit_m->setEnabled(true); // Standardmäßig an
+    dateEdit_m->setEnabled(true);
 
-    // Formular füllen
     formLayout->addRow(tr("Song:"), songDisplayLabel_m);
     formLayout->addRow(tr("Start Bar:"), startBarSpin_m);
     formLayout->addRow(tr("End Bar:"), endBarSpin_m);
@@ -137,4 +136,28 @@ void ReminderDialog::updateOkButtonState()
     }
 
     btnOk_m->setEnabled(finalValid);
+}
+
+void ReminderDialog::setReminderData(const ReminderDialog::ReminderData &data)
+{
+    currentSongId_m = data.songId;
+
+    startBarSpin_m->setValue(data.startBar);
+    endBarSpin_m->setValue(data.endBar);
+    bpmSpin_m->setValue(data.targetBpm);
+
+    dailyCheck_m->setChecked(data.isDaily);
+    monthlyCheck_m->setChecked(data.isMonthly);
+
+    if (data.weekday >= 0) {
+        weekdayCombo_m->setCurrentIndex(data.weekday);
+    } else {
+        weekdayCombo_m->setCurrentIndex(0); // "None" oder Standard
+    }
+
+    if (!data.reminderDate.isEmpty()) {
+        dateEdit_m->setDate(QDate::fromString(data.reminderDate, "yyyy-MM-dd"));
+    }
+
+    updateOkButtonState();
 }

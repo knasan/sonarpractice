@@ -296,7 +296,6 @@ void FilterPage::addSourcePath() {
         // Case B: Newly selected paths include existing paths
         // Example: New=F:/Guitar, Old=F:/Guitar/Pdf
         if (existingSlash.startsWith(newPathSlash)) {
-            // Der alte Pfad ist jetzt redundant. Wir löschen ihn.
             delete listWidgetSource_m->takeItem(i);
         }
     }

@@ -14,7 +14,7 @@ struct ImportTask {
     QString itemName;       // Display name/File name
     qint64 fileSize;
     QString fileSuffix;
-    QString categoryPath; // So that the processor knows where to go (z.B. "Übungen/Technik")
+    QString categoryPath; // So that the processor knows where to go (e.g. "Exercises/Technique")
     QString fileHash;     // For your duplicate check
 };
 

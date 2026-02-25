@@ -1,3 +1,6 @@
+#ifndef REMINDERDIALOG_H
+#define REMINDERDIALOG_H
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateEdit>
@@ -11,7 +14,6 @@ class ReminderDialog : public QDialog {
 public:
     explicit ReminderDialog(QWidget *parent = nullptr, int startBar = 1, int endBar = 1, int practiceBpm = 50);
 
-    // Struktur um die Daten einfach abzugreifen
     struct ReminderData {
         int songId;
         int startBar;
@@ -23,8 +25,9 @@ public:
         QString reminderDate;
     };
 
-    ReminderData getValues() const;
-    ReminderData getResults() const;
+    [[nodiscard]] ReminderData getValues() const;
+    [[nodiscard]] ReminderData getResults() const;
+    void setReminderData(const ReminderData &data);
     void setTargetSong(int id, const QString &name);
 
 private:
@@ -42,3 +45,5 @@ private:
 
     QLabel* songDisplayLabel_m;
 };
+
+#endif // REMINDERDIALOG_H

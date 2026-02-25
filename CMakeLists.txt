@@ -90,6 +90,7 @@ add_library(
   filescanner.cpp
   README_de.md
   README.md
+  Changelog.md
   styles/wizard.qss
   styles/base.qss
   gpparser.h
@@ -115,7 +116,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
       ${PROJECT_SOURCES}
       resources.qrc
       ${RC_FILE}
-      Changelog.md)
+    )
   else()
     qt_add_executable(SonarPractice MANUAL_FINALIZATION ${PROJECT_SOURCES} resources.qrc)
   endif()

@@ -511,7 +511,7 @@ void ImportDialog::collectTasksFromModel(QStandardItem* parent, QString currentD
         } else {
 
             QString sPath = child->data(RoleFilePath).toString();
-            qint64 sSize = QFileInfo(sPath).size(); // Größe ermitteln
+            qint64 sSize = QFileInfo(sPath).size();
 
             // VALIDATION:
             // 1. Is the path empty? (Folder remnants)

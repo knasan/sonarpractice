@@ -16,7 +16,6 @@ class SetupWizard : public QWizard {
     Q_OBJECT
 
 public:
-    // Definition der Seiten-IDs für Typsicherheit
     enum PageId {
         Page_Welcome = 0,
         Page_Filter = 1,

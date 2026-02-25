@@ -43,15 +43,16 @@ public:
     enum ReminderRole {
         ReminderIdRole  = Qt::UserRole + 1,
         ReminderFileIdRole = Qt::UserRole + 2,
+        ReminderSongTitle = Qt::UserRole + 3,
     };
 
 private:
     void setupUI();
+    void setupSidebar(QHBoxLayout *mainLayout);
     void setupSongInformationSection(QVBoxLayout *contentLayout);
     void setupTrainingSection(QVBoxLayout *contentLayout);
     void setupNotesSection(QVBoxLayout *contentLayout);
     void setupPracticeTable(QVBoxLayout *contentLayout);
-    void setupSidebar(QHBoxLayout *mainLayout);
 
     QPushButton *createFormattingButton(const QString &objectName,
                                         const QString &iconPath,
@@ -68,21 +69,29 @@ private:
 
     void sitesConnects();
     void onTimerButtonClicked();
+
     void setupResourceButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files);
     void setupSingleFileButton(QPushButton *btn, const DatabaseManager::RelatedFile &file);
     void setupMultiFileButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files);
+
     void updateButtonState();
+
     void loadJournalForDay(int songId, QDate date);
     void loadTableDataForDay(int songId, QDate date);
     void refreshTableDisplay(QDate date);
     void showSaveMessage(QString message);
+
+    // TODO: rename to addPracticeToTable
     void addSessionToTable(const PracticeSession &s, bool isReadOnly);
+
+    void syncCurrentSessionToTable(int startBar, int endBar, int currentBpm, int minutes);
+    void updatePracticeHistory(int fileId);
+    void updatePracticeTable(const QList<PracticeSession>& sessions);
 
     void updateFilterButtonsForFile(const QString& filePath);
 
     void updateReminderTable(const QDate &date);
 
-    void syncCurrentSessionToTable(int startBar, int endBar, int currentBpm, int minutes);
     [[nodiscard]] int findOrCreateEmptyTableRow();
     [[nodiscard]] bool isRowEmpty(int row);
     void updateTableRow(int targetRow, int startBar, int endBar, int bpm, int minutes);
@@ -96,6 +105,7 @@ private:
     [[nodiscard]] int getCurrentSongId();
 
     void initialLoadFromDb();
+    void updateEmptyTableMessage();
 
     QString savedMessage_m = tr("Successfully saved");
     QString savedMessageFailed_m = tr("Saved failed");
@@ -113,7 +123,7 @@ private:
     QSpinBox* beatOf_m;
     QSpinBox* beatTo_m;
     QSpinBox* practiceBpm_m;
-    QTableWidget* sessionTable_m;
+    QTableWidget* practiceTable_m;
 
     // Notes Section
     QTextEdit* notesEdit_m;
@@ -149,7 +159,6 @@ private:
     QToolButton *btnFilterAudio_m;
     QToolButton *btnFilterVideo_m;
     QToolButton *btnFilterDocument_m;
-    QToolButton *btnFilterUnlinked_m;
 
     // State Flags
     bool isLoading_m{true};
@@ -181,11 +190,13 @@ private slots:
     void onEditSongClicked();
     void onFilterToggled();
     void selectSongById(int targetId);
+    void onEditReminder(int reminderId, const QString title);
 
 public slots:
     void addTableRow();
     void removeTableRow();
     void onAddReminderClicked();
+
 };
 
 #endif // SONARLESSONPAGE_H

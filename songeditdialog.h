@@ -20,14 +20,13 @@ public:
                      const QStringList &allArtists,
                      const QStringList &allTunings);
 
-    // Getter für die Ergebnisse (um sie später in die DB zu schreiben)
     [[nodiscard]] QString title() const { return titleEdit_m->text(); }
     [[nodiscard]] QString artist() const { return artistCombo_m->currentText(); }
     [[nodiscard]] QString tuning() const { return tuningCombo_m->currentText(); }
     [[nodiscard]] int bpm() const { return bpmSpin_m->value(); }
 
 private:
-    // UI Elemente
+    // UI Elements
     QLineEdit* titleEdit_m;
     QComboBox* artistCombo_m;
     QComboBox* tuningCombo_m;
