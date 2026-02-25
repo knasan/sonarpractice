@@ -8,6 +8,8 @@
 #include <QHBoxLayout>
 #include <QLCDNumber>
 #include <QLineEdit>
+#include <QSortFilterProxyModel>
+#include <QStandardItem>
 #include <QWidget>
 
 class QPushButton;
@@ -29,7 +31,18 @@ public:
 
     enum SelectorRole {
         FileIdRole = Qt::UserRole + 1,
-        PathRole = Qt::UserRole
+        PathRole = Qt::UserRole + 2,
+        ArtistRole = Qt::UserRole + 3,
+        TitleRole = Qt::UserRole + 4,
+        TempoRole = Qt::UserRole + 5,
+        TuningRole = Qt::UserRole + 6,
+        TypeRole = Qt::UserRole + 7,
+        SongIdRole = Qt::UserRole + 8,
+    };
+
+    enum ReminderRole {
+        ReminderIdRole  = Qt::UserRole + 1,
+        ReminderFileIdRole = Qt::UserRole + 2,
     };
 
 private:
@@ -51,6 +64,8 @@ private:
                                       const QString &tooltip);
     void setupTimer();
 
+    void selectSongByExternalId(int songId);
+
     void sitesConnects();
     void onTimerButtonClicked();
     void setupResourceButton(QPushButton *btn, const QList<DatabaseManager::RelatedFile> &files);
@@ -62,6 +77,8 @@ private:
     void refreshTableDisplay(QDate date);
     void showSaveMessage(QString message);
     void addSessionToTable(const PracticeSession &s, bool isReadOnly);
+
+    void updateFilterButtonsForFile(const QString& filePath);
 
     void updateReminderTable(const QDate &date);
 
@@ -78,43 +95,45 @@ private:
 
     [[nodiscard]] int getCurrentSongId();
 
+    void initialLoadFromDb();
+
     QString savedMessage_m = tr("Successfully saved");
     QString savedMessageFailed_m = tr("Saved failed");
 
     // UI Elements
-    QComboBox *songSelector_m;
-    QLabel *artist_m;
-    QLabel *title_m;
-    QLabel *tempo_m;
-    QLabel *tuningLabel_m;
-    QPushButton *btnGpIcon_m;
+    QComboBox* songSelector_m;
+    QLabel* artist_m;
+    QLabel* title_m;
+    QLabel* tempo_m;
+    QLabel* tuningLabel_m;
+    QPushButton* btnGpIcon_m;
     // TODO': Tuning Notes
 
     // Training Controls
-    QSpinBox *beatOf_m;
-    QSpinBox *beatTo_m;
-    QSpinBox *practiceBpm_m;
-    QTableWidget *sessionTable_m;
+    QSpinBox* beatOf_m;
+    QSpinBox* beatTo_m;
+    QSpinBox* practiceBpm_m;
+    QTableWidget* sessionTable_m;
 
     // Notes Section
-    QTextEdit *notesEdit_m;
-    QPushButton *btnBold_m;
-    QPushButton *btnItalic_m;
-    QPushButton *btnHeader1_m;
-    QPushButton *btnHeader2_m;
-    QPushButton *btnList_m;
-    QPushButton *btnCheck_m;
-    QPushButton *btnAddReminder_m;
+    QTextEdit* notesEdit_m;
+    QPushButton* btnBold_m;
+    QPushButton* btnItalic_m;
+    QPushButton* btnHeader1_m;
+    QPushButton* btnHeader2_m;
+    QPushButton* btnList_m;
+    QPushButton* btnCheck_m;
+    QPushButton* btnAddReminder_m;
 
     // Resource Buttons
-    QPushButton *btnPdfIcon_m;
-    QPushButton *btnVideoIcon_m;
-    QPushButton *btnAudioIcon_m;
+    QPushButton* btnPdfIcon_m;
+    QPushButton* btnVideoIcon_m;
+    QPushButton* btnAudioIcon_m;
 
     // Timer Controls
-    QPushButton *timerBtn_m;
-    QLCDNumber *lcdNumber_m;
-    QTimer *uiRefreshTimer_m;
+    QPushButton* timerBtn_m;
+    QLCDNumber* lcdNumber_m;
+    QTimer* refreshTimer_m;
     QElapsedTimer elapsedTimer_m;
 
     // Status and State
@@ -124,6 +143,13 @@ private:
     QTableWidget *reminderTable_m;
     DatabaseManager *dbManager_m;
     QSqlTableModel *model_m;
+
+    // ToolBox
+    QToolButton *btnFilterGp_m;
+    QToolButton *btnFilterAudio_m;
+    QToolButton *btnFilterVideo_m;
+    QToolButton *btnFilterDocument_m;
+    QToolButton *btnFilterUnlinked_m;
 
     // State Flags
     bool isLoading_m{true};
@@ -142,17 +168,21 @@ private:
     QCheckBox *showAllSessions_m;
     QHBoxLayout *resourceLayout_m;
 
-protected:
-    void showEvent(QShowEvent *event) override; // trigger tab switch
+    QStandardItemModel *sourceModel_m;
+    QSortFilterProxyModel *proxyModel_m;
+
+// protected:
+//     void showEvent(QShowEvent *event) override; // trigger tab switch
 
 private slots:
     void onSongChanged(int songId);
     void onSaveClicked();
     void updateTimerDisplay();
     void onEditSongClicked();
+    void onFilterToggled();
+    void selectSongById(int targetId);
 
 public slots:
-    void loadData();
     void addTableRow();
     void removeTableRow();
     void onAddReminderClicked();

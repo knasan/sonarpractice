@@ -53,7 +53,6 @@ enum PracticeColumn { Date = 0, BeatFrom, BeatTo, BPM, Repetitions, Duration };
 SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     : QWidget(parent)
     , dbManager_m(dbManager)
-    , isLoading_m(false)
     , isDirtyNotes_m(false)
     , isDirtyTable_m(false)
     , isPlaceholderActive_m(false)
@@ -61,14 +60,22 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     , isConnectionsEstablished_m(false)
     , currentFileId_m(-1)
 {
+
+    sourceModel_m = new QStandardItemModel(this);
+    proxyModel_m = new QSortFilterProxyModel(this);
+    proxyModel_m->setSourceModel(sourceModel_m);
+    proxyModel_m->setFilterRole(SelectorRole::PathRole);
+
     setupTimer();
     setupUI();
     sitesConnects();
+    initialLoadFromDb();
     updateButtonState();
+    updateReminderTable(QDate::currentDate());
 }
 
 void SonarLessonPage::setupUI()
-{
+{   
     auto *mainLayout = new QHBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
     mainLayout->setSpacing(10);
@@ -226,6 +233,9 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     songSelector_m->setEditable(true);
     songSelector_m->setInsertPolicy(QComboBox::NoInsert);
 
+    songSelector_m->setModel(proxyModel_m);
+    songSelector_m->setModelColumn(0);
+
     QCompleter *completer = new QCompleter(songSelector_m->model(), this);
     completer->setFilterMode(Qt::MatchContains);
     completer->setCaseSensitivity(Qt::CaseInsensitive);
@@ -233,7 +243,55 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
 
     songSelector_m->setCompleter(completer);
 
-    formLayout->addWidget(songSelector_m, 0, 1, 1, 3);
+    auto setupFilterButton = [](QToolButton* btn, const QString& iconPath, const QString& tip) {
+        btn->setCheckable(true);
+        btn->setFixedSize(28, 28);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setToolTip(tip);
+        btn->setIcon(QIcon(iconPath));
+    };
+
+    btnFilterGp_m = new QToolButton(this);
+    btnFilterGp_m->setObjectName("filterToolButton");
+    btnFilterGp_m->setCheckable(true);
+
+    btnFilterAudio_m = new QToolButton(this);
+    btnFilterAudio_m->setObjectName("filterToolButton");
+    btnFilterAudio_m->setCheckable(true);
+
+    btnFilterVideo_m = new QToolButton(this);
+    btnFilterVideo_m->setObjectName("filterToolButton");
+    btnFilterVideo_m->setCheckable(true);
+
+    btnFilterDocument_m = new QToolButton(this);
+    btnFilterDocument_m->setObjectName("filterToolButton");
+    btnFilterDocument_m->setCheckable(true);
+
+    btnFilterUnlinked_m = new QToolButton(this);
+    btnFilterUnlinked_m->setObjectName("filterToolButton");
+    btnFilterUnlinked_m->setCheckable(true);
+
+    setupFilterButton(btnFilterGp_m, ":gp.png", tr("GuitarPro Filter"));
+    setupFilterButton(btnFilterAudio_m, ":audio.png", tr("Audio Filter"));
+    setupFilterButton(btnFilterVideo_m, ":video.png", tr("Video Filter"));
+    setupFilterButton(btnFilterDocument_m, ":doc.png", tr("Dokument Filter"));
+    setupFilterButton(btnFilterUnlinked_m, ":unlinked.png", tr("Unlinked Filter"));
+
+    // Enable GP by default
+    btnFilterGp_m->setChecked(true);
+
+    auto *filterLayout = new QHBoxLayout();
+    filterLayout->setSpacing(2);
+    filterLayout->setContentsMargins(0, 0, 0, 0);
+    filterLayout->addWidget(btnFilterGp_m);
+    filterLayout->addWidget(btnFilterAudio_m);
+    filterLayout->addWidget(btnFilterVideo_m);
+    filterLayout->addWidget(btnFilterDocument_m);
+    filterLayout->addWidget(btnFilterUnlinked_m);
+
+    formLayout->addWidget(songSelector_m, 0, 1, 1, 1);
+
+    formLayout->addLayout(filterLayout, 0, 2, 1, 2, Qt::AlignLeft);
 
     // Line 1: Artist
     QLabel *artistLabel = new QLabel(tr("Artist:"), this);
@@ -272,12 +330,12 @@ void SonarLessonPage::setupSongInformationSection(QVBoxLayout *contentLayout)
     formLayout->addWidget(tuningLabel_m, 4, 1, 1, 1);
 
     // Line 5: Open Song Button
-    btnGpIcon_m = new QPushButton(tr("Open song"), this);
+    btnGpIcon_m = new QPushButton(tr("Open Media"), this);
     btnGpIcon_m->setObjectName("songOpenButton");
     btnGpIcon_m->setIcon(style()->standardIcon(QStyle::SP_FileIcon));
     formLayout->addWidget(btnGpIcon_m, 5, 0, 1, 1);
 
-    auto *btnEditDialog = new QPushButton(tr("Edit Song"), this);
+    auto *btnEditDialog = new QPushButton(tr("Edit Entry"), this);
     btnEditDialog->setObjectName("songEditDialog");
     formLayout->addWidget(btnEditDialog, 5, 1, 1, 1);
 
@@ -325,10 +383,63 @@ void SonarLessonPage::onEditSongClicked() {
             statusLabel_m->setText(savedMessageFailed_m);
         } else {
             showSaveMessage(savedMessage_m);
+            // load DB and reselect the Song
+            initialLoadFromDb();
+            selectSongByExternalId(songId);
+        }
+    }
+}
+
+void SonarLessonPage::onFilterToggled() {
+    QStringList allAllowedExtensions;
+
+    // 1. Collect formats from FileUtils when the respective button is active.
+    if (btnFilterGp_m->isChecked())       allAllowedExtensions << FileUtils::getGuitarProFormats();
+    if (btnFilterAudio_m->isChecked())    allAllowedExtensions << FileUtils::getAudioFormats();
+    if (btnFilterVideo_m->isChecked())    allAllowedExtensions << FileUtils::getVideoFormats();
+    if (btnFilterDocument_m->isChecked()) allAllowedExtensions << FileUtils::getPdfFormats();
+
+    if (allAllowedExtensions.isEmpty()) {
+        // If nothing is selected, we display nothing at all.
+        proxyModel_m->setFilterRegularExpression(QRegularExpression("^$"));
+        return;
+    }
+
+    // 2. Converting "*.gp3" to regex-compatible extensions "\.gp3$"
+    QStringList regexPatterns;
+    for (QString ext : std::as_const(allAllowedExtensions)) {
+        ext.remove('*');
+        regexPatterns << QRegularExpression::escape(ext) + "$";
+    }
+
+    QString finalPattern = regexPatterns.join("|");
+
+    proxyModel_m->setFilterRegularExpression(QRegularExpression(finalPattern, QRegularExpression::CaseInsensitiveOption));
+}
+
+void SonarLessonPage::selectSongById(int targetId) {
+    // 1. Search in the SOURCE model (everything is included there)
+    QModelIndexList items = sourceModel_m->match(
+        sourceModel_m->index(0, 0),
+        Qt::UserRole,
+        targetId,
+        1,
+        Qt::MatchExactly
+        );
+
+    if (!items.isEmpty()) {
+        QModelIndex sourceIndex = items.first();
+
+        // 2. Map the source index to the proxy index
+        QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+
+        if (!proxyIndex.isValid()) {
+            auto details = dbManager_m->getSongDetails(targetId);
+            updateFilterButtonsForFile(details.fullPath);
+            proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
         }
 
-        // 7. Update UI (e.g., reload labels or tables)
-        loadData();
+        songSelector_m->setCurrentIndex(proxyIndex.row());
     }
 }
 
@@ -365,7 +476,7 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
     lcdNumber_m = new QLCDNumber(this);
     lcdNumber_m->setObjectName("trainingTimerDisplay");
     lcdNumber_m->display("00:00");
-    uiRefreshTimer_m = new QTimer(this);
+    refreshTimer_m = new QTimer(this);
 
     trainingLayout->addSpacerItem(new QSpacerItem(250, 0, QSizePolicy::Fixed));
     trainingLayout->addWidget(lcdNumber_m);
@@ -452,7 +563,7 @@ void SonarLessonPage::onAddReminderClicked()
 void SonarLessonPage::updateReminderTable(const QDate &date)
 {
     reminderTable_m->setRowCount(0);
-    auto reminders = DatabaseManager::instance().getRemindersForDate(date);
+    auto reminders = dbManager_m->getRemindersForDate(date);
 
     for (const auto &ref : std::as_const(reminders)) {
         QVariantMap r = ref.toMap();
@@ -464,20 +575,20 @@ void SonarLessonPage::updateReminderTable(const QDate &date)
         auto *itemBpm = new QTableWidgetItem(r["bpm"].toString());
 
         bool done = r["is_done"].toBool();
-        auto *itemStatus = new QTableWidgetItem(done ? "Done" : "Pending");
+        auto *itemStatus = new QTableWidgetItem(done ? tr("Done") : tr("Pending"));
 
-        itemSong->setData(Qt::UserRole, r["id"].toInt());
-        itemSong->setData(Qt::UserRole + 1, r["songId"].toInt());
+        itemSong->setData(ReminderRole::ReminderIdRole, r["id"].toInt());
+        itemSong->setData(ReminderRole::ReminderFileIdRole, r["songId"].toInt());
+
         itemStatus->setData(Qt::UserRole, done);
 
         reminderTable_m->setItem(row, 0, itemSong);
         reminderTable_m->setItem(row, 1, itemRange);
         reminderTable_m->setItem(row, 2, itemBpm);
         reminderTable_m->setItem(row, 3, itemStatus);
-
-        reminderTable_m->style()->unpolish(reminderTable_m);
-        reminderTable_m->style()->polish(reminderTable_m);
     }
+
+    reminderTable_m->viewport()->update();
 }
 
 void SonarLessonPage::setupNotesSection(QVBoxLayout *contentLayout)
@@ -622,8 +733,8 @@ QPushButton *SonarLessonPage::createResourceButton(const QString &objectName,
 
 void SonarLessonPage::setupTimer()
 {
-    uiRefreshTimer_m = new QTimer(this);
-    uiRefreshTimer_m->setInterval(1000);
+    refreshTimer_m = new QTimer(this);
+    refreshTimer_m->setInterval(1000);
 
     lcdNumber_m = new QLCDNumber();
     lcdNumber_m->setDigitCount(5);
@@ -657,8 +768,6 @@ void SonarLessonPage::sitesConnects() {
             &SonarLessonPage::onSongChanged);
 
     connect(notesEdit_m, &QTextEdit::textChanged, this, [this]() {
-        if (isLoading_m)
-            return;
         isDirtyNotes_m = true;
         updateButtonState();
     });
@@ -685,8 +794,6 @@ void SonarLessonPage::sitesConnects() {
 
     // In the setup area:
     connect(sessionTable_m, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
-        if (!item || isLoading_m)
-            return;
 
         int row = item->row();
         bool rowComplete = true;
@@ -762,6 +869,39 @@ void SonarLessonPage::sitesConnects() {
                             calendar_m->setSelectedDate(QDate::currentDate());
                         }
                     });
+
+                    connect(action, &QAction::triggered, this, [this, songId]() {
+                        // 1. Search in the SOURCE MODE (RAM), as EVERYTHING is located there, regardless of whether it's filtered or not.
+                        QModelIndexList matches = sourceModel_m->match(
+                            sourceModel_m->index(0, 0),
+                            SelectorRole::FileIdRole, // Wir suchen die Dateie-ID
+                            songId,
+                            1,
+                            Qt::MatchExactly
+                            );
+
+                        if (!matches.isEmpty()) {
+                            QModelIndex sourceIndex = matches.first();
+
+                            // 2. Check if the song is currently visible through the proxy.
+                            QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+
+                            if (!proxyIndex.isValid()) {
+                                // Song is hidden! Retrieve the path from RAM and enable filter buttons.
+                                QString filePath = sourceIndex.data(SelectorRole::PathRole).toString();
+                                updateFilterButtonsForFile(filePath); // Diese Methode musst du implementieren (siehe unten)
+
+                                // After the filter update, the ProxyIndex is now valid.
+                                proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+                            }
+
+                            // 3. Select securely now
+                            if (proxyIndex.isValid()) {
+                                songSelector_m->setCurrentIndex(proxyIndex.row());
+                                calendar_m->setSelectedDate(QDate::currentDate());
+                            }
+                        }
+                    });
                 }
                 menu.exec(calendar_m->mapToGlobal(pos));
             });
@@ -827,54 +967,64 @@ void SonarLessonPage::sitesConnects() {
 
     connect(timerBtn_m, &QPushButton::clicked, this, &SonarLessonPage::onTimerButtonClicked);
 
-    connect(uiRefreshTimer_m, &QTimer::timeout, this, &SonarLessonPage::updateTimerDisplay);
+    connect(refreshTimer_m, &QTimer::timeout, this, &SonarLessonPage::updateTimerDisplay);
 
     connect(btnAddReminder_m, &QPushButton::clicked, this, &SonarLessonPage::onAddReminderClicked);
 
-    connect(reminderTable_m,
-            &QTableWidget::customContextMenuRequested,
-            this,
-            [this](const QPoint &pos) {
-                QTableWidgetItem *item = reminderTable_m->itemAt(pos);
-                if (!item)
-                    return;
-                int row = item->row();
-                QTableWidgetItem *firstColItem = reminderTable_m->item(row, 0);
-                int reminderId = firstColItem->data(Qt::UserRole).toInt();
-                int songId = firstColItem->data(Qt::UserRole + 1).toInt();
+    connect(reminderTable_m, &QTableWidget::customContextMenuRequested, this, [this](const QPoint &pos) {
+        QTableWidgetItem *item = reminderTable_m->itemAt(pos);
+        if (!item) return;
 
-                QMenu menu(this);
-                QAction *loadData = menu.addAction("Select Song");
-                menu.addSeparator();
-                QAction *openSongAction = menu.addAction(tr("Open Song"));
-                menu.addSeparator();
-                QAction *deleteAction = menu.addAction(tr("Delete Reminder"));
-                QAction *selectedAction = menu.exec(reminderTable_m->mapToGlobal(pos));
+        int row = item->row();
+        QTableWidgetItem *firstColItem = reminderTable_m->item(row, 0);
 
-                if (selectedAction == openSongAction) {
-                    int index = songSelector_m->findData(songId, FileIdRole);
-                    if (index != -1) {
-                        QString path = songSelector_m->itemData(index, PathRole).toString();
-                        QString fullPath = QDir::cleanPath(path);
-                        songSelector_m->setCurrentIndex(index);
-                        UIHelper::openFileWithFeedback(this, fullPath);
-                    }
-                } else if (selectedAction == deleteAction) {
-                    if (dbManager_m->deleteReminder(reminderId)) {
-                        updateReminderTable(calendar_m->selectedDate());
-                    }
-                } else if (selectedAction == loadData) {
-                    int index = songSelector_m->findData(songId, FileIdRole);
-                    songSelector_m->setCurrentIndex(index);
+        // Retrieve IDs from the reminder data
+        int reminderId = firstColItem->data(ReminderIdRole).toInt();
+        int fileId     = firstColItem->data(ReminderFileIdRole).toInt();
+
+        QMenu menu(this);
+        QAction *loadAction = menu.addAction(tr("Select Entry"));
+        QAction *openAction = menu.addAction(tr("Open Entry"));
+        menu.addSeparator();
+        QAction *deleteAction = menu.addAction(tr("Delete Reminder"));
+
+        QAction *selectedAction = menu.exec(reminderTable_m->mapToGlobal(pos));
+        if (!selectedAction) return;
+
+        if (selectedAction == loadAction || selectedAction == openAction) {
+            // (Toggles filter and selects in ComboBox)
+            selectSongByExternalId(fileId);
+
+            if (selectedAction == openAction) {
+                QString path = songSelector_m->itemData(songSelector_m->currentIndex(), SelectorRole::PathRole).toString();
+                if (!path.isEmpty()) {
+                    UIHelper::openFileWithFeedback(this, QDir::cleanPath(path));
                 }
-            });
+            }
+        } else if (selectedAction == deleteAction) {
+            if (dbManager_m->deleteReminder(reminderId)) {
+                updateReminderTable(calendar_m->selectedDate());
+            }
+        }
+    });
+
+    QList<QToolButton*> filterButtons = {
+        btnFilterGp_m,
+        btnFilterAudio_m,
+        btnFilterVideo_m,
+        btnFilterDocument_m
+    };
+
+    for (QToolButton* btn : filterButtons) {
+        connect(btn, &QToolButton::toggled, this, &SonarLessonPage::onFilterToggled);
+    }
 }
 
 void SonarLessonPage::onTimerButtonClicked() {
     if (!isTimerRunning_m) {
         // --- START ---
         elapsedTimer_m.start();
-        uiRefreshTimer_m->start(1000);
+        refreshTimer_m->start(1000);
         isTimerRunning_m = true;
 
         timerBtn_m->setText(tr("Stop Timer"));
@@ -917,75 +1067,27 @@ void SonarLessonPage::updateTimerDisplay() {
     lcdNumber_m->display(text);
 }
 
-// The logic: Check files and activate icons.
-void SonarLessonPage::onSongChanged(int index)
-{
-    if (isLoading_m || !dbManager_m) {
-        return;
-    }
+void SonarLessonPage::onSongChanged(int index) {
+    if (index < 0 || isLoading_m) return;
 
-    try {
-        isLoading_m = true;
-        isPlaceholderActive_m = true;
+    // Data directly from the ProxyModel (which points to the SourceModel)
+    QModelIndex proxyIndex = proxyModel_m->index(index, 0);
 
-        currentSongPath_m = songSelector_m->itemData(index, PathRole).toString();
+    // Different roles to read data directly from RAM
+    // (You must populate these roles during the initial load!)
+    QString artist = proxyModel_m->data(proxyIndex, ArtistRole).toString();
+    QString title  = proxyModel_m->data(proxyIndex, TitleRole).toString();
+    QString tempo  = proxyModel_m->data(proxyIndex, TempoRole).toString();
+    QString tuning = proxyModel_m->data(proxyIndex, TuningRole).toString();
 
-        QDate selectedDate = calendar_m->selectedDate(); // Keep current calendar day
+    artist_m->setText(artist);
+    title_m->setText(title);
+    tempo_m->setText(tempo);
+    tuningLabel_m->setText(tuning);
 
-        auto songDetails = dbManager_m->getSongDetails(getCurrentSongId());
-
-        artist_m->setText(songDetails.artist);
-        title_m->setText(songDetails.title);
-        tempo_m->setText(QString::number(songDetails.bpm));
-        tuningLabel_m->setText(songDetails.tuning);
-
-        if (songDetails.practice_bpm > 0) {
-            practiceBpm_m->setValue(songDetails.practice_bpm);
-        } else {
-            practiceBpm_m->setValue(20);
-        }
-
-        loadJournalForDay(getCurrentSongId(), selectedDate);
-
-        // Keep lists for the file types
-        QList<DatabaseManager::RelatedFile> pdfFiles, videoFiles, audioFiles;
-
-        // Get linked files
-        QList<DatabaseManager::RelatedFile> related = dbManager_m->getFilesByRelation(
-            getCurrentSongId());
-
-        for (const auto &file : std::as_const(related)) {
-            QString ext = QFileInfo(file.fileName).suffix().toLower();
-
-            DatabaseManager::RelatedFile correctedFile = file;
-            // file.fileName is the relative or absolut path to the file
-            if (dbManager_m->getManagedPath().isEmpty()) {
-                correctedFile.relativePath = QDir::cleanPath(file.fileName);
-            } else {
-                correctedFile.relativePath = QDir::cleanPath(dbManager_m->getManagedPath() + "/"
-                                                             + file.fileName);
-            }
-
-            if (FileUtils::getPdfFormats().contains("*." + ext))
-                pdfFiles.append(correctedFile);
-            else if (FileUtils::getVideoFormats().contains("*." + ext))
-                videoFiles.append(correctedFile);
-            else if (FileUtils::getAudioFormats().contains("*." + ext))
-                audioFiles.append(correctedFile);
-        }
-
-        // Helper function for filling in the buttons
-        setupResourceButton(btnPdfIcon_m, pdfFiles);
-        setupResourceButton(btnVideoIcon_m, videoFiles);
-        setupResourceButton(btnAudioIcon_m, audioFiles);
-        isLoading_m = false;
-        updateButtonState();
-        updateCalendarHighlights();
-        updateReminderTable(calendar_m->selectedDate());
-    } catch (const std::exception &e) {
-        qCritical() << "[SonarLessonPage] onSongChanged error: " << e.what();
-        statusLabel_m->setText(tr("Error loading song data"));
-    }
+    // File path for the "Open Song" button
+    currentSongPath_m = proxyModel_m->data(proxyIndex, PathRole).toString();
+    btnGpIcon_m->setEnabled(!currentSongPath_m.isEmpty());
 }
 
 void SonarLessonPage::setupResourceButton(QPushButton *btn,
@@ -1041,47 +1143,59 @@ void SonarLessonPage::setupMultiFileButton(QPushButton *btn,
     btn->setMenu(menu);
 }
 
-void SonarLessonPage::loadData() {
-    if (!dbManager_m) return;
+void SonarLessonPage::selectSongByExternalId(int fileId) {
+    QModelIndexList matches = sourceModel_m->match(
+        sourceModel_m->index(0, 0),
+        SelectorRole::FileIdRole,
+        fileId,
+        1,
+        Qt::MatchExactly);
 
-    isLoading_m = true;
+    if (!matches.isEmpty()) {
+        QModelIndex sourceIndex = matches.first();
 
-    songSelector_m->clear();
+        QString path = sourceModel_m->data(sourceIndex, SelectorRole::PathRole).toString();
+        updateFilterButtonsForFile(path);
 
-    auto songs = dbManager_m->loadData();
+        QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
 
-    for (const DatabaseManager::SongDetails &song : std::as_const(songs)) {
-        songSelector_m->addItem(song.filePath);
-        int currentIndex = songSelector_m->count() - 1;
+        if (proxyIndex.isValid()) {
+            songSelector_m->setCurrentIndex(proxyIndex.row());
+        }
 
-        songSelector_m->setItemData(currentIndex, song.songId, FileIdRole);
-        songSelector_m->setItemData(currentIndex, song.fullPath, PathRole);
-
-        // Optional: Save additional data
-        // songSelector_m->setItemData(currentIndex, song.artist, ArtistRole);
-        // songSelector_m->setItemData(currentIndex, song.tuning, TuningRole);
-    }
-
-    if (!songs.isEmpty()) {
-        const DatabaseManager::SongDetails &firstSong = songs.first();
-        artist_m->setText(firstSong.artist);
-        title_m->setText(firstSong.title);
-        tempo_m->setText(QString::number(firstSong.bpm));
-        tuningLabel_m->setText(firstSong.tuning);
-    }
-
-    isLoading_m = false;
-}
-
-// Triggers when changes have been made.
-void SonarLessonPage::showEvent(QShowEvent *event) {
-    QWidget::showEvent(event);
-    loadData(); // Reload the ComboBox
-    // Update icons if a song is selected
-    if (songSelector_m->currentIndex() != -1) {
-        onSongChanged(songSelector_m->currentIndex());
+        updateFilterButtonsForFile(path);
     }
 }
+
+void SonarLessonPage::updateFilterButtonsForFile(const QString& filePath) {
+    if (filePath.isEmpty()) return;
+
+    QString ext = "*." + QFileInfo(filePath).suffix().toLower();
+
+    // Block signals to prevent the filter from being recalculated with every click.
+    const QList<QToolButton*> buttons = {btnFilterGp_m, btnFilterAudio_m, btnFilterVideo_m, btnFilterDocument_m};
+    for (auto* btn : buttons) btn->blockSignals(true);
+
+    if (FileUtils::getGuitarProFormats().contains(ext)) {
+        btnFilterGp_m->setChecked(true);
+    }
+    else if (FileUtils::getAudioFormats().contains(ext)) {
+        btnFilterAudio_m->setChecked(true);
+    }
+    else if (FileUtils::getVideoFormats().contains(ext)) {
+        btnFilterVideo_m->setChecked(true);
+    }
+    else if (FileUtils::getPdfFormats().contains(ext)) {
+        btnFilterDocument_m->setChecked(true);
+    }
+
+    // Release signals again
+    for (auto* btn : buttons) btn->blockSignals(false);
+
+    // Update the proxy filter once
+    onFilterToggled();
+}
+
 
 /*
  * Important: The table must be saved first, followed by the notes.
@@ -1102,7 +1216,12 @@ void SonarLessonPage::onSaveClicked() {
 
     if (isDirtyTable_m) {
         tableSuccess = saveTableRowsToDatabase();
-        if (tableSuccess) isDirtyTable_m = false;
+        if (tableSuccess) {
+            isDirtyTable_m = false;
+            showSaveMessage(savedMessage_m);
+        } else {
+            showSaveMessage(savedMessageFailed_m);
+        }
     }
 
     if (isDirtyNotes_m) {
@@ -1114,7 +1233,9 @@ void SonarLessonPage::onSaveClicked() {
         notesSuccess = dbManager_m->updateSongNotes(songId, dataToSave, selectedDate);
         if (notesSuccess) {
             isDirtyNotes_m = false;
-            showSaveMessage(tr("Successfully saved"));
+            showSaveMessage(savedMessage_m);
+        } else {
+            showSaveMessage(savedMessageFailed_m);
         }
     }
 
@@ -1140,6 +1261,8 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
         isDirtyTable_m = false;
         showSaveMessage(savedMessage_m);
         updateButtonState();
+    } else {
+        showSaveMessage(savedMessageFailed_m);
     }
 
     return allOk;
@@ -1167,8 +1290,6 @@ void SonarLessonPage::dailyNotePlaceholder() {
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     if (songId <= 0) return;
 
-    isLoading_m = true;
-
     // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
     notesEdit_m->clear();
@@ -1192,7 +1313,6 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     isDirtyTable_m = false;
     saveBtn_m->setEnabled(false);
 
-    isLoading_m = false;
 }
 
 /* Logic of collectTableData
@@ -1253,7 +1373,6 @@ void SonarLessonPage::updateCalendarHighlights() {
 
 void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
     if (songId <= 0) return;
-    isLoading_m = true;
 
     currentSessions_m = dbManager_m->getSessionsForDay(songId, date);
 
@@ -1261,8 +1380,6 @@ void SonarLessonPage::loadTableDataForDay(int songId, QDate date) {
     referenceSessions_m = dbManager_m->getLastSessions(songId, 2);
 
     refreshTableDisplay(date);
-
-    isLoading_m = false;
 }
 
 void SonarLessonPage::refreshTableDisplay(QDate date) {
@@ -1278,7 +1395,7 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
 
     // Then the current sessions for that day
     for (const auto& s : std::as_const(currentSessions_m)) {
-        addSessionToTable(s, false); // Editierbar
+        addSessionToTable(s, false);
     }
 
     // If selected today: The empty input line
@@ -1336,7 +1453,7 @@ void SonarLessonPage::syncCurrentSessionToTable(int startBar, int endBar, int bp
 void SonarLessonPage::updateTableRow(int targetRow, int startBar, int endBar, int bpm, int minutes)
 {
     for (int i = 0; i < sessionTable_m->rowCount(); ++i) {
-        QTableWidgetItem *itemDuration = sessionTable_m
+        QTableWidgetItem* itemDuration = sessionTable_m
                                              ->item(i, PracticeTable::PracticeColumn::Duration);
         if (!itemDuration || itemDuration->text().isEmpty()) {
             targetRow = i;
@@ -1393,7 +1510,7 @@ int SonarLessonPage::findOrCreateEmptyTableRow()
 bool SonarLessonPage::isRowEmpty(int row)
 {
     for (int col = 0; col < sessionTable_m->columnCount(); ++col) {
-        QTableWidgetItem *item = sessionTable_m->item(row, col);
+        QTableWidgetItem* item = sessionTable_m->item(row, col);
         if (item && !item->text().trimmed().isEmpty()) {
             return false;
         }
@@ -1417,4 +1534,45 @@ void SonarLessonPage::removeTableRow()
     if (!sessionTable_m)
         return;
     sessionTable_m->removeRow(sessionTable_m->currentRow());
+}
+
+void SonarLessonPage::initialLoadFromDb() {
+    isLoading_m = true;
+    sourceModel_m->clear();
+
+    auto allSongs = dbManager_m->getFilteredFiles(true, true, true, true, false);
+
+    for (const auto &song : std::as_const(allSongs)) {
+        QString display;
+
+        // 1. Check if the artist and title fields are filled in appropriately.
+        bool hasArtist = !song.artist.isEmpty() && song.artist.toLower() != "unknown";
+        bool hasTitle  = !song.title.isEmpty()  && song.title.toLower()  != "unknown";
+
+        if (hasArtist && hasTitle) {
+            display = song.artist + " - " + song.title;
+        } else if (hasTitle) {
+            display = song.title;
+        } else if (hasArtist) {
+            display = song.artist + " - (Unknown Title)";
+        } else {
+            // 2.Fallback: If everything is "Unknown", we take the filename.
+            display = QFileInfo(song.fullPath).fileName();
+        }
+
+        QStandardItem* item = new QStandardItem(display);
+        item->setData(QVariant::fromValue(song.id), SelectorRole::FileIdRole);
+        item->setData(QVariant::fromValue(song.fullPath), SelectorRole::PathRole);
+        item->setData(QVariant::fromValue(song.artist), SelectorRole::ArtistRole);
+        item->setData(QVariant::fromValue(song.title), SelectorRole::TitleRole);
+        item->setData(QVariant::fromValue(song.bpm), SelectorRole::TempoRole);
+        item->setData(QVariant::fromValue(song.tuning), SelectorRole::TuningRole);
+        item->setData(QVariant::fromValue(song.songId), SelectorRole::SongIdRole);
+
+        sourceModel_m->appendRow(item);
+    }
+
+    isLoading_m = false;
+
+    onFilterToggled();
 }

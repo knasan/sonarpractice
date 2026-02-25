@@ -84,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget_m->addWidget(lessonPage_m);   // Index 0
     stackedWidget_m->addWidget(libraryPage_m);  // Index 1
 
-    connect(this, &MainWindow::dataChanged, lessonPage_m, &SonarLessonPage::loadData);
+    // connect(this, &MainWindow::dataChanged, lessonPage_m, &SonarLessonPage::loadData);
 
     connect(this, &MainWindow::dataChanged, libraryPage_m, &LibraryPage::markAsDirty);
 

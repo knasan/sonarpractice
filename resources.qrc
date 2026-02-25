@@ -17,5 +17,10 @@
         <file alias="heading-1.svg">assets/svg/heading-1.svg</file>
         <file alias="heading-2.svg">assets/svg/heading-2.svg</file>
         <file alias="minus.svg">assets/svg/minus.svg</file>
+        <file alias="audio.png">assets/png/audio.png</file>
+        <file alias="doc.png">assets/png/doc.png</file>
+        <file alias="gp.png">assets/png/gp.png</file>
+        <file alias="unlinked.png">assets/png/unlinked.png</file>
+        <file alias="video.png">assets/png/video.png</file>
     </qresource>
 </RCC>

@@ -436,3 +436,30 @@ CollapsibleSection {
 #reminderTable::item[isCompleted="true"] { color: green; }
 #reminderTable::item[isCompleted="false"] { color: red; }
 #notesTextEdit { color: #C9D1DC; }
+
+
+QToolButton#filterToolButton {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    qproperty-iconSize: 28px 28px;
+    border-radius: 4px;
+    padding: 4px;
+    margin: 2px;
+}
+
+/* Hover-Effekt (wenn die Maus drüberfährt) */
+QToolButton#filterToolButton:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid #63C0FF;
+}
+
+/* DER WICHTIGSTE TEIL: Wenn der Button aktiv (eingerastet) ist */
+QToolButton#filterToolButton:checked {
+    background-color: rgba(47, 168, 255, 0.2);
+    border: 2px solid #2FA8FF;
+}
+
+/* Optional: Wenn der Button gedrückt wird (Klick-Moment) */
+QToolButton#filterToolButton:pressed {
+    background-color: #3d3d3d;
+}

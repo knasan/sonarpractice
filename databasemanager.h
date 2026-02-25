@@ -9,22 +9,21 @@
 
 struct PracticeSession {
     QDate date;
-    int startBar;
-    int endBar;
-    int bpm;
-    int reps;
-    int streaks;
+    int startBar{0};
+    int endBar{0};
+    int bpm{0};
+    int reps{0};
+    int streaks{0};
 };
 
 class DatabaseManager : public QObject {
     Q_OBJECT
 public:
     struct RelatedFile {
-        int id;
+        int id{0};
+        int songId{0};
         QString fileName;
         QString relativePath;
-
-        int songId;
         QString type;
         QString title;
         QString pathOrUrl;
@@ -32,15 +31,16 @@ public:
 
     struct SongDetails
     {
-        qlonglong id;
-        qlonglong songId;
+        int id{0};
+        int songId{0};
+        int bpm{0};
+        int practice_bpm{0};
         QString title;
         QString artist;
         QString tuning;
         QString filePath;
         QString fullPath;
-        int bpm;
-        int practice_bpm;
+
     };
 
     // Singleton & Lifecycle
@@ -95,7 +95,8 @@ public:
     [[nodiscard]] bool updateSongNotes(int songId, const QString &notes, QDate date);
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
     [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
-    [[nodiscard]] QList<DatabaseManager::SongDetails> loadData();
+    [[deprecated("use getFilteredFiles now")]] QList<DatabaseManager::SongDetails> loadData();
+    [[nodiscard]] QList<DatabaseManager::SongDetails> getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly);
 
     [[nodiscard]] bool updateSong(int songId, const QString &title, int artistId, int tuningId, int bpm);
 

@@ -1623,6 +1623,83 @@ QList<DatabaseManager::SongDetails> DatabaseManager::loadData()
     return songs;
 }
 
+// for combobox
+// Artist, Title, songId
+QList<DatabaseManager::SongDetails> DatabaseManager::getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly) {
+
+    QList<SongDetails> songs;
+    QStringList extensions;
+
+    if (gp)    extensions << FileUtils::getGuitarProFormats();
+    if (audio) extensions << FileUtils::getAudioFormats();
+    if (pdf)   extensions << FileUtils::getPdfFormats();
+    if (unlinkedOnly) extensions << FileUtils::getVideoFormats();
+
+    if (extensions.isEmpty()) return songs;
+
+    QSqlDatabase db = QSqlDatabase::database();
+
+    QString sql = "SELECT "
+                  "mf.id AS file_id, "
+                  "mf.song_id, "
+                  "mf.file_path, "
+                  "s.title, "
+                  "s.base_bpm, "
+                  "a.name AS artist_name, "
+                  "t.name AS tuning_name "
+                  "FROM media_files mf "
+                  "LEFT JOIN songs s ON mf.song_id = s.id "
+                  "LEFT JOIN artists a ON s.artist_id = a.id "
+                  "LEFT JOIN tunings t ON s.tuning_id = t.id "
+                  "WHERE (";
+
+    QStringList conditions;
+    for (QString ext : std::as_const(extensions)) {
+        ext.remove('*');
+        conditions << "mf.file_path LIKE '%" + ext + "'";
+    }
+    sql += conditions.join(" OR ") + ")";
+
+    if (unlinkedOnly) {
+        sql += " AND mf.song_id IS NULL";
+    }
+
+    sql += " ORDER BY s.title ASC, mf.file_path ASC";
+
+    QSqlQuery q(db);
+
+    if(q.exec(sql)) {
+        while (q.next()) {
+            SongDetails details;
+            details.songId = q.value("song_id").toInt();
+            details.id = q.value("file_id").toInt();
+
+            QString rawPath = q.value("file_path").toString();
+            QString managedPath = getManagedPath();
+
+            QString path = managedPath.isEmpty() ? rawPath : QDir(managedPath).filePath(rawPath);
+            QString cleaned = QDir::cleanPath(path);
+
+            details.filePath = QFileInfo(cleaned).fileName();
+            details.fullPath = cleaned;
+
+            details.artist = q.value("artist_name").toString();
+            details.title = q.value("title").toString();
+            details.bpm = q.value("base_bpm").toInt();
+            details.tuning = q.value("tuning_name").toString();
+
+            songs.append(details);
+        }
+    } else {
+        QString error = q.lastError().text();
+        QString executedSql = q.executedQuery();
+        qCritical() << "[DatabaseManager] getFilteredFiles error: " << q.lastError().text();
+        qDebug() << "[DatabaseManager] getFilteredFiles fullquery: " << q.executedQuery();
+    }
+
+    return songs;
+}
+
 // =============================================================================
 // --- Statistics & Dashboard
 // =============================================================================
