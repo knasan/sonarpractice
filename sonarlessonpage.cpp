@@ -1581,14 +1581,20 @@ void SonarLessonPage::updateTableRow(int targetRow, int startBar, int endBar, in
         }
     }
 
-    if (targetRow < 0) {
-        targetRow = practiceTable_m->rowCount();
-        practiceTable_m->insertRow(targetRow);
-
-        auto *itemDate = new QTableWidgetItem(QDate::currentDate().toString("dd.MM.yyyy"));
-        itemDate->setFlags(itemDate->flags() & ~Qt::ItemIsEditable);
-        practiceTable_m->setItem(targetRow, PracticeTable::PracticeColumn::Date, itemDate);
+    if(practiceTable_m->rowCount() > 0 ) {
+        QTableWidgetItem *firstItem = practiceTable_m->item(0, PracticeTable::Date);
+        if (firstItem) {
+            QDate checkDate = QDate::fromString(firstItem->text(), "dd.MM.yyyy");
+            if (!checkDate.isValid()) {
+                practiceTable_m->clearSpans();
+                practiceTable_m->setRowCount(0);
+                addTableRow();
+            }
+        }
     }
+
+    QString today = QDate::currentDate().toString("dd.MM.yyyy");
+    practiceTable_m->setItem(targetRow, PracticeTable::Date, new QTableWidgetItem(today));
 
     practiceTable_m->setItem(targetRow,
                             PracticeTable::PracticeColumn::BeatFrom,
@@ -1697,7 +1703,7 @@ void SonarLessonPage::initialLoadFromDb() {
 void SonarLessonPage::updateEmptyTableMessage() {
     if (practiceTable_m->rowCount() == 0) {
         practiceTable_m->setRowCount(1);
-        practiceTable_m->setSpan(0, 0, 1, practiceTable_m->columnCount());
+        // practiceTable_m->setSpan(0, 0, 1, practiceTable_m->columnCount());
 
         QTableWidgetItem *item = new QTableWidgetItem(tr("No data available. Press 'Start Timer' to begin..."));
         item->setTextAlignment(Qt::AlignCenter);
