@@ -41,18 +41,18 @@ public:
         return *this;
     }
 
-    long long totalFiles{0};
-    long long selectedFiles{0};
-    long long defects{0};
-    long long duplicates{0};
-    long long managed{0};
-    long long ignoredFiles{0};
-    long long alreadyInDb{0};
-    long long ignoredBytes{0};
-    long long totalBytes{0};
-    long long selectedBytes{0};
+    qint64 totalFiles{0};
+    qint64 selectedFiles{0};
+    qint64 defects{0};
+    qint64 duplicates{0};
+    qint64 managed{0};
+    qint64 ignoredFiles{0};
+    qint64 alreadyInDb{0};
+    qint64 ignoredBytes{0};
+    qint64 totalBytes{0};
+    qint64 selectedBytes{0};
 
-    void addFile(long long size, bool isDuplicate, bool isDefect, bool alreadyInDbParam = false) {
+    void addFile(qint64 size, bool isDuplicate, bool isDefect, bool alreadyInDbParam = false) {
         QMutexLocker locker(&mutex_m);
         if (alreadyInDbParam) {
             alreadyInDb++;
@@ -64,7 +64,7 @@ public:
         if (isDefect) defects++;
     }
 
-    void addIgnored(long long size) {
+    void addIgnored(qint64 size) {
         QMutexLocker locker(&mutex_m);
         ignoredFiles++;
         ignoredBytes += size;

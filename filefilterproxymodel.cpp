@@ -1,6 +1,5 @@
 #include "filefilterproxymodel.h"
 #include <QDir>
-#include <QDebug>
 
 FileFilterProxyModel::FileFilterProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent) {
@@ -153,8 +152,7 @@ void FileFilterProxyModel::updateStatsRecursive(const QModelIndex &parent, Revie
         if (src->hasChildren(idx)) {
             updateStatsRecursive(idx, stats);
         } else {
-            // Hier die Logik aus collectPathsRecursive nutzen
-            long long size = src->data(idx, RoleFileStatus).toLongLong();
+            qint64 size = src->data(idx, RoleFileSizeRaw).toLongLong(); // qint64 and long long are the same on almost all systems - best compromise
             int status = src->data(idx, RoleFileStatus).toInt();
             bool checked = (src->data(idx, Qt::CheckStateRole).toInt() == Qt::Checked);
 

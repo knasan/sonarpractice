@@ -496,8 +496,8 @@ bool MappingPage::validatePage() {
     QString tempDbPath = finalDbPath + ".tmp";
 
     // Path for the music files (chosen by the user)
-    QString musicBasePath = wiz()->field("targetPath").toString();
-    bool isManaged = wiz()->field("manageData").toBool();
+    QString musicBasePath = wiz()->field("cbTargetPath").toString();
+    bool isManaged = wiz()->field("cbManageData").toBool();
 
     // Collect tasks
     QList<ImportTask> tasks;

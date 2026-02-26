@@ -127,7 +127,7 @@ QString FileSelectionDialog::getCategoryForFile(const QString &fileName) {
     if (FileUtils::getAudioFormats().contains(ext))     return tr("Audio");
     if (FileUtils::getVideoFormats().contains(ext))     return tr("Video");
     if (FileUtils::getGuitarProFormats().contains(ext))  return tr("Guitar Pro");
-    if (FileUtils::getPdfFormats().contains(ext))       return tr("PDF");
+    if (FileUtils::getDocFormats().contains(ext))       return tr("PDF");
 
     return tr("Other");
 }

@@ -36,11 +36,12 @@ private:
     void updateRemoveSourceButtonState();
 
     QCheckBox* cbManageData_m{nullptr};
-    QCheckBox* cbPdf_m{nullptr};
+    QCheckBox* cbDoc_m{nullptr};
     QCheckBox* cbAudio_m{nullptr};
     QCheckBox* cbVideo_m{nullptr};
     QCheckBox* cbGuitarPro_m{nullptr};
-    QCheckBox* skipImport_m{nullptr};
+    QCheckBox* cbSkipImport_m{nullptr};
+    QCheckBox* cbMoveFiles_m{nullptr};
 
     QLabel* lblTargetPath_m{nullptr};
     QPushButton* btnSelectTargetPath_m{nullptr};

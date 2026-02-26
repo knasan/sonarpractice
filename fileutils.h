@@ -8,6 +8,9 @@
 #include <QFileDialog>
 #include <QDirIterator>
 #include <QDesktopServices>
+#include <QStorageInfo>
+#include <QFileInfo>
+#include <QLocale>
 
 class QWidget;
 
@@ -35,15 +38,8 @@ namespace FileUtils {
         }
     }
 
-    [[nodiscard]] inline QString formatBytes(long long bytes) {
-        double size = static_cast<double>(bytes);
-        QStringList units = {"B", "KB", "MB", "GB", "TB", "PB"};
-        int unitIndex = 0;
-        while (size >= 1024 && unitIndex < units.size() - 1) {
-            size /= 1024;
-            unitIndex++;
-        }
-        return QString("%1 %2").arg(size, 0, 'f', 2).arg(units[unitIndex]);
+    [[nodiscard]] inline QString formatBytes(qint64 bytes) {
+        return QLocale().formattedDataSize(bytes, 2);
     }
 
     [[nodiscard]] inline FolderCleanupReport analyzeAndCleanup(const QString &path) {
@@ -91,15 +87,30 @@ namespace FileUtils {
     }
 
     [[nodiscard]] static QStringList getAudioFormats() {
-        return {"*.wav", "*.mp3", "*.m4a", "*.aac", "*.ogg", "*.wma", "*.opus", "*.flac", "*.aiff"};
+        return {"*.wav", "*.mp3", "*.m4a", "*.aac", "*.ogg", "*.wma", "*.opus", "*.flac", "*.aiff", "*.mid"};
     }
 
     [[nodiscard]] static QStringList getVideoFormats() {
         return {"*.mp4", "*.mkv", "*.mov", "*.wmv", "*.webm", "*.flv", "*.m4v", "*.avchd", "*.mxf"};
     }
 
-    [[nodiscard]] static QStringList getPdfFormats() {
-        return {"*.pdf"};
+    [[nodiscard]] static QStringList getDocFormats() {
+        return {"*.pdf", "*.txt", "*.md"};
+    }
+
+    [[nodiscard]] inline bool hasEnoughSpace(const QStringList &sourceFiles, const QString &targetPath) {
+        qint64 totalRequiredSize = 0;
+        for (const QString &file : sourceFiles) {
+            totalRequiredSize += QFileInfo(file).size();
+        }
+
+        QStorageInfo storage(targetPath);
+        if (storage.isValid() && storage.isReady()) {
+            // 50 MB safety buffer
+            qint64 buffer = 50 * 1024 * 1024;
+            return storage.bytesAvailable() > (totalRequiredSize + buffer);
+        }
+        return false;
     }
 }
 

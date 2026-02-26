@@ -11,7 +11,6 @@
 #include <QScreen>
 #include <QGuiApplication>
 #include <QMessageBox>
-#include <QDebug>
 #include <QProcess>
 
 SetupWizard::SetupWizard(QWidget *parent)

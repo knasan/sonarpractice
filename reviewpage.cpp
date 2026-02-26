@@ -341,7 +341,7 @@ void ReviewPage::setupConnections() {
     connect(wiz->fileScanner(), &FileScanner::finished, this, [this](const ReviewStats &workerStats) {
         applySmartCheck();
         progressBar_m->hide();
-        statusLabel_m->setText(tr("Scan complete. %1 files found.").arg(workerStats.totalFiles));
+        statusLabel_m->setText(tr("Scan complete. %1 files found. Data Size: %2").arg(workerStats.totalFiles, workerStats.totalBytes));
         emit completeChanged();
     }, Qt::QueuedConnection);
 

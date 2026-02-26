@@ -36,6 +36,7 @@
 #include <QTimer>
 #include <QCompleter>
 #include <QMessageBox>
+#include <QDebug>
 
 // Move these to a separate header file or namespace
 namespace PracticeTable {
@@ -443,7 +444,7 @@ void SonarLessonPage::onFilterToggled() {
     if (btnFilterGp_m->isChecked())       allAllowedExtensions << FileUtils::getGuitarProFormats();
     if (btnFilterAudio_m->isChecked())    allAllowedExtensions << FileUtils::getAudioFormats();
     if (btnFilterVideo_m->isChecked())    allAllowedExtensions << FileUtils::getVideoFormats();
-    if (btnFilterDocument_m->isChecked()) allAllowedExtensions << FileUtils::getPdfFormats();
+    if (btnFilterDocument_m->isChecked()) allAllowedExtensions << FileUtils::getDocFormats();
 
     if (allAllowedExtensions.isEmpty()) {
         // If nothing is selected, we display nothing at all.
@@ -1201,7 +1202,7 @@ void SonarLessonPage::onSongChanged(int index) {
         if (FileUtils::getGuitarProFormats().contains(ext)) gpFiles << file;
         else if (FileUtils::getAudioFormats().contains(ext)) audioFiles << file;
         else if (FileUtils::getVideoFormats().contains(ext)) videoFiles << file;
-        else if (FileUtils::getPdfFormats().contains(ext)) pdfFiles << file;
+        else if (FileUtils::getDocFormats().contains(ext)) pdfFiles << file;
     }
 
     setupResourceButton(btnPdfIcon_m, pdfFiles);
@@ -1306,7 +1307,7 @@ void SonarLessonPage::updateFilterButtonsForFile(const QString& filePath) {
     else if (FileUtils::getVideoFormats().contains(ext)) {
         btnFilterVideo_m->setChecked(true);
     }
-    else if (FileUtils::getPdfFormats().contains(ext)) {
+    else if (FileUtils::getDocFormats().contains(ext)) {
         btnFilterDocument_m->setChecked(true);
     }
 

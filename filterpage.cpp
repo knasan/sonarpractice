@@ -50,16 +50,28 @@ void FilterPage::setupLayout() {
     infoLabel->setWordWrap(true);
 
     // --- Data management ---
-    cbManageData_m = new QCheckBox(tr("Manage"), this);
+    auto *dataManagmentLayout = new QHBoxLayout();
+
+    cbManageData_m = new QCheckBox(tr("Manage"));
     cbManageData_m->setObjectName("manageData");
+    // TODO: Aktivieren Sie die Dateiverwaltung; standardmäßig werden alle Daten in das Zielverzeichnis kopiert, es sei denn, die Option „Dateien verschieben“ ist aktiviert.
+    cbManageData_m->setToolTip(tr("Enable file management; by default, all data will be copied to the target directory unless 'move files' is enabled."));
 
-    skipImport_m = new QCheckBox(tr("Skip import"), this);
-    skipImport_m->setObjectName("skipimport");
+    cbMoveFiles_m = new QCheckBox(tr("Move files"));
+    cbMoveFiles_m->setObjectName("moveFiles");
+    // TODO: Aktiviert das Verschieben von Dateien
+    cbMoveFiles_m->setToolTip(tr("Enables file moving"));
 
-    skipImport_m->setToolTip(tr("Skip the file import. An empty library will be created with your chosen path settings so you can add files manually later."));
+    dataManagmentLayout->addWidget(cbManageData_m);
+    dataManagmentLayout->addWidget(cbMoveFiles_m,1);
 
-    layout->addWidget(cbManageData_m);
-    layout->addWidget(skipImport_m);
+    layout->addLayout(dataManagmentLayout);
+
+    cbSkipImport_m = new QCheckBox(tr("Skip import"));
+    cbSkipImport_m->setObjectName("skipimport");
+    cbSkipImport_m->setToolTip(tr("Skip the file import. An empty library will be created with your chosen path settings so you can add files manually later."));
+
+    layout->addWidget(cbSkipImport_m);
 
     // Container for path selection
     QHBoxLayout *pathLayout = new QHBoxLayout();
@@ -84,10 +96,10 @@ void FilterPage::setupLayout() {
     auto *typeGroup = new QGroupBox(tr("What data should be searched for?"), this);
     auto *gridLayout = new QGridLayout(typeGroup);
 
-    cbGuitarPro_m = new QCheckBox("Guitar Pro (.gp, .gpx, .gtp)", this);
-    cbPdf_m = new QCheckBox("PDF Documents", this);
-    cbAudio_m = new QCheckBox("Audio (MP3, WAV)", this);
-    cbVideo_m = new QCheckBox("Video (MP4, AVI)", this);
+    cbGuitarPro_m = new QCheckBox("Guitar Pro (.gp, .gpx, .gtp, etc.)", this);
+    cbDoc_m = new QCheckBox("Documents", this);
+    cbAudio_m = new QCheckBox("Audio (mp3, wav, aiff, etc.)", this);
+    cbVideo_m = new QCheckBox("Video (mp4, avi, mpeg, etc.)", this);
 
     // Guitar Pro is mandatory (requirement)
     cbGuitarPro_m->setChecked(true);
@@ -95,7 +107,7 @@ void FilterPage::setupLayout() {
 
     // Arrangement in the grid (row, column)
     gridLayout->addWidget(cbGuitarPro_m, 0, 0);
-    gridLayout->addWidget(cbPdf_m, 0, 1);
+    gridLayout->addWidget(cbDoc_m, 0, 1);
     gridLayout->addWidget(cbAudio_m, 1, 0);
     gridLayout->addWidget(cbVideo_m, 1, 1);
 
@@ -124,13 +136,13 @@ void FilterPage::setupLayout() {
 
     layout->addLayout(btnLayout);
 
-    registerField("manageData", cbManageData_m);
-    registerField("skipImport", skipImport_m);
-    registerField("targetPath", lblTargetPath_m, "text");
+    registerField("cbManageData", cbManageData_m);
+    registerField("cbSkipImport", cbSkipImport_m);
+    registerField("cbMoveFiles", cbMoveFiles_m);
+    registerField("cbTargetPath", lblTargetPath_m, "text");
 }
 
 void FilterPage::setupConnections() {
-    qDebug() << "[FilterPage] setupConnections";
     // Connection to the slot addPath
     connect(btnAddSource_m, &QPushButton::clicked, this, &FilterPage::addSourcePath);
 
@@ -140,7 +152,7 @@ void FilterPage::setupConnections() {
     // --- LOGIC LINK ---
 
     // Linking: Checkbox -> Activation skip import
-    connect(skipImport_m, &QCheckBox::toggled, this, &FilterPage::onSettingsChanged);
+    connect(cbSkipImport_m, &QCheckBox::toggled, this, &FilterPage::onSettingsChanged);
 
     // Linking: Checkbox -> Activation of path selection
     connect(cbManageData_m, &QCheckBox::toggled, this, &FilterPage::onSettingsChanged);
@@ -161,7 +173,7 @@ void FilterPage::setupConnections() {
 }
 
 void FilterPage::onSettingsChanged() {
-    const bool isSkipActive = skipImport_m->isChecked();
+    const bool isSkipActive = cbSkipImport_m->isChecked();
     listWidgetSource_m->setEnabled(!isSkipActive);
     btnAddSource_m->setEnabled(!isSkipActive);
     emit completeChanged();
@@ -172,7 +184,7 @@ bool FilterPage::validatePage() {
     if (!wiz) return false;
 
     // 1. Special case: Skip Import
-    if (skipImport_m && skipImport_m->isChecked()) {
+    if (cbSkipImport_m && cbSkipImport_m->isChecked()) {
         return handleSkipImport(); // Internally, wizard()->accept() is called here.
     }
 
@@ -191,7 +203,7 @@ bool FilterPage::validatePage() {
 
 bool FilterPage::isComplete() const {
     // If import is skipped, the page is always "complete".
-    if (skipImport_m && skipImport_m->isChecked()) {
+    if (cbSkipImport_m && cbSkipImport_m->isChecked()) {
         return true;
     }
 
@@ -235,8 +247,8 @@ bool FilterPage::handleSkipImport() {
     success &= db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
 
     // If 'Manage Data' was checked but skipped:
-    if (field("manageData").toBool()) {
-        success &= db.setSetting("managed_path", field("targetPath").toString());
+    if (field("cbManageData").toBool()) {
+        success &= db.setSetting("managed_path", field("cbTargetPath").toString());
     }
 
     db.closeDatabase();
@@ -250,7 +262,7 @@ bool FilterPage::handleSkipImport() {
 }
 
 int FilterPage::nextId() const {
-    if (skipImport_m->isChecked()) {
+    if (cbSkipImport_m->isChecked()) {
         return -1; // -1 signals: "This is the last page"
     }
     return SetupWizard::Page_Review;
@@ -375,8 +387,8 @@ QStringList FilterPage::getActiveFilters() {
     // Guitar Pro is always with me
     filters << FileUtils::getGuitarProFormats();
 
-    if (cbPdf_m->isChecked()) {
-        filters << FileUtils::getPdfFormats();
+    if (cbDoc_m->isChecked()) {
+        filters << FileUtils::getDocFormats();
     }
 
     if (cbAudio_m->isChecked()) {

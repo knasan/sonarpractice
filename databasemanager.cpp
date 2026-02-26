@@ -1597,14 +1597,14 @@ DatabaseManager::SongDetails DatabaseManager::getSongDetails(qlonglong songId)
 
 // for combobox
 // Artist, Title, songId
-QList<DatabaseManager::SongDetails> DatabaseManager::getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly) {
+QList<DatabaseManager::SongDetails> DatabaseManager::getFilteredFiles(bool gp, bool audio, bool video, bool doc, bool unlinkedOnly) {
 
     QList<SongDetails> songs;
     QStringList extensions;
 
     if (gp)    extensions << FileUtils::getGuitarProFormats();
     if (audio) extensions << FileUtils::getAudioFormats();
-    if (pdf)   extensions << FileUtils::getPdfFormats();
+    if (doc)   extensions << FileUtils::getDocFormats();
     if (video) extensions << FileUtils::getVideoFormats();
 
     if (extensions.isEmpty()) return songs;

@@ -3,7 +3,6 @@
 
 #include <QFile>
 #include <QString>
-#include <QDebug>
 
 class FNV1a {
 public:

@@ -17,7 +17,6 @@ struct ScanBatch {
     QString hash;
     int groupId{0};
     int status{0};
-    bool layoutChange{false};
 };
 
 enum Column {
