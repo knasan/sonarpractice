@@ -1703,12 +1703,12 @@ void SonarLessonPage::initialLoadFromDb() {
 void SonarLessonPage::updateEmptyTableMessage() {
     if (practiceTable_m->rowCount() == 0) {
         practiceTable_m->setRowCount(1);
-        // practiceTable_m->setSpan(0, 0, 1, practiceTable_m->columnCount());
+        practiceTable_m->setSpan(0, 0, 1, practiceTable_m->columnCount());
 
         QTableWidgetItem *item = new QTableWidgetItem(tr("No data available. Press 'Start Timer' to begin..."));
         item->setTextAlignment(Qt::AlignCenter);
-        item->setForeground(Qt::gray); // Text ausgegraut
-        item->setFlags(Qt::NoItemFlags); // Nicht anklickbar machen
+        item->setForeground(Qt::gray);
+        item->setFlags(Qt::NoItemFlags);
 
         practiceTable_m->setItem(0, 0, item);
     }
