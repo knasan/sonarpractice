@@ -71,9 +71,10 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     sitesConnects();
     initialLoadFromDb();
     updateButtonState();
-    onSongChanged(songSelector_m->currentIndex());
+    onSongChanged(getCurrentSongId());
     updateReminderTable(QDate::currentDate());
     updateEmptyTableMessage();
+    loadJournalForDay(getCurrentSongId(), calendar_m->selectedDate());
 }
 
 void SonarLessonPage::setupUI()
