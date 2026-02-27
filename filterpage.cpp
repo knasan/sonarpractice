@@ -95,7 +95,7 @@ void FilterPage::setupLayout() {
     auto *gridLayout = new QGridLayout(typeGroup);
 
     cbGuitarPro_m = new QCheckBox("Guitar Pro (.gp, .gpx, .gtp, etc.)", this);
-    cbDoc_m = new QCheckBox("Documents", this);
+    cbDoc_m = new QCheckBox(tr("Documents"), this);
     cbAudio_m = new QCheckBox("Audio (mp3, wav, aiff, etc.)", this);
     cbVideo_m = new QCheckBox("Video (mp4, avi, mpeg, etc.)", this);
 

@@ -74,7 +74,9 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     sitesConnects();
     initialLoadFromDb();
     updateButtonState();
-    onSongChanged(getCurrentSongId());
+    if (songSelector_m->currentIndex() >= 0) {
+        onSongChanged(songSelector_m->currentIndex());
+    }
 }
 
 void SonarLessonPage::setupUI()
@@ -745,16 +747,10 @@ QPushButton *SonarLessonPage::createFormattingButton(const QString &objectName,
 
 bool SonarLessonPage::eventFilter(QObject *obj, QEvent *event) {
     if(isLoading_m) return false;
-    if (obj == notesEdit_m && event->type() == QEvent::MouseButtonPress) {
-        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-        if(isPlaceholderActive_m) {
-            if (mouseEvent->button() == Qt::LeftButton) {
-                if(notesEdit_m->isReadOnly()) {
-                    notesEdit_m->clear();
-                    notesEdit_m->setReadOnly(false);
-                }
-                return true; // Event als verarbeitet markieren
-            }
+
+    if (obj == notesEdit_m && event->type() == QEvent::FocusIn) {
+        if (notesEdit_m->isReadOnly()) {
+            notesEdit_m->setReadOnly(false);
         }
     }
     return QWidget::eventFilter(obj, event);
@@ -881,6 +877,20 @@ void SonarLessonPage::sitesConnects() {
         blockSignal = false;
     });
 
+    connect(notesEdit_m, &QTextEdit::selectionChanged, this, [this]() {
+        if (isLoading_m || !notesEdit_m->hasFocus()) return;
+
+        if (isPlaceholderActive_m) {
+            isPlaceholderActive_m = false;
+            notesEdit_m->clear();
+            notesEdit_m->setReadOnly(false);
+
+            // QTextCharFormat format;
+            // format.setForeground(palette().windowText());
+            // notesEdit_m->setCurrentCharFormat(format);
+        }
+    });
+
     connect(notesEdit_m,
             &QTextEdit::currentCharFormatChanged,
             this,
@@ -932,7 +942,7 @@ void SonarLessonPage::sitesConnects() {
         int songId = songSelector_m->currentData().toInt();
 
         // load the data for this combination
-        notesEdit_m->clear();
+        // notesEdit_m->clear();
         loadJournalForDay(songId, selectedDate);
         updateReminderTable(selectedDate);
     });
@@ -1386,7 +1396,7 @@ void SonarLessonPage::onSaveClicked() {
     updateButtonState();
     updateCalendarHighlights();
     updateReminderTable(calendar_m->selectedDate());
-    loadTableDataForDay(getCurrentSongId(), calendar_m->selectedDate());
+    loadJournalForDay(songId, calendar_m->selectedDate());
 }
 
 void SonarLessonPage::showSaveMessage(QString message) {
@@ -1437,29 +1447,22 @@ void SonarLessonPage::dailyNotePlaceholder() {
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
     if (songId <= 0) return;
 
-    // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
-
     notesEdit_m->setAcceptRichText(false);
 
     if (!dailyNote.isEmpty()) {
-        notesEdit_m->clear();
-        notesEdit_m->setAcceptRichText(false);
+        isPlaceholderActive_m = false;
         notesEdit_m->setMarkdown(dailyNote);
         notesEdit_m->setReadOnly(false);
-        isPlaceholderActive_m = false;
     } else {
         dailyNotePlaceholder();
     }
 
-    // Load table data
     loadTableDataForDay(songId, date);
 
-    // Reset status
     isDirtyNotes_m = false;
     isDirtyTable_m = false;
     saveBtn_m->setEnabled(false);
-
 }
 
 /* Logic of collectTableData
@@ -1722,9 +1725,12 @@ void SonarLessonPage::initialLoadFromDb() {
         sourceModel_m->appendRow(item);
     }
 
-    isLoading_m = false;
+    if (proxyModel_m->rowCount() > 0) {
+        songSelector_m->setCurrentIndex(0);
+        onSongChanged(0);
+    }
 
-    onFilterToggled();
+    isLoading_m = false;
 }
 
 void SonarLessonPage::updateEmptyTableMessage() {
