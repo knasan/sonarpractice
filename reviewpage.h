@@ -82,6 +82,21 @@ private:
 
     QCheckBox* collabsTree_m{nullptr};
     QCheckBox* expertModeCheck_m{nullptr};
+
+    bool isManaged_m{false};
+    bool isMoved_m{false};
+    qint64 availableFreeSpace_m{0};
+    qint64 targetStorageSpace_m{0};
+
+    // QString managedPath_m;
+
+    /*
+     *     registerField("cbManageData", cbManageData_m);
+    registerField("cbSkipImport", cbSkipImport_m);
+    registerField("cbMoveFiles", cbMoveFiles_m);
+    registerField("cbTargetPath", lblTargetPath_m, "text");
+    */
+
 };
 
 #endif // REVIEWPAGE_H

@@ -40,22 +40,23 @@ private:
     void updateImportButtonState();
     bool hasCheckedItems(QStandardItem* item);
 
-    QTreeView *sourceView_m;
-    QTreeView *targetView_m;
+    QTreeView* sourceView_m;
+    QTreeView* targetView_m;
 
-    QStandardItemModel *sourceModel_m;
-    QStandardItemModel *targetModel_m;
+    QStandardItemModel* sourceModel_m;
+    QStandardItemModel* targetModel_m;
 
-    QPushButton *btnMap_m;
-    QPushButton *btnUnmap_m;
-    QPushButton *btnNewDir_m;
+    QPushButton* btnMap_m;
+    QPushButton* btnUnmap_m;
+    QPushButton* btnNewDir_m;
 
-    QPushButton *btnImport_m;
-    QLineEdit *searchLineEdit_m;
-    QCheckBox *collabsTree_m;
+    QPushButton* btnImport_m;
+    QLineEdit* searchLineEdit_m;
+    QCheckBox* collabsTree_m;
 
     QString dataBasePath_m;
-    bool isManaged_m;
+    bool isManaged_m{false};
+    bool isMoved_m{false};
 
     bool isConnectionsEstablished_m{false};
 

@@ -46,6 +46,20 @@ void ReviewPage::initializePage() {
     auto *wiz = qobject_cast<SetupWizard*>(wizard());
     if (!wiz) return;
 
+    isManaged_m = field("cbManageData").toBool();
+    isMoved_m = field("cbMoveFiles").toBool();
+
+    if (isManaged_m) {
+        QString targetPath = field("cbTargetPath").toString();
+        QStorageInfo storage(targetPath);
+
+        if (storage.isValid() && storage.isReady()) {
+            availableFreeSpace_m = storage.bytesAvailable();
+        }
+    } else {
+        availableFreeSpace_m = -1;
+    }
+
     // ALL wiz
     static bool connectionsEstablished = false;
     if (!connectionsEstablished) {
@@ -395,7 +409,11 @@ bool ReviewPage::isComplete() const {
         statusLabel_m->setText("");
     }
 
-    return (totalSelected > 0 && !collisionFound);
+    bool hasSelection = (totalSelected > 0);
+    bool noCollisions = !collisionFound;
+    bool hasEnoughSpace = (targetStorageSpace_m >= 0);
+
+    return hasSelection && noCollisions && hasEnoughSpace;
 
 }
 
@@ -454,6 +472,27 @@ void ReviewPage::updateUIStats() {
 
     // Here, stats.duplicates remains (the constant number of duplicates found).
     labelHtml = labelHtml.arg(wiz()->fileManager()->getStatusText(StatusDuplicate), strColDup.name(), QString::number(currentStats.duplicates));
+
+    if(isManaged_m) {
+        labelHtml = labelHtml + " | <b>%14:</b> <span style='color:%15'><b>%16</b></span> <span style='color:%17'>(%18)</span>";
+
+        targetStorageSpace_m = availableFreeSpace_m - currentStats.selectedBytes;
+
+        QString strColSpace = strColReady;
+
+        if(targetStorageSpace_m <= 0) {
+            strColSpace = strColDefect;
+            targetStorageSpace_m = 0;
+        }
+
+        labelHtml = labelHtml
+                        .arg(
+                            tr("Free Space"),
+                            strColReady,
+                            FileUtils::formatBytes(availableFreeSpace_m),
+                            strColSpace,
+                            FileUtils::formatBytes(targetStorageSpace_m));
+    }
 
     summaryLabel_m->setText(labelHtml);
 }
@@ -545,26 +584,27 @@ QStringList ReviewPage::getUnrecognizedFiles(const QString &folderPath) {
 bool ReviewPage::finishDialog() {
     ReviewStats stats = wiz()->proxyModel()->calculateCurrentStats();
     QStringList unresolvedDups = getUnresolvedDuplicateNames();
+    qDebug() << "Unresolved: " << unresolvedDups;
 
     // The message text (HTML for better readability)
     QString msg = QString(
                       "<h3>" + tr("Import summary") + "</h3>"
-                                                                   "<p><b>" + tr("In total:") + "</b> %1 (%2)</p>"
-                                        "<p><b>" + tr("Take over:") + "</b> <span style='color:green;'>%3 (%4)</span></p>"
-                                            "<p><b>" + tr("Corrupted files found (were skipped):") + "</b> <span style='color:red;'>%5</span></p>"
-                                        "<p><b>" + tr("Found duplicate files (managed by you):") + "</b> %6</p>"
+                                                      "<p><b>" + tr("In total:") + "</b> %1 (%2)</p>"
+                                          "<p><b>" + tr("Take over:") + "</b> <span style='color:green;'>%3 (%4)</span></p>"
+                                           "<p><b>" + tr("Corrupted files found (were skipped):") + "</b> <span style='color:red;'>%5</span></p>"
+                                                                      "<p><b>" + tr("Found duplicate files (managed by you):") + "</b> %6</p>"
                       ).arg(QString::number(stats.totalFiles),
                            FileUtils::formatBytes(stats.totalBytes),
                            QString::number(stats.selectedFiles),
                            FileUtils::formatBytes(stats.selectedBytes),
                            QString::number(stats.defects),
-                           QString::number(stats.selectedBytes));
+                           QString::number(unresolvedDups.size()));
 
     // Add warning for unresolved duplicates
     if (!unresolvedDups.isEmpty()) {
         msg += "<div style='margin-top:10px; padding:5px; border:1px solid orange;'>"
                "<b>" + tr("Attention: No duplicate was selected in %1 group(s):").arg(unresolvedDups.size()) + "</b><br/>"
-                                                                                                          "<i>" + unresolvedDups.join(", ") + "</i></div>";
+                                                                                                         "<i>" + unresolvedDups.join(", ") + "</i></div>";
     }
 
     msg += "<p><br/>" + tr("Do you want to accept the selection as is?") + "</p>";

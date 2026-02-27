@@ -243,6 +243,30 @@ bool FilterPage::handleSkipImport() {
 
     // C++20: Use structured bindings or clear logic for DB writes
     bool success = true;
+
+    if(field("cbManageData").toBool()) {
+        if (!db.setSetting("is_managed", QVariant(field("cbManageData").toBool()))) {
+            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << field("cbManageData").toBool();
+        }
+    }
+
+    if (field("cbManageData").toBool()) {
+        if (!db.setSetting("managed_path", QVariant(field("cbTargetPath").toString()))) {
+            qCritical() << "CRITICAL: managed_path could not be saved to DB:" << field("cbTargetPath").toString();
+        }
+    }
+
+    if(field("cbMoveFiles").toBool()) {
+        if (!db.setSetting("is_moved", QVariant(field("cbMoveFiles").toBool()))) {
+            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << field("cbMoveFiles").toBool();
+        }
+    }
+
+
+    if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {
+        qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
+    }
+
     success &= db.setSetting("is_managed", false);
     success &= db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
 

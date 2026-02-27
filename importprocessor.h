@@ -23,7 +23,7 @@ class ImportProcessor : public QObject {
 public:
     explicit ImportProcessor(QObject *parent = nullptr) : QObject(parent) {}
 
-    [[nodiscard]] bool executeImport(const QList<ImportTask> &tasks, const QString &basePath, bool isManaged) {
+    [[nodiscard]] bool executeImport(const QList<ImportTask> &tasks, const QString &basePath, bool isManaged, bool isMoved) {
         if (!DatabaseManager::instance().beginTransaction()) {
             qDebug() << "executeImport: instance false";
             return false;
@@ -40,10 +40,28 @@ public:
                 QString finalDest;
                 if (isManaged) {
                     finalDest = QDir::cleanPath(QDir(basePath).absoluteFilePath(task.relativePath));
+
+                    // Create target directory
                     QDir().mkpath(QFileInfo(finalDest).absolutePath());
+
                     if (!QFile::exists(finalDest)) {
-                        if (!QFile::copy(task.sourcePath, finalDest)) [[unlikely]] {
-                            throw std::runtime_error("Copy error: " + task.sourcePath.toStdString());
+                        if (isMoved) {
+                            // Try moving it (faster and saves space)
+                            if (!QFile::rename(task.sourcePath, finalDest)) {
+                                // If rename fails (e.g., different drive), copy + remove
+                                if (QFile::copy(task.sourcePath, finalDest)) {
+                                    if (!QFile::remove(task.sourcePath)) {
+                                        throw std::runtime_error("Remove error after copy: " + task.sourcePath.toStdString());
+                                    }
+                                } else {
+                                    throw std::runtime_error("Copy error: " + task.sourcePath.toStdString());
+                                }
+                            }
+                        } else {
+                            // Copy-only mode
+                            if (!QFile::copy(task.sourcePath, finalDest)) [[unlikely]] {
+                                throw std::runtime_error("Copy error: " + task.sourcePath.toStdString());
+                            }
                         }
                     }
                     QCoreApplication::processEvents();
@@ -62,12 +80,12 @@ public:
                 QString fileName = QFileInfo(task.sourcePath).fileName();
                 qlonglong songId;
 
-                QString title = task.itemName; // Fallback auf Dateiname
+                QString title = task.itemName; // Fallback to filename
                 QString artist = "Unknown Artist";
                 QString tuning = "E-Standard";
                 int bpm = 0;
 
-                // Nur Parsen, wenn es eine GP-Datei ist
+                // Only parse if it is a GP file.
                 if (task.fileSuffix.startsWith("gp", Qt::CaseInsensitive)) {
                     GpParser parser;
                     GpParser::GPMetadata meta = parser.parseMetadata(task.sourcePath);
@@ -119,13 +137,20 @@ public:
         auto &db = DatabaseManager::instance();
 
         if (isManaged) {
+
+            if (!db.setSetting("is_managed", QVariant(isManaged))) {
+                qCritical() << "CRITICAL: isManaged could not be saved to DB:" << isManaged;
+            }
+
             if (!db.setSetting("managed_path", QVariant(basePath))) {
                 qCritical() << "CRITICAL: managed_path could not be saved to DB:" << basePath;
             }
         }
 
-        if (!db.setSetting("is_managed", QVariant(isManaged))) {
-            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << isManaged;
+        if(isMoved) {
+            if (!db.setSetting("is_moved", QVariant(isMoved))) {
+                qCritical() << "CRITICAL: isManaged could not be saved to DB:" << isManaged;
+            }
         }
 
         if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {

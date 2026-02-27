@@ -1,5 +1,10 @@
 # Changelog
 
+27.06.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Add move file option
+- Add Database settings is_moved and reminder is_weekly
+
 26.02.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - DatabaseManager getPracticeSessions optimation

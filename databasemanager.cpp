@@ -81,7 +81,7 @@ bool DatabaseManager::initDatabase(const QString &dbPath)
             return true;
         }
 
-        existingDb = QSqlDatabase(); // Handle freigeben
+        existingDb = QSqlDatabase(); // Release handle
         QSqlDatabase::removeDatabase(QSqlDatabase::defaultConnection);
     }
 
@@ -334,6 +334,7 @@ bool DatabaseManager::createInitialTables()
                 "weekday INTEGER, "              // Day of the week (0-6, 0=Sunday)
                 "is_daily INTEGER DEFAULT 0, "   // Daily reminder
                 "is_monthly INTEGER DEFAULT 0, " // Monthly reminder
+                "is_weekly INTEGER DEFAULT 0,"    // Weekly reminder
                 "is_active INTEGER DEFAULT 1, "  // Active/Inactive
                 "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                 "FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE, "
@@ -363,22 +364,6 @@ bool DatabaseManager::createInitialTables()
         return false;
     }
 
-    // 13. REMINDER_COMPLETIONS (Completed Memories) NOT USED YET
-    if (!q.exec("CREATE TABLE IF NOT EXISTS reminder_completions ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                "reminder_id INTEGER NOT NULL, "
-                "completion_date DATETIME DEFAULT CURRENT_TIMESTAMP, "
-                "practice_journal_id INTEGER, " // Reference to the exercise session
-                "FOREIGN KEY(reminder_id) REFERENCES reminders(id) ON DELETE CASCADE, "
-                "FOREIGN KEY(practice_journal_id) REFERENCES practice_journal(id) ON DELETE SET "
-                "NULL)")) {
-        qCritical() << "[DatabaseManager] create table reminder_completions failed, error: "
-                    << q.lastError().text();
-        qDebug() << "[DatabaseManager] create table reminder_completions failed, fullpath: "
-                 << q.executedQuery();
-        return false;
-    }
-
     if (!q.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('managed_path', '')")) {
         qCritical() << "[DatabaseManager] insert into settings managed_path failed, error: "
                     << q.lastError().text();
@@ -391,6 +376,14 @@ bool DatabaseManager::createInitialTables()
         qCritical() << "[DatabaseManager] insert into settings is_managed failed, error: "
                     << q.lastError().text();
         qDebug() << "[DatabaseManager] insert into settings is_managed failed, fullquery: "
+                 << q.executedQuery();
+        return false;
+    }
+
+    if (!q.exec("INSERT OR IGNORE INTO settings (key, value) VALUES ('is_moved', 'false')")) {
+        qCritical() << "[DatabaseManager] insert into settings is_moved failed, error: "
+                    << q.lastError().text();
+        qDebug() << "[DatabaseManager] insert into settings is_moved failed, fullquery: "
                  << q.executedQuery();
         return false;
     }

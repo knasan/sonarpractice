@@ -498,6 +498,7 @@ bool MappingPage::validatePage() {
     // Path for the music files (chosen by the user)
     QString musicBasePath = wiz()->field("cbTargetPath").toString();
     bool isManaged = wiz()->field("cbManageData").toBool();
+    bool isMoved = wiz()->field("cbMoveFiles").toBool();
 
     // Collect tasks
     QList<ImportTask> tasks;
@@ -530,7 +531,7 @@ bool MappingPage::validatePage() {
         connect(&processor, &ImportProcessor::progressUpdated, &progress, &QProgressDialog::setValue);
 
         // Carry out
-        success = processor.executeImport(tasks, musicBasePath, isManaged);
+        success = processor.executeImport(tasks, musicBasePath, isManaged, isMoved);
     }
 
     if (success) {

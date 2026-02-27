@@ -535,16 +535,6 @@ void ImportDialog::collectTasksFromModel(QStandardItem* parent, QString currentD
                 t.relativePath = QDir::cleanPath(currentDirPath + "/" + t.itemName);
             }
 
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.sourcePath: " << t.sourcePath;      // absolute sourcePath
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.itemName: " << t.itemName;          // FileName
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.fileHash: " << t.fileHash;          // not in Application, only in wizrad
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.fileSize: " << t.fileSize;          // Size of
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.fileSuffix: " << t.fileSuffix;      // file suffix <- must have Directory from target
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.categoryPath: " << t.categoryPath;  // BUG: always empty
-            // qDebug() << "[ImportDialog] collectTasksFromModel t.relativePath: " << t.relativePath;  // new full path by managed
-            // qDebug() << "[ImportDialog] collectTasksFromModel currentDirPath: " << currentDirPath;  // Empty
-            // qDebug() << "------------------------------------------------------------------------------------";
-
             tasks.append(t);
         }
     }
@@ -578,7 +568,7 @@ void ImportDialog::accept() {
     ImportProcessor processor;
     connect(&processor, &ImportProcessor::progressUpdated, &progress, &QProgressDialog::setValue);
 
-    bool success = processor.executeImport(tasks, dataBasePath_m, isManaged_m);
+    bool success = processor.executeImport(tasks, dataBasePath_m, isManaged_m, isMoved_m);
 
     if (success) {
         // If everything worked, close the dialog and report the result to MainWindow.
