@@ -1080,14 +1080,14 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation type="vanished">Tuning: - </translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="363"/>
-        <location filename="sonarlessonpage.cpp" line="559"/>
+        <location filename="sonarlessonpage.cpp" line="355"/>
+        <location filename="sonarlessonpage.cpp" line="551"/>
         <source>Tempo:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="521"/>
-        <location filename="sonarlessonpage.cpp" line="836"/>
+        <location filename="sonarlessonpage.cpp" line="513"/>
+        <location filename="sonarlessonpage.cpp" line="822"/>
         <location filename="sonarlessonpage.cpp" line="1156"/>
         <source>Start Timer</source>
         <translation>Timer starten</translation>
@@ -1103,13 +1103,13 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation type="vanished">Notizen:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="128"/>
+        <location filename="sonarlessonpage.cpp" line="129"/>
         <source>Takt from</source>
         <oldsource>Takt von</oldsource>
         <translation>Takt von</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="129"/>
+        <location filename="sonarlessonpage.cpp" line="130"/>
         <source>Tempo (BPM)</source>
         <translation></translation>
     </message>
@@ -1122,17 +1122,17 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation type="vanished">Dauer (Min.)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="128"/>
+        <location filename="sonarlessonpage.cpp" line="129"/>
         <source>Takt to</source>
         <translation>Takt bis</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="128"/>
+        <location filename="sonarlessonpage.cpp" line="129"/>
         <source>Day</source>
         <translation>Tag</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="129"/>
+        <location filename="sonarlessonpage.cpp" line="130"/>
         <source>Duration (Min)</source>
         <translation>Dauer (Min.)</translation>
     </message>
@@ -1141,7 +1141,7 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation type="vanished">Zeige alle einträge</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="777"/>
+        <location filename="sonarlessonpage.cpp" line="763"/>
         <source>Save</source>
         <translation>Speichern</translation>
     </message>
@@ -1166,231 +1166,231 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation>Speichern fehlgeschlagen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="115"/>
+        <location filename="sonarlessonpage.cpp" line="116"/>
         <source>Practice Table</source>
         <translation>Übungstabelle</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="129"/>
+        <location filename="sonarlessonpage.cpp" line="130"/>
         <source>Success Streak</source>
         <translation>Erfolgsserie</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="133"/>
+        <location filename="sonarlessonpage.cpp" line="134"/>
         <source>Date of the exercise session</source>
         <translation>Datum der Übungseinheit</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="134"/>
+        <location filename="sonarlessonpage.cpp" line="135"/>
         <source>Starting beat number of the section</source>
         <translation>Beginn des Abschnitts</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="135"/>
+        <location filename="sonarlessonpage.cpp" line="136"/>
         <source>End bar number of the section</source>
         <translation>End Bar des Abschnitts</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="136"/>
+        <location filename="sonarlessonpage.cpp" line="137"/>
         <source>Set speed in beats per minute</source>
         <translation>Geschwindigkeit in Schlägen pro Minute einstellen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="138"/>
+        <location filename="sonarlessonpage.cpp" line="139"/>
         <source>Maximum number of consecutive error-free repetitions.
 This number shows how confidently you have mastered the section.</source>
         <translation>Maximale Anzahl aufeinanderfolgender fehlerfreier Wiederholungen.
 Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="142"/>
+        <location filename="sonarlessonpage.cpp" line="143"/>
         <source>Total duration of this exercise unit</source>
         <translation>Gesamtdauer dieser Übungseinheit</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="164"/>
+        <location filename="sonarlessonpage.cpp" line="165"/>
         <source>Add Row</source>
         <translation>Zeile hinzufügen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="168"/>
+        <location filename="sonarlessonpage.cpp" line="169"/>
         <source>Remove Row</source>
         <translation>Zeile entfernen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="219"/>
+        <location filename="sonarlessonpage.cpp" line="211"/>
         <source>Calendar</source>
         <translation>Kalender</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="225"/>
+        <location filename="sonarlessonpage.cpp" line="217"/>
         <source>Today&apos;s Reminders</source>
         <translation>Heutige Erinnerungen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="233"/>
+        <location filename="sonarlessonpage.cpp" line="225"/>
         <source>Song</source>
         <translation>Song</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="233"/>
+        <location filename="sonarlessonpage.cpp" line="225"/>
         <source>Range</source>
         <translation>Range</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="233"/>
+        <location filename="sonarlessonpage.cpp" line="225"/>
         <source>BPM</source>
         <translation>BPM</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="233"/>
+        <location filename="sonarlessonpage.cpp" line="225"/>
         <source>Status</source>
         <translation>Status</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="269"/>
+        <location filename="sonarlessonpage.cpp" line="261"/>
         <source>Song Information</source>
         <translation>Songinformationen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="281"/>
+        <location filename="sonarlessonpage.cpp" line="273"/>
         <source>Selected Repertoire:</source>
         <translation>Ausgewähltes Repertoire:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="324"/>
+        <location filename="sonarlessonpage.cpp" line="316"/>
         <source>GuitarPro Filter</source>
         <translation>GuitarPro-Filter</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="325"/>
+        <location filename="sonarlessonpage.cpp" line="317"/>
         <source>Audio Filter</source>
         <translation>Audiofilter</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="326"/>
+        <location filename="sonarlessonpage.cpp" line="318"/>
         <source>Video Filter</source>
         <translation>Videofilter</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="327"/>
+        <location filename="sonarlessonpage.cpp" line="319"/>
         <source>Dokument Filter</source>
         <translation>Dokumentenfilter</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="345"/>
+        <location filename="sonarlessonpage.cpp" line="337"/>
         <source>Artist:</source>
         <translation>Künstler:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="354"/>
+        <location filename="sonarlessonpage.cpp" line="346"/>
         <source>Title:</source>
         <translation>Titel:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="372"/>
+        <location filename="sonarlessonpage.cpp" line="364"/>
         <source>Tuning:</source>
         <translation>Tuning:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="381"/>
+        <location filename="sonarlessonpage.cpp" line="373"/>
         <source>Open Media</source>
         <translation>Offene Media</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="386"/>
+        <location filename="sonarlessonpage.cpp" line="378"/>
         <source>Edit Entry</source>
         <translation>Eintrag bearbeiten</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="508"/>
+        <location filename="sonarlessonpage.cpp" line="500"/>
         <source>Training</source>
         <translation>Training</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="551"/>
+        <location filename="sonarlessonpage.cpp" line="543"/>
         <source>Add Reminder</source>
         <translation>Erinnerung hinzufügen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="555"/>
+        <location filename="sonarlessonpage.cpp" line="547"/>
         <source>Beat of:</source>
         <translation>Beat von:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="557"/>
+        <location filename="sonarlessonpage.cpp" line="549"/>
         <source>Beat to:</source>
         <translation>Beat bis:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="617"/>
+        <location filename="sonarlessonpage.cpp" line="609"/>
         <location filename="sonarlessonpage.cpp" line="1093"/>
         <source>Edit Reminder</source>
         <translation>Edit Reminder</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="651"/>
+        <location filename="sonarlessonpage.cpp" line="643"/>
         <source>Done</source>
         <translation>Erledigt</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="651"/>
+        <location filename="sonarlessonpage.cpp" line="643"/>
         <source>Pending</source>
         <translation>Ausstehend</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="671"/>
+        <location filename="sonarlessonpage.cpp" line="663"/>
         <source>Notice</source>
         <translation>Notiz</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="684"/>
+        <location filename="sonarlessonpage.cpp" line="676"/>
         <source>Bold (Ctrl+B)</source>
         <translation>Bold (Ctrl+B)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="688"/>
+        <location filename="sonarlessonpage.cpp" line="680"/>
         <source>Italic (Ctrl+I)</source>
         <translation>Italic (Ctrl+I)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="692"/>
+        <location filename="sonarlessonpage.cpp" line="684"/>
         <source>Heading 1 (Ctrl+1)</source>
         <translation>Überschrift 1 (Strg+1)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="696"/>
+        <location filename="sonarlessonpage.cpp" line="688"/>
         <source>Heading 2 (Ctrl+2)</source>
         <translation>Überschrift 2 (Strg+2)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="700"/>
+        <location filename="sonarlessonpage.cpp" line="692"/>
         <source>List (Ctrl+L)</source>
         <translation>Liste (Strg+L)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="704"/>
+        <location filename="sonarlessonpage.cpp" line="696"/>
         <source>Task List (Ctrl+Enter)</source>
         <translation>Aufgabenliste (Strg+Eingabe)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="717"/>
+        <location filename="sonarlessonpage.cpp" line="709"/>
         <source>Write your practice notes here...</source>
         <translation>Schreibe hier deine Übungsnotizen auf...</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="794"/>
+        <location filename="sonarlessonpage.cpp" line="780"/>
         <source>Open linked documents and files</source>
         <oldsource>Open linked PDF files</oldsource>
         <translation>Verknüpfte Dokumentdateien öffnen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="797"/>
+        <location filename="sonarlessonpage.cpp" line="783"/>
         <source>Open linked video files</source>
         <translation>Verlinkte Videodateien öffnen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="800"/>
+        <location filename="sonarlessonpage.cpp" line="786"/>
         <source>Open linked audio tracks</source>
         <translation>Verknüpfte Audiospuren öffnen</translation>
     </message>
@@ -1425,27 +1425,27 @@ Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
         <translation>Möchtest du diese Erinnerung wirklich löschen?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="1423"/>
+        <location filename="sonarlessonpage.cpp" line="1422"/>
         <source>What did you achieve today?</source>
         <translation>Was hast du heute erreicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="1424"/>
+        <location filename="sonarlessonpage.cpp" line="1423"/>
         <source>What came easily to you?</source>
         <translation>Was fiel dir leicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="1425"/>
+        <location filename="sonarlessonpage.cpp" line="1424"/>
         <source>What didn&apos;t work so well?</source>
         <translation>Was hat nicht so gut funktioniert?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="1426"/>
+        <location filename="sonarlessonpage.cpp" line="1425"/>
         <source>What will you pay attention to tomorrow?</source>
         <translation>Worauf wirst du morgen erreichen?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="1740"/>
+        <location filename="sonarlessonpage.cpp" line="1732"/>
         <source>No data available. Press &apos;Start Timer&apos; to begin...</source>
         <translation>Keine Daten verfügbar. Drücken Sie „Timer starten“, um zu beginnen…</translation>
     </message>

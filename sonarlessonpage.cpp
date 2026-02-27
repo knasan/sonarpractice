@@ -77,6 +77,7 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     if (songSelector_m->currentIndex() >= 0) {
         onSongChanged(songSelector_m->currentIndex());
     }
+    onFilterToggled();
 }
 
 void SonarLessonPage::setupUI()
@@ -188,19 +189,10 @@ void SonarLessonPage::updatePracticeTable(const QList<PracticeSession>& sessions
         int row = practiceTable_m->rowCount();
         practiceTable_m->insertRow(row);
 
-        // Spalte 0: Datum
         practiceTable_m->setItem(row, 0, new QTableWidgetItem(s.date.toString("dd.MM.yyyy")));
-
-        // Spalte 1: Bereich
         practiceTable_m->setItem(row, 1, new QTableWidgetItem(QString("%1 - %2").arg(s.startBar).arg(s.endBar)));
-
-        // Spalte 2: BPM
         practiceTable_m->setItem(row, 2, new QTableWidgetItem(QString::number(s.bpm)));
-
-        // Spalte 3: Reps
         practiceTable_m->setItem(row, 4, new QTableWidgetItem(QString::number(s.reps)));
-
-        // Spalte 4: Streaks
         practiceTable_m->setItem(row, 5, new QTableWidgetItem(QString::number(s.streaks)));
 
         for(int i = 0; i < practiceTable_m->columnCount(); ++i) {
@@ -1349,7 +1341,6 @@ void SonarLessonPage::updateFilterButtonsForFile(const QString& filePath) {
     // Update the proxy filter once
     onFilterToggled();
 }
-
 
 /*
  * Important: The table must be saved first, followed by the notes.
