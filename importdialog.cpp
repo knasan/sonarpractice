@@ -612,7 +612,7 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
         // --- Logic for duplicates and existing files ---
 
         if (batch.status == StatusAlreadyInDatabase) {
-            // Fall: exists in db
+            // Case: exists in db
             fileItem->setText(tr("(In Library) ") + fileItem->text());
             fileItem->setForeground(QBrush(Qt::gray));
             fileItem->setCheckable(false);
@@ -621,15 +621,15 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
             fileItem->setToolTip(tr("This file is already in your database."));
         }
         else if (batch.status == StatusDuplicate) {
-            // Fall: Duplicate within the current scan
-            fileItem->setText(fileItem->text() + tr(" (Duplicate)"));
+            // Case: Duplicate within the current scan
+            fileItem->setText(fileItem->text() + tr("(Duplicate)"));
             fileItem->setForeground(QBrush(Qt::red));
             fileItem->setCheckable(false);
             fileItem->setToolTip(tr("This file exists multiple times in your selection."));
             // fileItem->setIcon(QIcon(":/icons/duplicate.png"));
         }
         else {
-            // Fall: StatusReady
+            // Case: StatusReady
             fileItem->setCheckable(true);
             fileItem->setCheckState(Qt::Checked);
         }

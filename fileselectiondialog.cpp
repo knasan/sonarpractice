@@ -26,7 +26,7 @@ FileSelectionDialog::FileSelectionDialog(int excludeId, QWidget *parent)
 
     // Filter-Buttons (Horizontal)
     auto *filterLayout = new QHBoxLayout();
-    QStringList categories = { tr("All"), tr("Audio"), tr("Video"), tr("Guitar Pro"), tr("PDF") };
+    QStringList categories = { tr("All"), tr("Audio"), tr("Video"), tr("Guitar Pro"), tr("Documents") };
 
     // QButtonGroup ensures that only one filter is active at a time (like RadioButtons)
     auto *filterGroup = new QButtonGroup(this);
@@ -127,7 +127,7 @@ QString FileSelectionDialog::getCategoryForFile(const QString &fileName) {
     if (FileUtils::getAudioFormats().contains(ext))     return tr("Audio");
     if (FileUtils::getVideoFormats().contains(ext))     return tr("Video");
     if (FileUtils::getGuitarProFormats().contains(ext))  return tr("Guitar Pro");
-    if (FileUtils::getDocFormats().contains(ext))       return tr("PDF");
+    if (FileUtils::getDocFormats().contains(ext))       return tr("Documents");
 
     return tr("Other");
 }

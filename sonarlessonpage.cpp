@@ -789,7 +789,7 @@ void SonarLessonPage::setupResourceButtons()
 
     btnPdfIcon_m = createResourceButton("docsButton",
                                         ":/file-stack.svg",
-                                        tr("Open linked PDF files"));
+                                        tr("Open linked documents and files"));
     btnVideoIcon_m = createResourceButton("videosButton",
                                           ":/list-video.svg",
                                           tr("Open linked video files"));

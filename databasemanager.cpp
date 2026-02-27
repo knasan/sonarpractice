@@ -1204,7 +1204,6 @@ bool DatabaseManager::saveTableSessions(int songId,
     QSqlQuery q(db);
     QString dateStr = date.toString("yyyy-MM-dd");
 
-    // TODO: get first note_text bevor delete.
     // INSERT now the note_text or make insert or update the practice_journal
 
     q.prepare("DELETE FROM practice_journal WHERE song_id = :sId AND practice_date = :pDate");

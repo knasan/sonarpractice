@@ -4,44 +4,44 @@
 <context>
     <name>FileManager</name>
     <message>
-        <location filename="filemanager.cpp" line="36"/>
+        <location filename="filemanager.cpp" line="66"/>
         <source>Ready</source>
         <translation>Bereit</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="37"/>
+        <location filename="filemanager.cpp" line="67"/>
         <source>Defect</source>
         <oldsource>Defect)</oldsource>
         <translation>Defekt</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="38"/>
+        <location filename="filemanager.cpp" line="68"/>
         <source>Duplicates</source>
         <oldsource>Dubletten</oldsource>
         <translation>Duplikate</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="39"/>
+        <location filename="filemanager.cpp" line="69"/>
         <source>Selected</source>
         <translation>Ausgewählt</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="40"/>
+        <location filename="filemanager.cpp" line="70"/>
         <source>Unknown</source>
         <translation>Unbekannt</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="41"/>
+        <location filename="filemanager.cpp" line="71"/>
         <source>Rejected</source>
         <translation>Verworfen</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="42"/>
+        <location filename="filemanager.cpp" line="72"/>
         <source>Files</source>
         <translation>Dateien</translation>
     </message>
     <message>
-        <location filename="filemanager.cpp" line="138"/>
+        <location filename="filemanager.cpp" line="205"/>
         <source>0-byte files cannot be imported.</source>
         <translation>0-Byte Dateien können nicht importiert werden.</translation>
     </message>
@@ -86,8 +86,8 @@
     <message>
         <location filename="fileselectiondialog.cpp" line="29"/>
         <location filename="fileselectiondialog.cpp" line="130"/>
-        <source>PDF</source>
-        <translation></translation>
+        <source>Documents</source>
+        <translation>Dokumente</translation>
     </message>
     <message>
         <location filename="fileselectiondialog.cpp" line="132"/>
@@ -112,62 +112,83 @@
         <location filename="filterpage.cpp" line="20"/>
         <source>Settings for your repertoire.</source>
         <oldsource>Einstellungen für deine Repertoire.</oldsource>
-        <translation>Einstellungen für deine Repertoire.</translation>
+        <translation>Einstellungen für dein Repertoire.</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="23"/>
+        <location filename="filterpage.cpp" line="31"/>
         <source>Filterpage</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="26"/>
+        <location filename="filterpage.cpp" line="39"/>
         <source>&lt;h3&gt;Select Data Management&lt;/h3&gt;&lt;p&gt;You decide how SonarPractice handles your files:&lt;/p&gt;&lt;p&gt;Manage option:&lt;/p&gt;&lt;ul&gt;  &lt;li&gt;&lt;b&gt;Disabled:&lt;/b&gt; Your files will remain exactly where they are now. SonarPractice simply creates a smart link in the database.&lt;br&gt;This allows the program to check if the file is still in place and lets you link journal entries directly to your repertoire.&lt;/li&gt;  &lt;li&gt;&lt;b&gt;Activated:&lt;/b&gt;Sonar Practice handles the organization and copies your selectioninto the selected target directory. This helps you to keep things organized and permanently avoid duplicates.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;i&gt;Note: Your progress analysis and journal entries are securely stored in the system&apos;s internal database (AppData/Local).&lt;/i&gt;&lt;/p&gt;</source>
         <translation>&lt;h3&gt;Daten-Verwaltung wählen&lt;/h3&gt;&lt;p&gt;Du entscheidest, wie SonarPractice mit deinen Dateien umgeht:&lt;/p&gt;&lt;p&gt;Option Verwalten:&lt;/p&gt;&lt;ul&gt;  &lt;li&gt;&lt;b&gt;Deaktiviert:&lt;/b&gt; Deine Dateien bleiben exakt dort, wo sie jetzt sind. SonarPractice erstellt lediglich eine intelligente Verknüpfung in der Datenbank.&lt;br&gt;Dies ermöglicht es dem Programm zu prüfen, ob die Datei noch am Ort ist, und erlaubt es dir, Journal-Einträge direkt mit deinem Repertoire zu verknüpfen.&lt;/li&gt;  &lt;li&gt;&lt;b&gt;Aktiviert:&lt;/b&gt; SonarPractice übernimmt die Organisation und verschiebt deine Auswahl&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;i&gt;Hinweis: Deine Fortschrittsanalyse und Journal-Einträge werden sicher in der systeminternen Datenbank (AppData / Local) gespeichert.&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="45"/>
+        <location filename="filterpage.cpp" line="55"/>
         <source>Manage</source>
         <translation>Verwalten</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="46"/>
+        <location filename="filterpage.cpp" line="58"/>
+        <source>Enable file management; by default, all data will be copied to the target directory unless &apos;move files&apos; is enabled.</source>
+        <translation>Aktiviere die Dateiverwaltung; standardmäßig werden alle Daten in das Zielverzeichnis kopiert, es sei denn, die Option „Dateien verschieben“ ist aktiviert.</translation>
+    </message>
+    <message>
+        <location filename="filterpage.cpp" line="60"/>
+        <source>Move files</source>
+        <translation>Dateien verschieben</translation>
+    </message>
+    <message>
+        <location filename="filterpage.cpp" line="63"/>
+        <source>Enables file moving</source>
+        <translation>Aktiviert Datei verschieben</translation>
+    </message>
+    <message>
+        <location filename="filterpage.cpp" line="70"/>
         <source>Skip import</source>
         <translation>Import überspringen</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="47"/>
+        <location filename="filterpage.cpp" line="72"/>
         <source>Skip the file import. An empty library will be created with your chosen path settings so you can add files manually later.</source>
-        <translation>Überspringen Sie den Dateiimport. Es wird eine leere Bibliothek mit den von Ihnen gewählten Pfadeinstellungen erstellt, sodass Sie später manuell Dateien hinzufügen können.</translation>
+        <translation>Überspringe den Dateiimport. Es wird eine leere Bibliothek mit den von dir gewählten Pfadeinstellungen erstellt, sodass du später manuell Dateien hinzufügen kannst.</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="56"/>
+        <location filename="filterpage.cpp" line="82"/>
         <source>Change path...</source>
         <translation>Pfad auswählen...</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="70"/>
+        <location filename="filterpage.cpp" line="96"/>
         <source>What data should be searched for?</source>
-        <translation>Welche Daten sollten gesucht werden?</translation>
+        <translation>Nach welchen Daten suchst du?</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="95"/>
+        <location filename="filterpage.cpp" line="123"/>
         <source>Add folder</source>
         <translation>Ordner Hinzufügen</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="100"/>
+        <location filename="filterpage.cpp" line="126"/>
         <source>Remove folder</source>
         <translation>Ordner Entfernen</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="166"/>
+        <location filename="filterpage.cpp" line="212"/>
+        <source>No path selected</source>
+        <translation>Kein Pfad ausgewählt</translation>
+    </message>
+    <message>
+        <location filename="filterpage.cpp" line="295"/>
         <source>Select target directory</source>
         <oldsource>Select target directory for administration</oldsource>
         <translation>Zielverzeichnis auswählen</translation>
     </message>
     <message>
-        <location filename="filterpage.cpp" line="176"/>
+        <location filename="filterpage.cpp" line="305"/>
         <source>Select folder</source>
+        <translatorcomment>Ordner auswählen</translatorcomment>
         <translation>Ordner Auwählen</translation>
     </message>
 </context>
@@ -176,222 +197,226 @@
     <message>
         <location filename="importdialog.cpp" line="24"/>
         <source>Organizing and structuring data</source>
-        <translation type="unfinished">Daten organisieren und strukturieren</translation>
+        <translation>Daten organisieren und strukturieren</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="41"/>
         <location filename="importdialog.cpp" line="131"/>
-        <location filename="importdialog.cpp" line="148"/>
+        <location filename="importdialog.cpp" line="149"/>
         <source>Target structure</source>
-        <translation type="unfinished">Zielstruktur</translation>
+        <translation>Zielstruktur</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="59"/>
         <source>&lt;b&gt;Instructions:&lt;/b&gt;&lt;br&gt;1. Create folders for your structure on the right-hand side.&lt;br&gt;2. Select files on the left and drag them into a folder using &lt;b&gt;&amp;gt;&lt;/b&gt;.</source>
-        <translation type="unfinished">&lt;b&gt;Anleitung:&lt;/b&gt;&lt;br&gt;1. Erstelle rechts Ordber für deine Struktur.&lt;br&gt;2. Wähle links Dateien aus und schiebe sie mit &lt;b&gt;&amp;gt;&lt;/b&gt; in einen Ordner.</translation>
+        <translation>&lt;b&gt;Anleitung:&lt;/b&gt;&lt;br&gt;1. Erstelle auf der rechten Seite Ordner für die Struktur.&lt;br&gt;2. Wähle links Dateien aus und schiebe diese mit &lt;b&gt;&amp;gt;&lt;/b&gt; in einen Ordner.</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="66"/>
         <source>Search...</source>
-        <translation type="unfinished">Suchen...</translation>
+        <translation>Suchen...</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="70"/>
         <source>Open structure</source>
-        <translation type="unfinished">Struktur öffnen</translation>
+        <translation>Struktur öffnen</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="86"/>
-        <location filename="importdialog.cpp" line="341"/>
+        <location filename="importdialog.cpp" line="339"/>
         <source>New directory</source>
-        <translation type="unfinished"></translation>
+        <translation>Neues Verzeichnis</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="110"/>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Import</translation>
     </message>
     <message>
         <location filename="importdialog.cpp" line="111"/>
-        <location filename="importdialog.cpp" line="551"/>
+        <location filename="importdialog.cpp" line="564"/>
         <source>Cancel</source>
-        <translation type="unfinished">Abbrechen</translation>
+        <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="535"/>
+        <location filename="importdialog.cpp" line="548"/>
         <source>files left over</source>
-        <translation type="unfinished">übriggebliebene Dateien</translation>
+        <translation>übriggebliebene Dateien</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="536"/>
+        <location filename="importdialog.cpp" line="549"/>
         <source>There are %1 files remaining in the list. These will not be imported.
 
 Do you want to continue?</source>
-        <translation type="unfinished"></translation>
+        <translation>Es befinden sich noch %1 Dateien in der Liste. Diese werden nicht importiert.
+
+Möchten Sie fortfahren?</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="547"/>
+        <location filename="importdialog.cpp" line="560"/>
         <source>Empty import</source>
-        <translation type="unfinished">Leerer Import</translation>
+        <translation>Leerer Import</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="547"/>
+        <location filename="importdialog.cpp" line="560"/>
         <source>No files were selected for import.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurden keine Dateien zum Import ausgewählt.</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="551"/>
+        <location filename="importdialog.cpp" line="564"/>
         <source>Files are being imported....</source>
-        <translation type="unfinished"></translation>
+        <translation>Dateien werden importiert....</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="565"/>
+        <location filename="importdialog.cpp" line="578"/>
         <source>Error</source>
-        <translation type="unfinished">Fehler</translation>
+        <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="565"/>
+        <location filename="importdialog.cpp" line="578"/>
         <source>The import process failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Der Importvorgang ist fehlgeschlagen.</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="588"/>
+        <location filename="importdialog.cpp" line="601"/>
         <source>Source (verified)</source>
-        <translation type="unfinished">Quelle (verifiziert)</translation>
+        <translation>Quelle (verifiziert)</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="603"/>
+        <location filename="importdialog.cpp" line="616"/>
         <source>(In Library) </source>
-        <translation type="unfinished"></translation>
+        <translation>(In Bibliothek) </translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="608"/>
+        <location filename="importdialog.cpp" line="621"/>
         <source>This file is already in your database.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Datei befindet sich bereits in der Datenbank.</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="612"/>
-        <source> (Duplicate)</source>
-        <translation type="unfinished"></translation>
+        <location filename="importdialog.cpp" line="625"/>
+        <source>(Duplicate)</source>
+        <oldsource> (Duplicate)</oldsource>
+        <translation>(Duplikat)</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="615"/>
+        <location filename="importdialog.cpp" line="628"/>
         <source>This file exists multiple times in your selection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Datei ist in deiner Auswahl mehrfach vorhanden.</translation>
     </message>
     <message>
-        <location filename="importdialog.cpp" line="633"/>
+        <location filename="importdialog.cpp" line="646"/>
         <source>Target Structure (Managed)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zielstruktur (verwaltet)</translation>
     </message>
 </context>
 <context>
     <name>LibraryPage</name>
     <message>
-        <location filename="librarypage.cpp" line="42"/>
+        <location filename="librarypage.cpp" line="44"/>
         <source>Path</source>
         <oldsource>Pfad</oldsource>
         <translation>Pfad</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="73"/>
-        <source>Search for songs, videos, or PDFs...</source>
-        <translation>Suche für Song, Video, Dokumente ....</translation>
+        <location filename="librarypage.cpp" line="77"/>
+        <source>Search for songs, videos, audios or docs...</source>
+        <oldsource>Search for songs, videos, or docs...</oldsource>
+        <translation>Suche für Song, Video, Audio, Dokumente ....</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="76"/>
+        <location filename="librarypage.cpp" line="80"/>
         <source>Expert mode</source>
         <translation>Experten modus</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="95"/>
-        <location filename="librarypage.cpp" line="183"/>
+        <location filename="librarypage.cpp" line="99"/>
+        <location filename="librarypage.cpp" line="190"/>
         <source>Choose content</source>
         <translation>Wähle Inhalt</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="100"/>
+        <location filename="librarypage.cpp" line="104"/>
         <source>Linked files</source>
         <translation>Verknüpfte Dateien</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="112"/>
+        <location filename="librarypage.cpp" line="116"/>
         <source>Select files and link them to the currently selected medium.</source>
         <translation>Wählen Sie Dateien aus und verknüpfen Sie sie mit dem aktuell ausgewählten Medium.</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="116"/>
+        <location filename="librarypage.cpp" line="124"/>
         <source>Remove selected links from the list.</source>
         <translation>Ausgewählte Links aus der Liste entfernen.</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="139"/>
+        <location filename="librarypage.cpp" line="143"/>
         <source>Online resources / course portals</source>
         <translation>Online-Ressourcen / Kursportale</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="187"/>
+        <location filename="librarypage.cpp" line="194"/>
         <source>Selected: %1</source>
         <translation>Ausgewählt: %1</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="216"/>
+        <location filename="librarypage.cpp" line="226"/>
         <source>Media catalog is loading...</source>
         <translation>Der Medienkatalog wird geladen...</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="216"/>
+        <location filename="librarypage.cpp" line="226"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="255"/>
+        <location filename="librarypage.cpp" line="270"/>
         <source>No choice</source>
         <translation>Keine Auswahl</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="256"/>
+        <location filename="librarypage.cpp" line="271"/>
         <source>Please first select a file from the catalog to be linked.</source>
         <translation>Bitte wählen Sie zunächst eine Datei aus dem Katalog aus, die verknüpft werden soll.</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="292"/>
+        <location filename="librarypage.cpp" line="313"/>
         <source>Disconnect</source>
         <translation>Verknüpfung lösen</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="293"/>
+        <location filename="librarypage.cpp" line="314"/>
         <source>Do you really want to remove the link to the highlighted %1 files?</source>
         <translation>Möchtest du die Verknüpfung zu den markierten %1 Dateien wirklich entfernen?</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="377"/>
+        <location filename="librarypage.cpp" line="410"/>
         <source>Delete %1 files (Move to Trash)</source>
         <translation>Lösche %1 Datei (In den Papierkorb verschieben)</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="378"/>
+        <location filename="librarypage.cpp" line="411"/>
         <source>Delete file (Move to Trash)</source>
         <translation>Datei löschen (In den Papierkorb verschieben)</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="380"/>
+        <location filename="librarypage.cpp" line="413"/>
         <source>Open file in default player</source>
         <translation>Öffne Datei mit Standard Player</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="433"/>
+        <location filename="librarypage.cpp" line="447"/>
         <source>Delete Files</source>
         <translation>Dateien löschen</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="434"/>
+        <location filename="librarypage.cpp" line="448"/>
         <source>Are you sure you want to move %1 files to the trash and remove them from the database?</source>
         <translation>Möchtest du wirklich %1 Dateien in den Papierkorb verschieben und aus der Datenbank entfernen?</translation>
     </message>
     <message>
-        <location filename="librarypage.cpp" line="166"/>
-        <location filename="librarypage.cpp" line="203"/>
+        <location filename="librarypage.cpp" line="171"/>
+        <location filename="librarypage.cpp" line="211"/>
         <source>Media catalog</source>
         <oldsource>Medien-Katalog</oldsource>
         <translation>Medienkatalog</translation>
@@ -400,72 +425,79 @@ Do you want to continue?</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="mainwindow.cpp" line="54"/>
+        <location filename="mainwindow.cpp" line="59"/>
         <source>Exercise (Home)</source>
         <translation>Übung (Home)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="55"/>
+        <location filename="mainwindow.cpp" line="66"/>
         <source>Library</source>
         <translation>Bibliothek</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="138"/>
-        <source>Audio</source>
-        <translation>Audio</translation>
+        <location filename="mainwindow.cpp" line="142"/>
+        <source>Audios</source>
+        <oldsource>Audio</oldsource>
+        <translation>Audios</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="139"/>
+        <location filename="mainwindow.cpp" line="143"/>
         <source>Guitar Pro</source>
         <translation>Guitar Pro</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="140"/>
         <source>PDF</source>
-        <translation>PDF</translation>
+        <translation type="vanished">PDF</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="141"/>
-        <source>Video</source>
-        <translation>Video</translation>
+        <location filename="mainwindow.cpp" line="144"/>
+        <source>Documents</source>
+        <oldsource>Document</oldsource>
+        <translation>Dokumente</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="142"/>
+        <location filename="mainwindow.cpp" line="145"/>
+        <source>Videos</source>
+        <oldsource>Video</oldsource>
+        <translation>Videos</translation>
+    </message>
+    <message>
+        <location filename="mainwindow.cpp" line="146"/>
         <source>All files (*.*)</source>
         <translation>Alle dateien (*.*)</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="144"/>
+        <location filename="mainwindow.cpp" line="148"/>
         <source>All Supported</source>
         <translation>Alle unterstützten</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="152"/>
+        <location filename="mainwindow.cpp" line="156"/>
         <source>Select files for import</source>
         <translation>Dateien zum Import auswählen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="189"/>
+        <location filename="mainwindow.cpp" line="193"/>
         <source>Select folder for import</source>
         <translation>Ordner für den Import auswählen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="192"/>
+        <location filename="mainwindow.cpp" line="196"/>
         <source>Scanning and hashing files...</source>
         <translation>Dateien scannen und hashen...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="192"/>
+        <location filename="mainwindow.cpp" line="196"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="210"/>
+        <location filename="mainwindow.cpp" line="214"/>
         <source>%1 files processed...</source>
         <translation>%1 Dateien verarbeitet...</translation>
     </message>
     <message>
-        <location filename="mainwindow.cpp" line="217"/>
+        <location filename="mainwindow.cpp" line="221"/>
         <source>Aborting scan... Please wait.</source>
         <translation>Scan wird abgebrochen... Bitte warten.</translation>
     </message>
@@ -473,65 +505,65 @@ Do you want to continue?</source>
 <context>
     <name>MappingPage</name>
     <message>
-        <location filename="mappingpage.cpp" line="24"/>
+        <location filename="mappingpage.cpp" line="26"/>
         <source>Organizing and structuring data</source>
         <oldsource>Daten organisieren &amp; strukturieren</oldsource>
         <translation>Daten organisieren und strukturieren</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="44"/>
+        <location filename="mappingpage.cpp" line="47"/>
         <source>Mapping</source>
         <translation>Abbildung</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="48"/>
+        <location filename="mappingpage.cpp" line="51"/>
         <source>&lt;b&gt;Instructions:&lt;/b&gt;&lt;br&gt;1. Create folders for your structure on the right-hand side.&lt;br&gt;2. Select files on the left and drag them into a folder using &lt;b&gt;&amp;gt;&lt;/b&gt;.</source>
         <oldsource>&lt;b&gt;Instructions:&lt;/b&gt;&lt;br&gt;1. Create groups on the right for your structure.&lt;br&gt;2. Select files on the left and drag them into a group using &lt;b&gt;&amp;gt;&lt;/b&gt;.</oldsource>
         <translation>&lt;b&gt;Anleitung:&lt;/b&gt;&lt;br&gt;1. Erstelle rechts Ordber für deine Struktur.&lt;br&gt;2. Wähle links Dateien aus und schiebe sie mit &lt;b&gt;&amp;gt;&lt;/b&gt; in einen Ordner.</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="56"/>
+        <location filename="mappingpage.cpp" line="59"/>
         <source>Search...</source>
         <translation>Suchen...</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="60"/>
+        <location filename="mappingpage.cpp" line="63"/>
         <source>Open structure</source>
         <translation>Struktur öffnen</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="76"/>
-        <location filename="mappingpage.cpp" line="329"/>
+        <location filename="mappingpage.cpp" line="79"/>
+        <location filename="mappingpage.cpp" line="330"/>
         <source>New group</source>
         <translation>Neue Gruppe</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="158"/>
+        <location filename="mappingpage.cpp" line="161"/>
         <source>Source (verified)</source>
         <translation>Quelle (verifiziert)</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="159"/>
+        <location filename="mappingpage.cpp" line="162"/>
         <source>Target structure</source>
         <translation>Zielstruktur</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="421"/>
+        <location filename="mappingpage.cpp" line="420"/>
         <source>Reset mapping</source>
         <translation>Zuordnung zurücksetzen</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="422"/>
+        <location filename="mappingpage.cpp" line="421"/>
         <source>Do you want to delete the entire structure and move all the files back to the left side?</source>
         <translation>Möchtest du die gesamte Struktur löschen und alle Dateien zurück auf die linke Seite schieben?</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="471"/>
+        <location filename="mappingpage.cpp" line="473"/>
         <source>files left over</source>
         <translation>übriggebliebene Dateien</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="472"/>
+        <location filename="mappingpage.cpp" line="474"/>
         <source>There are %1 files remaining in the list. These will not be imported..
 
 Do you want to continue?</source>
@@ -540,27 +572,27 @@ Do you want to continue?</source>
 Möchten Sie fortfahren?</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="506"/>
+        <location filename="mappingpage.cpp" line="507"/>
         <source>Empty import</source>
         <translation>Leerer Import</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="507"/>
+        <location filename="mappingpage.cpp" line="508"/>
         <source>No files were selected for import. Continue?</source>
         <translation>Es wurden keine Dateien zum Import ausgewählt. Fortfahren?</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="518"/>
+        <location filename="mappingpage.cpp" line="519"/>
         <source>Import files...</source>
         <translation>Dateien importieren...</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="518"/>
+        <location filename="mappingpage.cpp" line="519"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="mappingpage.cpp" line="79"/>
+        <location filename="mappingpage.cpp" line="82"/>
         <source>Reset</source>
         <translation>Zurücksetzen</translation>
     </message>
@@ -590,161 +622,299 @@ Path: %1</source>
 Pfad: %1</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="19"/>
-        <location filename="sonarmenuhelper.h" line="31"/>
+        <location filename="sonarmenuhelper.h" line="23"/>
+        <location filename="sonarmenuhelper.h" line="26"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="25"/>
+        <location filename="sonarmenuhelper.h" line="30"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="30"/>
+        <location filename="sonarmenuhelper.h" line="25"/>
         <source>&amp;Import</source>
         <translation>&amp;Import</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="34"/>
+        <location filename="sonarmenuhelper.h" line="27"/>
         <source>&amp;Directory</source>
         <translation>&amp;Verzeichnis</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="47"/>
+        <location filename="sonarmenuhelper.h" line="35"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="sonarmenuhelper.h" line="56"/>
+        <location filename="sonarmenuhelper.h" line="38"/>
+        <source>&amp;About</source>
+        <translation>&amp;Über</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="45"/>
         <source>About &amp;Qt</source>
         <translation>Über &amp;Qt</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="59"/>
+        <source>About SonarPractice</source>
+        <translation>Über SonarPractice</translation>
+    </message>
+</context>
+<context>
+    <name>ReminderDialog</name>
+    <message>
+        <location filename="reminderdialog.cpp" line="15"/>
+        <source>Add Practice Reminder</source>
+        <translation>Übungserinnerung hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="44"/>
+        <source>Repeat Daily</source>
+        <translation>Täglich wiederholen</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="45"/>
+        <source>Repeat Weekly</source>
+        <translation>Wöchentlich wiederholen</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="46"/>
+        <source>Repeat Monthly</source>
+        <translation>Monatlich wiederholen</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="49"/>
+        <source>None</source>
+        <translation>Keiner</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="50"/>
+        <source>Monday</source>
+        <translation>Montag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="51"/>
+        <source>Tuesday</source>
+        <translation>Dienstag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="52"/>
+        <source>Wednesday</source>
+        <translation>Mittwoch</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="53"/>
+        <source>Thursday</source>
+        <translation>Donnerstag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="54"/>
+        <source>Friday</source>
+        <translation>Freitag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="55"/>
+        <source>Saturday</source>
+        <translation>Samstag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="56"/>
+        <source>Sunday</source>
+        <translation>Sonntag</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="62"/>
+        <source>Song:</source>
+        <translation>Lied:</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="63"/>
+        <source>Start Bar:</source>
+        <translation>Start Bar:</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="64"/>
+        <source>End Bar:</source>
+        <translation>End Bar:</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="65"/>
+        <source>Target BPM:</source>
+        <translation>Ziel-BPM:</translation>
+    </message>
+    <message>
+        <location filename="reminderdialog.cpp" line="69"/>
+        <source>Or on Weekday:</source>
+        <translation>Oder an Wochentagen:</translation>
     </message>
 </context>
 <context>
     <name>ReviewPage</name>
     <message>
-        <location filename="reviewpage.cpp" line="38"/>
+        <location filename="reviewpage.cpp" line="31"/>
         <source>Examination</source>
         <translation>Überprüfung</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="39"/>
+        <location filename="reviewpage.cpp" line="32"/>
         <source>Choose which files to import.</source>
         <translation>Wähle aus, welche Dateien importiert werden sollen.</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="56"/>
+        <location filename="reviewpage.cpp" line="110"/>
         <source>Open structure</source>
         <translation>Struktur öffnen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="57"/>
+        <location filename="reviewpage.cpp" line="111"/>
         <source>Expert mode</source>
         <translation>Experten modus</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="58"/>
+        <location filename="reviewpage.cpp" line="112"/>
         <source>Enables file deletion and direct editing of indexed files!</source>
         <translation>aktiviert löschen von Dateien und direktes Bearbeiten der indexierten Dateien!</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="65"/>
+        <location filename="reviewpage.cpp" line="119"/>
         <source>Filter</source>
         <translation>Filter</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="67"/>
+        <location filename="reviewpage.cpp" line="121"/>
         <source>All</source>
         <translation>Alle</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="68"/>
+        <location filename="reviewpage.cpp" line="122"/>
         <source>Errors</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="69"/>
+        <location filename="reviewpage.cpp" line="123"/>
         <source>Duplicates</source>
         <translation>Duplikate</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="80"/>
+        <location filename="reviewpage.cpp" line="130"/>
         <source>Search for artists, songs, or paths...</source>
         <translation>Suche nach Künstlern, Songs oder Pfaden ...</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="160"/>
         <source>Index: %1</source>
-        <translation>Indexiere: %1</translation>
+        <translation type="vanished">Indexiere: %1</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="167"/>
         <source>%1 Data scanned ... </source>
-        <translation>%1 Daten gescannt ... </translation>
+        <translation type="vanished">%1 Daten gescannt ... </translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="664"/>
+        <location filename="reviewpage.cpp" line="264"/>
+        <source>Duplicate protection</source>
+        <translation>Duplikatschutz</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="265"/>
+        <source>You have already selected a copy of this file.
+Only one duplicate can be imported per group.</source>
+        <translation>Sie haben bereits eine Kopie dieser Datei ausgewählt.
+Pro Gruppe kann nur ein Duplikat importiert werden.</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="352"/>
+        <source>Scanning files: %1</source>
+        <translation>Dateien werden gescannt: %1</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="358"/>
+        <source>Scan complete. %1 files found. Data Size: %2</source>
+        <translation>Scan abgeschlossen. %1 Dateien gefunden. Datengröße: %2</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="407"/>
+        <source>Please check your selection for duplicate or corrupted files.</source>
+        <translation>Bitte überprüfen Sie Ihre Auswahl auf doppelte oder beschädigte Dateien.</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="490"/>
+        <source>Free Space</source>
+        <translation>Freier Platz</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="591"/>
         <source>Import summary</source>
         <translation>Zusammenfassung des Imports</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="665"/>
+        <location filename="reviewpage.cpp" line="592"/>
         <source>In total:</source>
         <translation>Gesamt:</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="666"/>
+        <location filename="reviewpage.cpp" line="593"/>
         <source>Take over:</source>
         <translation>Übernehmen:</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="683"/>
+        <location filename="reviewpage.cpp" line="594"/>
+        <source>Corrupted files found (were skipped):</source>
+        <translation>Beschädigte Dateien gefunden (wurden übersprungen):</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="595"/>
+        <source>Found duplicate files (managed by you):</source>
+        <translation>Doppelte Dateien gefunden (von Ihnen verwaltet):</translation>
+    </message>
+    <message>
+        <location filename="reviewpage.cpp" line="610"/>
         <source>Do you want to accept the selection as is?</source>
         <translation>Möchtest du die Auswahl so übernehmen?</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="692"/>
+        <location filename="reviewpage.cpp" line="619"/>
         <source>Take over</source>
         <translation>Übernehmen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="693"/>
+        <location filename="reviewpage.cpp" line="620"/>
         <source>Correct</source>
         <translation>Korrigieren</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="731"/>
+        <location filename="reviewpage.cpp" line="700"/>
         <source>Jump to duplicate...</source>
         <translation>Springe zu Duplikat...</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="869"/>
+        <location filename="reviewpage.cpp" line="810"/>
         <source>Remove from list</source>
         <translation>Aus Liste entfernen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="870"/>
+        <location filename="reviewpage.cpp" line="811"/>
         <source>Do you really want to remove %1 &lt;b&gt;&apos;%2&apos;&lt;/b&gt; from this view?&lt;br&gt;&lt;br&gt;&lt;small&gt;The files remain on the hard drive, but are ignored during this import process.&lt;/small&gt;</source>
         <translation>Möchtest du %1 &lt;b&gt;&apos;%2&apos;&lt;/b&gt; wirklich aus dieser Ansicht entfernen?&lt;br&gt;&lt;br&gt;&lt;small&gt;Die Dateien bleiben auf der Festplatte erhalten, werden aber in diesem Import-Vorgang ignoriert.&lt;/small&gt;</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="872"/>
+        <location filename="reviewpage.cpp" line="813"/>
         <source>the folder</source>
         <translation>den Ordner</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="872"/>
+        <location filename="reviewpage.cpp" line="813"/>
         <source>the file</source>
         <translation>die Datei</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="924"/>
+        <location filename="reviewpage.cpp" line="859"/>
         <source>Data loss warning</source>
         <translation>Datenverlust-Warnung</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="925"/>
+        <location filename="reviewpage.cpp" line="860"/>
         <source>The folder contains %1 files that were NOT captured by the scanner (e.g., ZIP files, images, text):
 
 %2
@@ -753,98 +923,97 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation>Der Ordner enthält %1 Dateien, die NICHT vom Scanner erfasst wurden (z.B. ZIP, Bilder, Texte): %2\n\nMöchtest du den Ordner und ALLE darin enthaltenen Dateien wirklich löschen?</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="934"/>
+        <location filename="reviewpage.cpp" line="869"/>
         <source>Confirm deletion</source>
         <translation>Löschen bestätigen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="935"/>
+        <location filename="reviewpage.cpp" line="870"/>
         <source>Do you really want to move %1 to the trash?
 
 %2</source>
         <translation>Möchtest du %1 wirklich in den Papierkorb verschieben?\n\n%2</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="957"/>
+        <location filename="reviewpage.cpp" line="892"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="957"/>
+        <location filename="reviewpage.cpp" line="892"/>
         <source>The file could not be deleted.</source>
         <translation>Datei konnte nicht gelöscht werden.</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="968"/>
+        <location filename="reviewpage.cpp" line="902"/>
         <source>Open directory: %1</source>
-        <translation>Öffne Verueichnis: %1</translation>
+        <translation>Öffne Verzeichnis: %1</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="972"/>
+        <location filename="reviewpage.cpp" line="906"/>
         <source>Open file: %1</source>
         <translation>Öffne Datei: %1</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="980"/>
+        <location filename="reviewpage.cpp" line="914"/>
         <source>Removes the entry only from this view. The file itself is not deleted.</source>
         <translation>Entfernt den Eintrag nur aus dieser Ansicht. Die Datei wird nicht gelöscht.</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="981"/>
+        <location filename="reviewpage.cpp" line="915"/>
         <source>Remove from list: %1</source>
         <translation>Aus Liste verwerfen: %1</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="990"/>
+        <location filename="reviewpage.cpp" line="921"/>
+        <source>Delete %1</source>
+        <translation>Lösche %1</translation>
+    </message>
+    <message>
         <source>Delete duplicate %1</source>
-        <translation>Duplikat %1 löschen</translation>
+        <translation type="vanished">Duplikat %1 löschen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="995"/>
         <source>Delete directory %1</source>
-        <translation>Verzeichnis %1 löschen</translation>
+        <translation type="vanished">Verzeichnis %1 löschen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="1006"/>
+        <location filename="reviewpage.cpp" line="929"/>
         <source>Select all</source>
         <translation>Alles auswählen</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="1007"/>
+        <location filename="reviewpage.cpp" line="932"/>
         <source>Clear selection</source>
         <translation>Auswahl aufheben</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="161"/>
         <source>Scanning ...</source>
-        <translation>Scannen ...</translation>
+        <translation type="vanished">Scannen ...</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="184"/>
         <source>Scan complete. %1 files found.</source>
         <oldsource>Scan abgeschlossen. %1 Dateien gefunden.</oldsource>
-        <translation>Scan abgeschlossen. %1 Dateien gefunden.</translation>
+        <translation type="vanished">Scan abgeschlossen. %1 Dateien gefunden.</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="667"/>
         <source>Defect:</source>
         <oldsource>Defekt:</oldsource>
-        <translation>Defekt:</translation>
+        <translation type="vanished">Defekt:</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="668"/>
         <source>Duplicates:</source>
         <oldsource>Dubletten:</oldsource>
-        <translation>Duplikate:</translation>
+        <translation type="vanished">Duplikate:</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="679"/>
+        <location filename="reviewpage.cpp" line="606"/>
         <source>Attention: No duplicate was selected in %1 group(s):</source>
         <oldsource>Achtung: In %1 Gruppe(n) wurde kein Duplikat gewählt:</oldsource>
         <translation>Achtung: In %1 Gruppe(n) wurde kein Duplikat gewählt:</translation>
     </message>
     <message>
-        <location filename="reviewpage.cpp" line="687"/>
+        <location filename="reviewpage.cpp" line="614"/>
         <source>Confirm import</source>
         <oldsource>Import bestätigen</oldsource>
         <translation>Import bestätigen</translation>
@@ -857,33 +1026,32 @@ Do you really want to delete the folder and ALL the files it contains?</source>
 <context>
     <name>SetupWizard</name>
     <message>
-        <location filename="setupwizard.cpp" line="26"/>
-        <location filename="setupwizard.cpp" line="30"/>
+        <location filename="setupwizard.cpp" line="52"/>
         <source>About Qt</source>
         <translation>Über Qt</translation>
     </message>
     <message>
-        <location filename="setupwizard.cpp" line="39"/>
+        <location filename="setupwizard.cpp" line="86"/>
         <source>Name</source>
         <translation>Name</translation>
     </message>
     <message>
-        <location filename="setupwizard.cpp" line="39"/>
+        <location filename="setupwizard.cpp" line="86"/>
         <source>Size</source>
         <translation>Größe</translation>
     </message>
     <message>
-        <location filename="setupwizard.cpp" line="39"/>
+        <location filename="setupwizard.cpp" line="86"/>
         <source>Group</source>
         <translation>Gruppe</translation>
     </message>
     <message>
-        <location filename="setupwizard.cpp" line="51"/>
+        <location filename="setupwizard.cpp" line="47"/>
         <source>SonarPractice Setup Assistant</source>
         <translation>SonarPractice Einrichtungs-Assistent</translation>
     </message>
     <message>
-        <location filename="setupwizard.cpp" line="39"/>
+        <location filename="setupwizard.cpp" line="86"/>
         <source>Status</source>
         <translation>Status</translation>
     </message>
@@ -891,85 +1059,75 @@ Do you really want to delete the folder and ALL the files it contains?</source>
 <context>
     <name>SonarLessonPage</name>
     <message>
-        <location filename="sonarlessonpage.cpp" line="49"/>
         <source>Daily Journal</source>
-        <translation>Daily Journal</translation>
+        <translation type="vanished">Daily Journal</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="60"/>
         <source>Practice Entry - %1</source>
-        <translation>Übungseintrag - %1</translation>
+        <translation type="vanished">Übungseintrag - %1</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="65"/>
         <source>Song information</source>
-        <translation>Songinformationen</translation>
+        <translation type="vanished">Songinformationen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="71"/>
         <source>Tuning: - </source>
-        <translation>Tuning: - </translation>
+        <translation type="vanished">Tuning: - </translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="78"/>
-        <source>Song (GuitarPro):</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="sonarlessonpage.cpp" line="81"/>
+        <location filename="sonarlessonpage.cpp" line="361"/>
+        <location filename="sonarlessonpage.cpp" line="557"/>
         <source>Tempo:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="92"/>
-        <location filename="sonarlessonpage.cpp" line="299"/>
+        <location filename="sonarlessonpage.cpp" line="519"/>
+        <location filename="sonarlessonpage.cpp" line="834"/>
+        <location filename="sonarlessonpage.cpp" line="1154"/>
         <source>Start Timer</source>
         <translation>Timer starten</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="96"/>
         <source>Open song</source>
         <oldsource>Song öffnen</oldsource>
-        <translation>Song öffnen</translation>
+        <translation type="vanished">Song öffnen</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="102"/>
         <source>Notes:</source>
         <oldsource>Notizen:</oldsource>
-        <translation>Notizen:</translation>
+        <translation type="vanished">Notizen:</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="126"/>
         <source>Takt from</source>
         <oldsource>Takt von</oldsource>
         <translation>Takt von</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="127"/>
         <source>Tempo (BPM)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
         <source>Repetitions</source>
-        <translation>Wiederholungen</translation>
+        <translation type="vanished">Wiederholungen</translation>
     </message>
     <message>
         <source>duration (Min)</source>
         <translation type="vanished">Dauer (Min.)</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="126"/>
         <source>Takt to</source>
         <translation>Takt bis</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="126"/>
         <source>Day</source>
         <translation>Tag</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="111"/>
+        <location filename="sonarlessonpage.cpp" line="127"/>
         <source>Duration (Min)</source>
         <translation>Dauer (Min.)</translation>
     </message>
@@ -978,97 +1136,384 @@ Do you really want to delete the folder and ALL the files it contains?</source>
         <translation type="vanished">Zeige alle einträge</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="152"/>
+        <location filename="sonarlessonpage.cpp" line="775"/>
         <source>Save</source>
         <translation>Speichern</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="247"/>
+        <location filename="sonarlessonpage.cpp" line="956"/>
         <source>Training sessions at %1</source>
         <translation>Trainingseinheiten bei %1</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="289"/>
+        <location filename="sonarlessonpage.cpp" line="1144"/>
         <source>Stop Timer</source>
         <translation>Timer beenden</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="513"/>
+        <location filename="sonarlessonpage.h" line="112"/>
         <source>Successfully saved</source>
         <translation>Erfolgreich gespeichert</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="531"/>
+        <location filename="sonarlessonpage.h" line="113"/>
+        <source>Saved failed</source>
+        <translation>Speichern fehlgeschlagen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="113"/>
+        <source>Practice Table</source>
+        <translation>Übungstabelle</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="127"/>
+        <source>Success Streak</source>
+        <translation>Erfolgsserie</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="131"/>
+        <source>Date of the exercise session</source>
+        <translation>Datum der Übungseinheit</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="132"/>
+        <source>Starting beat number of the section</source>
+        <translation>Beginn des Abschnitts</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="133"/>
+        <source>End bar number of the section</source>
+        <translation>End Bar des Abschnitts</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="134"/>
+        <source>Set speed in beats per minute</source>
+        <translation>Geschwindigkeit in Schlägen pro Minute einstellen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="136"/>
+        <source>Maximum number of consecutive error-free repetitions.
+This number shows how confidently you have mastered the section.</source>
+        <translation>Maximale Anzahl aufeinanderfolgender fehlerfreier Wiederholungen.
+Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="140"/>
+        <source>Total duration of this exercise unit</source>
+        <translation>Gesamtdauer dieser Übungseinheit</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="162"/>
+        <source>Add Row</source>
+        <translation>Zeile hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="166"/>
+        <source>Remove Row</source>
+        <translation>Zeile entfernen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="217"/>
+        <source>Calendar</source>
+        <translation>Kalender</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="223"/>
+        <source>Today&apos;s Reminders</source>
+        <translation>Heutige Erinnerungen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="231"/>
+        <source>Song</source>
+        <translation>Song</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="231"/>
+        <source>Range</source>
+        <translation>Range</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="231"/>
+        <source>BPM</source>
+        <translation>BPM</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="231"/>
+        <source>Status</source>
+        <translation>Status</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="267"/>
+        <source>Song Information</source>
+        <translation>Songinformationen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="279"/>
+        <source>Selected Repertoire:</source>
+        <translation>Ausgewähltes Repertoire:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="322"/>
+        <source>GuitarPro Filter</source>
+        <translation>GuitarPro-Filter</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="323"/>
+        <source>Audio Filter</source>
+        <translation>Audiofilter</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="324"/>
+        <source>Video Filter</source>
+        <translation>Videofilter</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="325"/>
+        <source>Dokument Filter</source>
+        <translation>Dokumentenfilter</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="343"/>
+        <source>Artist:</source>
+        <translation>Künstler:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="352"/>
+        <source>Title:</source>
+        <translation>Titel:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="370"/>
+        <source>Tuning:</source>
+        <translation>Tuning:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="379"/>
+        <source>Open Media</source>
+        <translation>Offene Media</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="384"/>
+        <source>Edit Entry</source>
+        <translation>Eintrag bearbeiten</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="506"/>
+        <source>Training</source>
+        <translation>Training</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="549"/>
+        <source>Add Reminder</source>
+        <translation>Erinnerung hinzufügen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="553"/>
+        <source>Beat of:</source>
+        <translation>Beat von:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="555"/>
+        <source>Beat to:</source>
+        <translation>Beat bis:</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="615"/>
+        <location filename="sonarlessonpage.cpp" line="1091"/>
+        <source>Edit Reminder</source>
+        <translation>Edit Reminder</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="649"/>
+        <source>Done</source>
+        <translation>Erledigt</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="649"/>
+        <source>Pending</source>
+        <translation>Ausstehend</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="669"/>
+        <source>Notice</source>
+        <translation>Notiz</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="682"/>
+        <source>Bold (Ctrl+B)</source>
+        <translation>Bold (Ctrl+B)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="686"/>
+        <source>Italic (Ctrl+I)</source>
+        <translation>Italic (Ctrl+I)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="690"/>
+        <source>Heading 1 (Ctrl+1)</source>
+        <translation>Überschrift 1 (Strg+1)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="694"/>
+        <source>Heading 2 (Ctrl+2)</source>
+        <translation>Überschrift 2 (Strg+2)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="698"/>
+        <source>List (Ctrl+L)</source>
+        <translation>Liste (Strg+L)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="702"/>
+        <source>Task List (Ctrl+Enter)</source>
+        <translation>Aufgabenliste (Strg+Eingabe)</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="715"/>
+        <source>Write your practice notes here...</source>
+        <translation>Schreibe hier deine Übungsnotizen auf...</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="792"/>
+        <source>Open linked documents and files</source>
+        <oldsource>Open linked PDF files</oldsource>
+        <translation>Verknüpfte Dokumentdateien öffnen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="795"/>
+        <source>Open linked video files</source>
+        <translation>Verlinkte Videodateien öffnen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="798"/>
+        <source>Open linked audio tracks</source>
+        <translation>Verknüpfte Audiospuren öffnen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="916"/>
+        <source>Load full history</source>
+        <translation>Vollständigen Verlauf laden</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1088"/>
+        <source>Select Entry</source>
+        <translation>Eintrag auswählen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1089"/>
+        <source>Open Entry</source>
+        <translation>Offener Eintrag</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1093"/>
+        <source>Delete Reminder</source>
+        <translation>Erinnerung löschen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1114"/>
+        <source>Confirm deletion</source>
+        <translation>Löschen bestätigen</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1115"/>
+        <source>Do you really want to delete this reminder?</source>
+        <translation>Möchtest du diese Erinnerung wirklich löschen?</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1421"/>
         <source>What did you achieve today?</source>
         <translation>Was hast du heute erreicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="532"/>
+        <location filename="sonarlessonpage.cpp" line="1422"/>
         <source>What came easily to you?</source>
         <translation>Was fiel dir leicht?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="533"/>
+        <location filename="sonarlessonpage.cpp" line="1423"/>
         <source>What didn&apos;t work so well?</source>
         <translation>Was hat nicht so gut funktioniert?</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="534"/>
+        <location filename="sonarlessonpage.cpp" line="1424"/>
         <source>What will you pay attention to tomorrow?</source>
         <translation>Worauf wirst du morgen erreichen?</translation>
+    </message>
+    <message>
+        <location filename="sonarlessonpage.cpp" line="1735"/>
+        <source>No data available. Press &apos;Start Timer&apos; to begin...</source>
+        <translation>Keine Daten verfügbar. Drücken Sie „Timer starten“, um zu beginnen…</translation>
     </message>
     <message>
         <source>Daily goal: %v / %m Min</source>
         <oldsource>Tagesziel: %v / %m Min</oldsource>
         <translation type="vanished">Tagesziel: %v / %m Min</translation>
     </message>
+</context>
+<context>
+    <name>SonarMenuHelper</name>
     <message>
-        <location filename="sonarlessonpage.cpp" line="133"/>
-        <source>PDF</source>
-        <translation></translation>
+        <location filename="sonarmenuhelper.h" line="66"/>
+        <source>Version</source>
+        <translation>Version</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="134"/>
-        <source>Video</source>
-        <translation></translation>
+        <location filename="sonarmenuhelper.h" line="67"/>
+        <source>Build env</source>
+        <translation>Build-Umgebung</translation>
     </message>
     <message>
-        <location filename="sonarlessonpage.cpp" line="135"/>
-        <source>Audio</source>
+        <location filename="sonarmenuhelper.h" line="68"/>
+        <source>Qt version</source>
+        <translation>Qt-Version</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="69"/>
+        <source>Build time</source>
+        <translation>Bauzeit</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="70"/>
+        <source>OS</source>
+        <translation>OS</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="71"/>
+        <source>I hope SonarPractice helps you with your daily music exercises!</source>
+        <translation>Ich hoffe, SonarPractice hilft dir bei deinen täglichen Musikübungen!</translation>
+    </message>
+    <message>
+        <location filename="sonarmenuhelper.h" line="72"/>
+        <source>Buy me a coffee</source>
         <translation></translation>
     </message>
 </context>
 <context>
     <name>SongEditDialog</name>
     <message>
-        <location filename="songeditdialog.cpp" line="8"/>
-        <source>Song-Metadaten bearbeiten</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="songeditdialog.cpp" line="32"/>
-        <source>Titel:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="songeditdialog.cpp" line="33"/>
-        <source>Künstler:</source>
-        <translation type="unfinished"></translation>
+        <location filename="songeditdialog.cpp" line="11"/>
+        <source>Edit song metadata</source>
+        <translation>Song-Metadaten bearbeiten</translation>
     </message>
     <message>
         <location filename="songeditdialog.cpp" line="34"/>
-        <source>Stimmung:</source>
-        <translation type="unfinished"></translation>
+        <source>Titel:</source>
+        <translation>Titel:</translation>
     </message>
     <message>
         <location filename="songeditdialog.cpp" line="35"/>
-        <source>Tempo (BPM):</source>
-        <translation type="unfinished"></translation>
+        <source>Artist:</source>
+        <translation>Künstler:</translation>
     </message>
     <message>
         <location filename="songeditdialog.cpp" line="36"/>
-        <source>Takte gesamt:</source>
-        <translation type="unfinished"></translation>
+        <source>Tuning:</source>
+        <translation>Tuning:</translation>
+    </message>
+    <message>
+        <location filename="songeditdialog.cpp" line="37"/>
+        <source>BPM:</source>
+        <translation>BPM:</translation>
     </message>
 </context>
 <context>

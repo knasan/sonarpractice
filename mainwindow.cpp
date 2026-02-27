@@ -139,10 +139,10 @@ void MainWindow::reloadStyle() {
 
 void MainWindow::onImportFileTriggered() {
 
-    QString audioFilter = formatFilter(tr("Audio"), FileUtils::getAudioFormats());
+    QString audioFilter = formatFilter(tr("Audios"), FileUtils::getAudioFormats());
     QString gpFilter = formatFilter(tr("Guitar Pro"), FileUtils::getGuitarProFormats());
-    QString pdfFilter = formatFilter(tr("PDF"), FileUtils::getDocFormats());
-    QString videoFilter = formatFilter(tr("Video"), FileUtils::getVideoFormats());
+    QString pdfFilter = formatFilter(tr("Documents"), FileUtils::getDocFormats());
+    QString videoFilter = formatFilter(tr("Videos"), FileUtils::getVideoFormats());
     QString allFilter = tr("All files (*.*)");
 
     QString allSupported = formatFilter(tr("All Supported"), FileUtils::getAudioFormats() + FileUtils::getGuitarProFormats() + FileUtils::getDocFormats() + FileUtils::getVideoFormats());

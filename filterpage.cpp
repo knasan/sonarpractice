@@ -54,12 +54,10 @@ void FilterPage::setupLayout() {
 
     cbManageData_m = new QCheckBox(tr("Manage"));
     cbManageData_m->setObjectName("manageData");
-    // TODO: Aktivieren Sie die Dateiverwaltung; standardmäßig werden alle Daten in das Zielverzeichnis kopiert, es sei denn, die Option „Dateien verschieben“ ist aktiviert.
     cbManageData_m->setToolTip(tr("Enable file management; by default, all data will be copied to the target directory unless 'move files' is enabled."));
 
     cbMoveFiles_m = new QCheckBox(tr("Move files"));
     cbMoveFiles_m->setObjectName("moveFiles");
-    // TODO: Aktiviert das Verschieben von Dateien
     cbMoveFiles_m->setToolTip(tr("Enables file moving"));
 
     dataManagmentLayout->addWidget(cbManageData_m);
