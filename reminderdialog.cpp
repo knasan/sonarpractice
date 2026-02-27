@@ -42,6 +42,7 @@ ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int pr
     bpmSpin_m->setValue(practiceBpm);
 
     dailyCheck_m = new QCheckBox(tr("Repeat Daily"), this);
+    weekleyCheck_m = new QCheckBox(tr("Repeat Weekly"), this);
     monthlyCheck_m = new QCheckBox(tr("Repeat Monthly"), this);
 
     weekdayCombo_m = new QComboBox(this);
@@ -63,6 +64,7 @@ ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int pr
     formLayout->addRow(tr("End Bar:"), endBarSpin_m);
     formLayout->addRow(tr("Target BPM:"), bpmSpin_m);
     formLayout->addRow(dailyCheck_m);
+    formLayout->addRow(weekleyCheck_m);
     formLayout->addRow(monthlyCheck_m);
     formLayout->addRow(tr("Or on Weekday:"), weekdayCombo_m);
 
@@ -72,7 +74,9 @@ ReminderDialog::ReminderDialog(QWidget *parent, int startBar, int endBar, int pr
 
     // 2. Connect all relevant widgets to the validation
     connect(dailyCheck_m, &QCheckBox::toggled, this, &ReminderDialog::updateOkButtonState);
+    connect(weekleyCheck_m, &QCheckBox::toggled, this, &ReminderDialog::updateOkButtonState);
     connect(monthlyCheck_m, &QCheckBox::toggled, this, &ReminderDialog::updateOkButtonState);
+
     connect(weekdayCombo_m,
             QOverload<int>::of(&QComboBox::currentIndexChanged),
             this,
@@ -106,10 +110,12 @@ ReminderDialog::ReminderData ReminderDialog::getResults() const
     res.targetBpm = bpmSpin_m->value();
 
     res.isDaily = dailyCheck_m->isChecked();
+    res.isWeekly = weekleyCheck_m->isChecked();
     res.isMonthly = monthlyCheck_m->isChecked();
+
     res.weekday = (weekdayCombo_m->currentIndex() > 0) ? weekdayCombo_m->currentIndex() : -1;
 
-    if (!res.isDaily && !res.isMonthly && res.weekday == -1) {
+    if (!res.isDaily && !res.isWeekly && !res.isMonthly && res.weekday == -1) {
         res.reminderDate = dateEdit_m->date().toString("yyyy-MM-dd");
     } else {
         res.reminderDate = "";
@@ -121,10 +127,11 @@ ReminderDialog::ReminderData ReminderDialog::getResults() const
 void ReminderDialog::updateOkButtonState()
 {
     bool hasDaily = dailyCheck_m->isChecked();
+    bool hasWeekly = (weekleyCheck_m && weekleyCheck_m->isChecked());
     bool hasMonthly = (monthlyCheck_m && monthlyCheck_m->isChecked());
     bool hasWeekday = (weekdayCombo_m->currentIndex() > 0);
 
-    bool hasInterval = hasDaily || hasMonthly || hasWeekday;
+    bool hasInterval = hasDaily || hasWeekly || hasMonthly || hasWeekday;
 
     bool finalValid = false;
 
@@ -147,6 +154,7 @@ void ReminderDialog::setReminderData(const ReminderDialog::ReminderData &data)
     bpmSpin_m->setValue(data.targetBpm);
 
     dailyCheck_m->setChecked(data.isDaily);
+    weekleyCheck_m->setChecked(data.isWeekly);
     monthlyCheck_m->setChecked(data.isMonthly);
 
     if (data.weekday >= 0) {

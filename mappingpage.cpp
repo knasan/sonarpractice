@@ -17,7 +17,6 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <unistd.h>
 
 /**
  * @brief Constructor of the MappingPage.
@@ -543,7 +542,6 @@ bool MappingPage::validatePage() {
             if(!isRestart) {
                 isRestart = true;
                 wiz()->restartApp();
-                _exit(0);
             }
             return true;
         }

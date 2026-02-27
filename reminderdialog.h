@@ -20,6 +20,7 @@ public:
         int endBar;
         int targetBpm;
         bool isDaily;
+        bool isWeekly;
         bool isMonthly;
         int weekday; // 0=None, 1=Mon...7=Sun
         QString reminderDate;
@@ -34,6 +35,7 @@ private:
     void updateOkButtonState();
     QSpinBox* startBarSpin_m, *endBarSpin_m, *bpmSpin_m;
     QCheckBox* dailyCheck_m;
+    QCheckBox* weekleyCheck_m;
     QCheckBox* monthlyCheck_m;
     QComboBox* weekdayCombo_m;
     QDateEdit* dateEdit_m;

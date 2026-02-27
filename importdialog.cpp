@@ -133,6 +133,7 @@ void ImportDialog::setupTargetRoot() {
     // Get the information from the database / settings.
     dataBasePath_m = DatabaseManager::instance().getManagedPath();
     isManaged_m = DatabaseManager::instance().getSetting("is_managed", QString("false")) == "true";
+    isMoved_m = DatabaseManager::instance().getSetting("is_moved", QString("false")) == "true";
 
     QString rootDisplay;
     if (isManaged_m) {

@@ -37,6 +37,8 @@
 #include <QCompleter>
 #include <QMessageBox>
 #include <QDebug>
+#include <QEvent>
+#include <QMouseEvent>
 
 // Move these to a separate header file or namespace
 namespace PracticeTable {
@@ -73,9 +75,6 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     initialLoadFromDb();
     updateButtonState();
     onSongChanged(getCurrentSongId());
-    updateReminderTable(QDate::currentDate());
-    updateEmptyTableMessage();
-    loadJournalForDay(getCurrentSongId(), calendar_m->selectedDate());
 }
 
 void SonarLessonPage::setupUI()
@@ -599,6 +598,7 @@ void SonarLessonPage::onAddReminderClicked()
                                      res.endBar,
                                      res.targetBpm,
                                      res.isDaily,
+                                     res.isWeekly,
                                      res.isMonthly,
                                      res.weekday,
                                      res.reminderDate)) {
@@ -714,6 +714,7 @@ void SonarLessonPage::setupNotesSection(QVBoxLayout *contentLayout)
     notesEdit_m->setObjectName("notesTextEdit");
     notesEdit_m->setPlaceholderText(tr("Write your practice notes here..."));
     notesEdit_m->setAcceptRichText(false);
+    notesEdit_m->installEventFilter(this);
 
     auto *notesLayout = new QVBoxLayout();
     notesLayout->setSpacing(5);
@@ -740,6 +741,23 @@ QPushButton *SonarLessonPage::createFormattingButton(const QString &objectName,
     button->setToolTip(tooltip);
     button->setFixedWidth(35);
     return button;
+}
+
+bool SonarLessonPage::eventFilter(QObject *obj, QEvent *event) {
+    if(isLoading_m) return false;
+    if (obj == notesEdit_m && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        if(isPlaceholderActive_m) {
+            if (mouseEvent->button() == Qt::LeftButton) {
+                if(notesEdit_m->isReadOnly()) {
+                    notesEdit_m->clear();
+                    notesEdit_m->setReadOnly(false);
+                }
+                return true; // Event als verarbeitet markieren
+            }
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }
 
 void SonarLessonPage::setupFooterSection(QVBoxLayout *contentLayout)
@@ -914,6 +932,7 @@ void SonarLessonPage::sitesConnects() {
         int songId = songSelector_m->currentData().toInt();
 
         // load the data for this combination
+        notesEdit_m->clear();
         loadJournalForDay(songId, selectedDate);
         updateReminderTable(selectedDate);
     });
@@ -1209,6 +1228,9 @@ void SonarLessonPage::onSongChanged(int index) {
     setupResourceButton(btnAudioIcon_m, audioFiles);
     setupResourceButton(btnVideoIcon_m, videoFiles);
 
+    updateReminderTable(QDate::currentDate());
+    loadJournalForDay(getCurrentSongId(), calendar_m->selectedDate());
+
     updateEmptyTableMessage();
 }
 
@@ -1364,6 +1386,7 @@ void SonarLessonPage::onSaveClicked() {
     updateButtonState();
     updateCalendarHighlights();
     updateReminderTable(calendar_m->selectedDate());
+    loadTableDataForDay(getCurrentSongId(), calendar_m->selectedDate());
 }
 
 void SonarLessonPage::showSaveMessage(QString message) {
@@ -1407,6 +1430,8 @@ void SonarLessonPage::dailyNotePlaceholder() {
     notesEdit_m->clear();
     notesEdit_m->setAcceptRichText(false);
     notesEdit_m->setMarkdown(markdownList);
+    notesEdit_m->setReadOnly(true);
+    isPlaceholderActive_m = true;
 }
 
 void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
@@ -1414,14 +1439,14 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 
     // Retrieve a note for this specific day from the database
     QString dailyNote = dbManager_m->getNoteForDay(songId, date);
-    notesEdit_m->clear();
+
     notesEdit_m->setAcceptRichText(false);
-    notesEdit_m->setMarkdown(dailyNote);
 
     if (!dailyNote.isEmpty()) {
         notesEdit_m->clear();
         notesEdit_m->setAcceptRichText(false);
         notesEdit_m->setMarkdown(dailyNote);
+        notesEdit_m->setReadOnly(false);
         isPlaceholderActive_m = false;
     } else {
         dailyNotePlaceholder();

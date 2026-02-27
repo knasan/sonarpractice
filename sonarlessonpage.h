@@ -45,6 +45,8 @@ public:
         ReminderFileIdRole = Qt::UserRole + 2,
         ReminderSongTitle = Qt::UserRole + 3,
     };
+protected:
+    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void setupUI();

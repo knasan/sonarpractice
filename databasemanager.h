@@ -113,6 +113,7 @@ public:
                                    int endBar,
                                    int bpm,
                                    bool isDaily,
+                                   bool isWeekly,
                                    bool isMonthly,
                                    int weekday,
                                    const QString &reminderDate);

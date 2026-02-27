@@ -13,6 +13,8 @@
 #include <QMessageBox>
 #include <QProcess>
 
+#include <unistd.h>
+
 SetupWizard::SetupWizard(QWidget *parent)
     : QWizard(parent)
 {
@@ -112,6 +114,7 @@ void SetupWizard::restartApp() {
 
     if (success) {
         QCoreApplication::quit();
+        _exit(0);
     } else {
         QMessageBox::critical(nullptr, "Error", "Could not restart application.");
     }

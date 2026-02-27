@@ -356,8 +356,8 @@ bool DatabaseManager::createInitialTables()
                 "min_minutes INTEGER, " // Minimum exercise duration in minutes
                 "FOREIGN KEY(reminder_id) REFERENCES reminders(id) ON DELETE CASCADE)")) {
         qCritical()
-            << "[DatabaseManager] create table reminder_completion_conditions failed, error: "
-            << q.lastError().text();
+        << "[DatabaseManager] create table reminder_completion_conditions failed, error: "
+        << q.lastError().text();
         qDebug()
             << "[DatabaseManager] create table reminder_completion_conditions failed, fullpath: "
             << q.executedQuery();
@@ -1795,7 +1795,7 @@ bool DatabaseManager::isReminderCompleted(int reminderId)
     QSqlDatabase db = QSqlDatabase::database();
     QSqlQuery q(db);
 
-    q.prepare("SELECT reminder_date, weekday, is_daily, is_monthly FROM reminders WHERE id = ?");
+    q.prepare("SELECT reminder_date, weekday, is_daily, is_weekly, is_monthly FROM reminders WHERE id = ?");
     q.addBindValue(reminderId);
 
     if (!q.exec() || !q.next()) {
@@ -1806,6 +1806,7 @@ bool DatabaseManager::isReminderCompleted(int reminderId)
 
     QVariant weekdayVar = q.value("weekday");
     bool isDaily = q.value("is_daily").toBool();
+    bool isWeekly = q.value("is_weekly").toBool();
     bool isMonthly = q.value("is_monthly").toBool();
     QString reminderDate = q.value("reminder_date").toString();
 
@@ -1827,7 +1828,7 @@ bool DatabaseManager::isReminderCompleted(int reminderId)
         checkSql += "date(completion_date) = date(:rdate)";
     } else if (isDaily) {
         checkSql += "date(completion_date) = date('now')";
-    } else if (!weekdayVar.isNull()) {
+    }  else if (isWeekly || !weekdayVar.isNull()) {
         checkSql += "strftime('%W', completion_date) = strftime('%W', 'now') "
                     "AND strftime('%Y', completion_date) = strftime('%Y', 'now')";
     } else if (isMonthly) {
@@ -1856,6 +1857,7 @@ bool DatabaseManager::addReminder(int songId,
                                   int endBar,
                                   int bpm,
                                   bool isDaily,
+                                  bool isWeekly,
                                   bool isMonthly,
                                   int weekday,
                                   const QString &reminderDate)
@@ -1868,13 +1870,14 @@ bool DatabaseManager::addReminder(int songId,
 
     // If reminderDate is empty, it is a recurring reminder.
     q.prepare(
-        "INSERT INTO reminders (song_id, reminder_date, is_daily, is_monthly, weekday, is_active) "
-        "VALUES (:sid, :rdate, :daily, :monthly, :wd, 1)");
+        "INSERT INTO reminders (song_id, reminder_date, is_daily, is_weekly, is_monthly, weekday, is_active) "
+        "VALUES (:sid, :rdate, :daily, :weekly, :monthly, :wd, 1)");
 
     q.bindValue(":sid", songId);
     q.bindValue(":rdate",
                 reminderDate.isEmpty() ? QVariant(QMetaType::fromType<QString>()) : reminderDate);
     q.bindValue(":daily", isDaily ? 1 : 0);
+    q.bindValue(":weekly", isWeekly ? 1 : 0);
     q.bindValue(":monthly", isMonthly ? 1 : 0);
     q.bindValue(":wd", weekday != -1 ? weekday : QVariant(QMetaType::fromType<int>()));
 
@@ -1903,9 +1906,7 @@ bool DatabaseManager::addReminder(int songId,
         return false;
     }
 
-    db.transaction();
     db.commit();
-
     return true;
 }
 
@@ -1928,7 +1929,7 @@ QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
                   "JOIN songs s ON r.song_id = s.id "
                   "JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
                   "WHERE r.user_id = 1 AND r.is_active = 1 AND ("
-                  "  r.reminder_date = :date OR r.is_daily = 1 OR r.weekday = :wd OR "
+                  "  r.reminder_date = :date OR r.is_daily = 1 OR r.is_weekly = 1 OR r.weekday = :wd OR "
                   "  (r.is_monthly = 1 AND strftime('%d', r.reminder_date) = :dom)"
                   ")";
 
@@ -1964,10 +1965,10 @@ QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
 ReminderDialog::ReminderData DatabaseManager::getReminder(int reminderId)
 {
     ReminderDialog::ReminderData data;
-    data.songId = -1; // Fallback, falls nichts gefunden wird
+    data.songId = -1;
 
     QSqlQuery q;
-    q.prepare("SELECT r.song_id, r.is_daily, r.is_monthly, r.weekday, r.reminder_date, "
+    q.prepare("SELECT r.song_id, r.is_daily, r.is_weekly, r.is_monthly, r.weekday, r.reminder_date, "
               "c.start_bar, c.end_bar, c.min_bpm "
               "FROM reminders r "
               "LEFT JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
@@ -1980,14 +1981,15 @@ ReminderDialog::ReminderData DatabaseManager::getReminder(int reminderId)
 
         // First row-table (scheduling)
         data.isDaily      = q.value(1).toBool();   // is_daily
-        data.isMonthly    = q.value(2).toBool();   // is_monthly
-        data.weekday      = q.value(3).toInt();    // weekday
-        data.reminderDate = q.value(4).toString(); // reminder_date
+        data.isWeekly     = q.value(2).toBool();   // is_weekly
+        data.isMonthly    = q.value(3).toBool();   // is_monthly
+        data.weekday      = q.value(4).toInt();    // weekday
+        data.reminderDate = q.value(5).toString(); // reminder_date
 
         // Then the column table (conditions)
-        data.startBar     = q.value(5).toInt();    // start_bar
-        data.endBar       = q.value(6).toInt();    // end_bar
-        data.targetBpm    = q.value(7).toInt();    // min_bpm
+        data.startBar     = q.value(6).toInt();    // start_bar
+        data.endBar       = q.value(7).toInt();    // end_bar
+        data.targetBpm    = q.value(8).toInt();    // min_bpm
 
         // Debugging for control
         // qDebug() << "Loaded ReminderId: " << reminderId << " - SongId:" << data.songId << "BPM:" << data.targetBpm
@@ -2009,13 +2011,14 @@ bool DatabaseManager::updateReminder(int reminderId, const ReminderDialog::Remin
     QSqlQuery q1(db);
     // 1. Update the schedule in 'reminders'
     q1.prepare("UPDATE reminders SET "
-               "is_daily = :d, is_monthly = :m, weekday = :w, reminder_date = :rd "
+               "is_daily = :idc, is_weekly = :iwc, is_monthly = :imc, weekday = :w, reminder_date = :rd "
                "WHERE id = :id");
-    q1.bindValue(":d", data.isDaily ? 1 : 0);
-    q1.bindValue(":m", data.isMonthly ? 1 : 0);
-    q1.bindValue(":w", data.weekday);
-    q1.bindValue(":rd", data.reminderDate);
-    q1.bindValue(":id", reminderId);
+    q1.bindValue(":idc", data.isDaily ? 1 : 0); // is daily check
+    q1.bindValue(":iwc", data.isWeekly ? 1 : 0); // is weekly check
+    q1.bindValue(":imc", data.isMonthly ? 1 : 0); // is monthly check
+    q1.bindValue(":w", data.weekday); // weekday
+    q1.bindValue(":rd", data.reminderDate); // reminder date
+    q1.bindValue(":id", reminderId); // reminder id
 
     if (!q1.exec()) {
         qCritical() << "[DatabaseManager] updateReminder (Table reminders) failed:" << q1.lastError().text();

@@ -244,35 +244,34 @@ bool FilterPage::handleSkipImport() {
     // C++20: Use structured bindings or clear logic for DB writes
     bool success = true;
 
-    if(field("cbManageData").toBool()) {
-        if (!db.setSetting("is_managed", QVariant(field("cbManageData").toBool()))) {
-            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << field("cbManageData").toBool();
+    bool isManaged = field("cbManageData").toBool();
+    bool isMoved = field("cbMoveFiles").toBool();
+    QString managedPath = field("cbTargetPath").toString();
+
+    bool currentOk = db.setSetting("is_managed", isManaged);
+    success &= currentOk;
+    if (!currentOk) {
+        qCritical() << "CRITICAL: isManaged could not be saved to DB:" << isManaged;
+    }
+
+    if (isManaged && !managedPath.isEmpty()) {
+        currentOk = db.setSetting("managed_path", managedPath);
+        success &= currentOk;
+        if (!currentOk) {
+            qCritical() << "CRITICAL: managed_path could not be saved to DB:" << managedPath;
         }
     }
 
-    if (field("cbManageData").toBool()) {
-        if (!db.setSetting("managed_path", QVariant(field("cbTargetPath").toString()))) {
-            qCritical() << "CRITICAL: managed_path could not be saved to DB:" << field("cbTargetPath").toString();
-        }
+    currentOk = db.setSetting("is_moved", isMoved);
+    success &= currentOk;
+    if (!currentOk) {
+        qCritical() << "CRITICAL: is_moved could not be saved to DB:" << isMoved;
     }
 
-    if(field("cbMoveFiles").toBool()) {
-        if (!db.setSetting("is_moved", QVariant(field("cbMoveFiles").toBool()))) {
-            qCritical() << "CRITICAL: isManaged could not be saved to DB:" << field("cbMoveFiles").toBool();
-        }
-    }
-
-
-    if (!db.setSetting("last_import_date", QVariant(QDateTime::currentDateTime().toString(Qt::ISODate)))) {
-        qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
-    }
-
-    success &= db.setSetting("is_managed", false);
-    success &= db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
-
-    // If 'Manage Data' was checked but skipped:
-    if (field("cbManageData").toBool()) {
-        success &= db.setSetting("managed_path", field("cbTargetPath").toString());
+    currentOk = db.setSetting("last_import_date", QDateTime::currentDateTime().toString(Qt::ISODate));
+    success &= currentOk;
+    if (!currentOk) {
+        qCritical() << "CRITICAL: last_import_date could not be saved to DB";
     }
 
     db.closeDatabase();
