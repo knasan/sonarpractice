@@ -1,5 +1,10 @@
 # Changelog
 
+29.02.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- fixed error when targetdir not exits.
+- File extensions for documents and videos have been expanded.
+
 28.02.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Translation corrected
