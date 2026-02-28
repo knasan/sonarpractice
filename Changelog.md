@@ -1,5 +1,11 @@
 # Changelog
 
+28.02.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Translation corrected
+- Weekly Reminder fixed
+- Adopt QSpinBox training values ​​for start bar, end bar and bpm
+
 27.06.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Add move file option

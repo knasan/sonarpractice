@@ -1295,7 +1295,7 @@ Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
     <message>
         <location filename="sonarlessonpage.cpp" line="373"/>
         <source>Open Media</source>
-        <translation>Offene Media</translation>
+        <translation>Öffne Media</translation>
     </message>
     <message>
         <location filename="sonarlessonpage.cpp" line="378"/>
@@ -1326,7 +1326,7 @@ Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
         <location filename="sonarlessonpage.cpp" line="609"/>
         <location filename="sonarlessonpage.cpp" line="1093"/>
         <source>Edit Reminder</source>
-        <translation>Edit Reminder</translation>
+        <translation>Erinnerung editieren</translation>
     </message>
     <message>
         <location filename="sonarlessonpage.cpp" line="643"/>
@@ -1407,7 +1407,7 @@ Diese Zahl zeigt, wie sicher Sie den Abschnitt beherrschen.</translation>
     <message>
         <location filename="sonarlessonpage.cpp" line="1091"/>
         <source>Open Entry</source>
-        <translation>Offener Eintrag</translation>
+        <translation>Eintrag öffnen</translation>
     </message>
     <message>
         <location filename="sonarlessonpage.cpp" line="1095"/>
