@@ -577,11 +577,11 @@ void SonarLessonPage::onAddReminderClicked()
     QString songName;
     QString rawTitle = title_m->text().trimmed();
 
-    if (rawTitle.isEmpty() || rawTitle == "Unknown" || rawTitle == "Unknown Title") {
+    if (rawTitle.isEmpty() || rawTitle.toLower() == "unknown" || rawTitle.toLower() == "unknown title") {
         songName = songSelector_m->currentText();
     } else {
         QString artist = artist_m->text().trimmed();
-        if (!artist.isEmpty() && artist != "Unknown") {
+        if (!artist.isEmpty() && artist.toLower() != "unknown" || !artist.isEmpty() && artist.toLower() != "unknown artist" )  {
             songName = QString("%1 - %2").arg(artist, rawTitle);
         } else {
             songName = rawTitle;
@@ -610,7 +610,6 @@ void SonarLessonPage::onAddReminderClicked()
 }
 
 void SonarLessonPage::onEditReminder(int reminderId, const QString title) {
-    // 1. Hol die Daten aus der Liste/DB
     ReminderDialog::ReminderData oldData = dbManager_m->getReminder(reminderId);
 
     ReminderDialog dlg(this);

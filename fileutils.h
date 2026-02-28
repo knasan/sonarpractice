@@ -91,11 +91,11 @@ namespace FileUtils {
     }
 
     [[nodiscard]] static QStringList getVideoFormats() {
-        return {"*.mp4", "*.mkv", "*.mov", "*.wmv", "*.webm", "*.flv", "*.m4v", "*.avchd", "*.mxf"};
+        return {"*.mp4", "*.mkv", "*.mov", "*.wmv", "*.webm", "*.flv", "*.m4v", "*.avchd", "*.mxf", "*.vob", "*.ifo", "*.bup"};
     }
 
     [[nodiscard]] static QStringList getDocFormats() {
-        return {"*.pdf", "*.txt", "*.md"};
+        return {"*.pdf", "*.txt", "*.md", "*.jpg", "*.jpeg", "*.png"};
     }
 
     [[nodiscard]] inline bool hasEnoughSpace(const QStringList &sourceFiles, const QString &targetPath) {
