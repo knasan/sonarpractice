@@ -12,7 +12,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_definitions(APP_VERSION="${PROJECT_VERSION} alpha")
+add_compile_definitions(APP_VERSION="${PROJECT_VERSION} beta")
 add_compile_definitions(COMPILER_INFO="${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 add_compile_definitions(BUILD_DATE="${CMAKE_DATE}")
 
