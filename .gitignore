@@ -84,3 +84,9 @@ build*
 
 # Workdir icons
 design_lab
+installer/config/logo.ico
+installer/config/logo.png
+installer/tmp/
+installer/packages/io.github.knasan.sonarpractice/data/
+installer/repo/
+installer/*.exe

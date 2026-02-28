@@ -1,0 +1,36 @@
+site_name: SonarPractice Dokumentation
+theme:
+  name: material
+  palette:
+    # Dunkles Design 
+    - media: "(prefers-color-scheme: dark)"
+      scheme: default
+      primary: light blue
+      accent: light blue
+      toggle:
+        icon: material/brightness-4
+        name: In den hellen Modus wechseln
+    # Helles Design
+    - media: "(prefers-color-scheme: light)"
+      scheme: slate
+      primary: gray
+      accent: light blue
+      toggle:
+        icon: material/brightness-7
+        name: In den dunklen Modus wechseln
+    
+  language: de
+  logo: assets/svg/icon.svg
+  favicon: assets/logo.ico
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Konfiguration: konfiguration.md
+  - Dashboard: dashboard.md
+
+markdown_extensions:
+  - attr_list
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences

@@ -1,0 +1,109 @@
+name: Build, Docs and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: List Available Qt Tools
+        shell: bash
+        run: |
+          pip install aqtinstall
+          echo "--- Verfügbare Tools für Windows Desktop ---"
+          aqt list-tool windows desktop
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.10.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_llvm_mingw' 
+          tools: 'tools_ifw tools_llvm_mingw1706 tools_ninja tools_cmake'
+
+      - name: Build Application (CMake)
+        shell: bash
+        run: |
+          QT_ROOT="D:/a/sonarpractice/Qt"
+          LLVM_BIN="$QT_ROOT/Tools/llvm-mingw1706_64/bin"
+          NINJA_BIN="$QT_ROOT/Tools/Ninja"
+          QT_CMAKE_BIN="$QT_ROOT/Tools/CMake_64/bin"
+          
+          export PATH="$QT_CMAKE_BIN:$LLVM_BIN:$NINJA_BIN:$PATH"
+
+          mkdir build && cd build
+          
+          "$QT_CMAKE_BIN/cmake.exe" -G "Ninja" \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_COMPILER="$LLVM_BIN/clang++.exe" \
+          -DCMAKE_C_COMPILER="$LLVM_BIN/clang.exe" \
+          -DCMAKE_MAKE_PROGRAM="$NINJA_BIN/ninja.exe" \
+          -DCMAKE_LINKER="$LLVM_BIN/ld.lld.exe" \
+          -DCMAKE_AR="$LLVM_BIN/llvm-ar.exe" \
+          -DCMAKE_RANLIB="$LLVM_BIN/llvm-ranlib.exe" \
+          ..
+          
+          "$QT_CMAKE_BIN/cmake.exe" --build . --config Release
+
+      - name: Run Installer Script
+        shell: bash
+        run: |
+          export RELEASE_PATH="./build/SonarPractice.exe"
+          export QT_MSVC_DIR="$Qt6_DIR"
+          export QT_IFW_DIR="$RUNNER_TOOL_CACHE/QtInstallerFramework"
+          
+          chmod +x installer/create_installer.sh
+          ./installer/create_installer.sh
+        env:
+          REPO_PATH: ${{ github.workspace }}
+
+      - name: Prepare Deployment Directory
+        shell: bash
+        run: |
+          mkdir -p deploy/repo
+          mkdir -p deploy/docs
+          mkdir -p deploy/download
+          
+          [ -d "installer/repo" ] && cp -r installer/repo/* deploy/repo/
+          [ -d "site" ] && cp -r site/* deploy/docs/
+          
+          find . -name "SonarPractice_Web_Setup.exe" -exec cp {} deploy/download/ \;
+
+          VERSION=$(git describe --tags --always --dirty)
+          echo "$VERSION" > deploy/download/version.txt
+          
+          touch deploy/.nojekyll
+          
+          echo '<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=./docs/"><title>Redirecting...</title></head><body><p>Redirecting to <a href="./docs/">documentation</a>...</p></body></html>' > deploy/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
+          keep_files: true
+          publish_navigation_control: true
+          enable_jekyll: false
+
+      - name: Upload Installer EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonarPractice-Windows-Setup
+          path: "**/SonarPractice_Web_Setup.exe"
+          if-no-files-found: error
