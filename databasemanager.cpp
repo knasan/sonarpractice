@@ -1915,28 +1915,31 @@ QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
     QSqlQuery q(db);
 
     QString sql = "SELECT r.id AS reminder_id, s.id AS song_id, s.title, c.start_bar, c.end_bar, "
-                  "c.min_bpm, "
+                  "c.min_bpm, r.is_weekly, " // is_weekly mit abfragen
                   "(EXISTS ( "
                   "  SELECT 1 FROM practice_journal p "
                   "  WHERE p.song_id = r.song_id "
                   "  AND p.start_bar <= c.start_bar "
                   "  AND p.end_bar >= c.end_bar "
                   "  AND p.practiced_bpm >= c.min_bpm "
-                  "  AND p.practice_date = :date "
+                  "  AND ( "
+                  "    (r.is_weekly = 0 AND date(p.practice_date) = :date) OR " // Normal: gleicher Tag
+                  "    (r.is_weekly = 1 AND strftime('%Y-%W', p.practice_date) = strftime('%Y-%W', :date)) " // Weekly: same week, week always starts on Sunday!
+                  "  ) "
                   ")) AS is_done "
                   "FROM reminders r "
                   "JOIN songs s ON r.song_id = s.id "
                   "JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
                   "WHERE r.user_id = 1 AND r.is_active = 1 AND ("
-                  "  r.reminder_date = :date OR r.is_daily = 1 OR r.is_weekly = 1 OR r.weekday = :wd OR "
+                  "  date(r.reminder_date) = :date OR r.is_daily = 1 OR r.is_weekly = 1 OR r.weekday = :wd OR "
                   "  (r.is_monthly = 1 AND strftime('%d', r.reminder_date) = :dom)"
                   ")";
 
     q.prepare(sql);
 
     q.bindValue(":date", date.toString("yyyy-MM-dd"));
-    q.bindValue(":wd", date.dayOfWeek());     // Montag = 1, Sonntag = 7
-    q.bindValue(":dom", date.toString("dd")); // Tag des Monats (01-31)
+    q.bindValue(":wd", date.dayOfWeek());     // Monday = 1, Sunday = 7
+    q.bindValue(":dom", date.toString("dd")); // Tday of the month (01-31)
 
     QVariantList results;
     if (q.exec()) {

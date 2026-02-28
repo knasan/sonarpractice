@@ -69,8 +69,9 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
     proxyModel_m->setSourceModel(sourceModel_m);
     proxyModel_m->setFilterRole(SelectorRole::PathRole);
 
-    setupTimer();
     setupUI();
+    setupTimer();
+
     sitesConnects();
     initialLoadFromDb();
     updateButtonState();
@@ -199,6 +200,12 @@ void SonarLessonPage::updatePracticeTable(const QList<PracticeSession>& sessions
             if(auto item = practiceTable_m->item(row, i))
                 item->setTextAlignment(Qt::AlignCenter);
         }
+    }
+
+    if(sessions.count() > 0) {
+        beatOf_m->setValue(sessions.last().startBar);
+        beatTo_m->setValue(sessions.last().endBar);
+        practiceBpm_m->setValue(sessions.last().bpm);
     }
 }
 
@@ -512,6 +519,7 @@ void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
     // 4.1. Timer area
     timerBtn_m = new QPushButton(tr("Start Timer"), this);
     timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+    timerBtn_m->setObjectName("trainingStartStopButton");
 
     lcdNumber_m = new QLCDNumber(this);
     lcdNumber_m->setObjectName("trainingTimerDisplay");
@@ -811,17 +819,11 @@ QPushButton *SonarLessonPage::createResourceButton(const QString &objectName,
 
 void SonarLessonPage::setupTimer()
 {
-    refreshTimer_m = new QTimer(this);
     refreshTimer_m->setInterval(1000);
 
-    lcdNumber_m = new QLCDNumber();
     lcdNumber_m->setDigitCount(5);
     lcdNumber_m->display("00:00");
     lcdNumber_m->setSegmentStyle(QLCDNumber::Filled);
-
-    timerBtn_m = new QPushButton(tr("Start Timer"));
-    timerBtn_m->setObjectName("trainingStartStopButton");
-    timerBtn_m->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
 }
 
 void SonarLessonPage::sitesConnects() {
@@ -876,10 +878,6 @@ void SonarLessonPage::sitesConnects() {
             isPlaceholderActive_m = false;
             notesEdit_m->clear();
             notesEdit_m->setReadOnly(false);
-
-            // QTextCharFormat format;
-            // format.setForeground(palette().windowText());
-            // notesEdit_m->setCurrentCharFormat(format);
         }
     });
 
@@ -1673,7 +1671,13 @@ void SonarLessonPage::addTableRow()
     int newRow = practiceTable_m->rowCount();
     practiceTable_m->insertRow(newRow);
 
-    practiceTable_m->setItem(newRow, 0, new QTableWidgetItem(QDate::currentDate().toString()));
+    practiceTable_m->setItem(newRow, 0, new QTableWidgetItem(QDate::currentDate().toString())); // Date
+    practiceTable_m->setItem(newRow, 1, new QTableWidgetItem(beatOf_m->value())); // beatOf
+    practiceTable_m->setItem(newRow, 2, new QTableWidgetItem(beatTo_m->value())); // beatTo
+    practiceTable_m->setItem(newRow, 3, new QTableWidgetItem(practiceBpm_m->value())); // BPM
+    // latest streak ignore
+    // minutes from timer
+
 }
 
 void SonarLessonPage::removeTableRow()

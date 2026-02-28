@@ -149,18 +149,18 @@ private:
     QElapsedTimer elapsedTimer_m;
 
     // Status and State
-    QLabel *statusLabel_m;
-    QPushButton *saveBtn_m;
-    QCalendarWidget *calendar_m;
-    QTableWidget *reminderTable_m;
-    DatabaseManager *dbManager_m;
-    QSqlTableModel *model_m;
+    QLabel* statusLabel_m;
+    QPushButton* saveBtn_m;
+    QCalendarWidget* calendar_m;
+    QTableWidget* reminderTable_m;
+    DatabaseManager* dbManager_m;
+    QSqlTableModel* model_m;
 
     // ToolBox
-    QToolButton *btnFilterGp_m;
-    QToolButton *btnFilterAudio_m;
-    QToolButton *btnFilterVideo_m;
-    QToolButton *btnFilterDocument_m;
+    QToolButton* btnFilterGp_m;
+    QToolButton* btnFilterAudio_m;
+    QToolButton* btnFilterVideo_m;
+    QToolButton* btnFilterDocument_m;
 
     // State Flags
     bool isLoading_m{true};
@@ -176,14 +176,11 @@ private:
     QList<PracticeSession> currentSessions_m;
     QList<PracticeSession> referenceSessions_m;
 
-    QCheckBox *showAllSessions_m;
-    QHBoxLayout *resourceLayout_m;
+    QCheckBox* showAllSessions_m;
+    QHBoxLayout* resourceLayout_m;
 
-    QStandardItemModel *sourceModel_m;
-    QSortFilterProxyModel *proxyModel_m;
-
-// protected:
-//     void showEvent(QShowEvent *event) override; // trigger tab switch
+    QStandardItemModel* sourceModel_m;
+    QSortFilterProxyModel* proxyModel_m;
 
 private slots:
     void onSongChanged(int songId);
