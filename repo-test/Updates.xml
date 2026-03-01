@@ -1,0 +1,25 @@
+<Updates>
+ <ApplicationName>{AnyApplication}</ApplicationName>
+ <ApplicationVersion>1.0.0</ApplicationVersion>
+ <Checksum>true</Checksum>
+ <PackageUpdate>
+  <Name>io.github.knasan.sonarpractice</Name>
+  <DisplayName>SonarPractice</DisplayName>
+  <Version>2026.03.01</Version>
+  <ReleaseDate>2026-03-01</ReleaseDate>
+  <Publisher>Sandy Marko Knauer</Publisher>
+  <Default>true</Default>
+  <Script>installscript.qs</Script>
+  <RequiresAdminRights>true</RequiresAdminRights>
+  <Default>true</Default>
+  <UpdateFile CompressedSize="19435541" OS="Any" UncompressedSize="71624352"/>
+  <DownloadableArchives>generic.7z,iconengines.7z,imageformats.7z,networkinformation.7z,platforms.7z,sqldrivers.7z,styles.7z,tls.7z,translations.7z,content.7z</DownloadableArchives>
+  <UserInterfaces>page.ui</UserInterfaces>
+  <Licenses>
+   <License file="license.txt" name="Lizenzvereinbarung"/>
+  </Licenses>
+  <SHA1>f27ff9a88119b724dee6b2751ee552588b81ae89</SHA1>
+ </PackageUpdate>
+ <SHA1>f27ff9a88119b724dee6b2751ee552588b81ae89</SHA1>
+ <MetadataName>2026-03-01-1919_meta.7z</MetadataName>
+</Updates>
