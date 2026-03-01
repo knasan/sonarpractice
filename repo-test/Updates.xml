@@ -12,14 +12,14 @@
   <Script>installscript.qs</Script>
   <RequiresAdminRights>true</RequiresAdminRights>
   <Default>true</Default>
-  <UpdateFile CompressedSize="19433700" OS="Any" UncompressedSize="71624352"/>
+  <UpdateFile CompressedSize="19435796" OS="Any" UncompressedSize="71624352"/>
   <DownloadableArchives>generic.7z,iconengines.7z,imageformats.7z,networkinformation.7z,platforms.7z,sqldrivers.7z,styles.7z,tls.7z,translations.7z,content.7z</DownloadableArchives>
   <UserInterfaces>page.ui</UserInterfaces>
   <Licenses>
    <License file="license.txt" name="Lizenzvereinbarung"/>
   </Licenses>
-  <SHA1>ec0167728e75f5cd2ede753c7e40f579f18ace9f</SHA1>
+  <SHA1>e71f36329ea0d9b74eb102abfeb0c3fc9b97559a</SHA1>
  </PackageUpdate>
- <SHA1>ec0167728e75f5cd2ede753c7e40f579f18ace9f</SHA1>
- <MetadataName>2026-03-01-1927_meta.7z</MetadataName>
+ <SHA1>e71f36329ea0d9b74eb102abfeb0c3fc9b97559a</SHA1>
+ <MetadataName>2026-03-01-1937_meta.7z</MetadataName>
 </Updates>
