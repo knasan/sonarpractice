@@ -98,7 +98,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./deploy
-          keep_files: true
+          keep_files: false
           publish_navigation_control: true
           enable_jekyll: false
 
