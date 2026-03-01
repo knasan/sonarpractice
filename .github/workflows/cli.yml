@@ -74,6 +74,15 @@ jobs:
         env:
           REPO_PATH: ${{ github.workspace }}
 
+
+      - name: Install Python and MkDocs
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs-material  # Installiert MkDocs und das Material-Theme
+
+      - name: Build Documentation
+        run: mkdocs build
+
       - name: Prepare Deployment Directory
         shell: bash
         run: |
