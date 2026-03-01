@@ -1,5 +1,10 @@
 # Changelog
 
+01.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Wizard toggle move files
+- Fixed parse Files when move files active (path corrected)
+
 29.02.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - fixed error when targetdir not exits.

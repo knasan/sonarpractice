@@ -59,6 +59,8 @@ void FilterPage::setupLayout() {
     cbMoveFiles_m = new QCheckBox(tr("Move files"));
     cbMoveFiles_m->setObjectName("moveFiles");
     cbMoveFiles_m->setToolTip(tr("Enables file moving"));
+    cbMoveFiles_m->setEnabled(false);
+    cbMoveFiles_m->setCheckState(Qt::Unchecked);
 
     dataManagmentLayout->addWidget(cbManageData_m);
     dataManagmentLayout->addWidget(cbMoveFiles_m,1);
@@ -174,6 +176,12 @@ void FilterPage::onSettingsChanged() {
     const bool isSkipActive = cbSkipImport_m->isChecked();
     listWidgetSource_m->setEnabled(!isSkipActive);
     btnAddSource_m->setEnabled(!isSkipActive);
+    if(cbManageData_m->checkState() == Qt::Unchecked) {
+        cbMoveFiles_m->setCheckState(Qt::Unchecked);
+        cbMoveFiles_m->setEnabled(false);
+    } else {
+        cbMoveFiles_m->setEnabled(true);
+    }
     emit completeChanged();
 }
 

@@ -77,7 +77,7 @@ public:
                 }
 
                 // --- Database logic (DRY & grouping) ---
-                QString fileName = QFileInfo(task.sourcePath).fileName();
+                QString fileName = QFileInfo(finalDest).fileName();
                 qlonglong songId;
 
                 QString title = task.itemName; // Fallback to filename
@@ -88,7 +88,7 @@ public:
                 // Only parse if it is a GP file.
                 if (task.fileSuffix.startsWith("gp", Qt::CaseInsensitive)) {
                     GpParser parser;
-                    GpParser::GPMetadata meta = parser.parseMetadata(task.sourcePath);
+                    GpParser::GPMetadata meta = parser.parseMetadata(QFileInfo(finalDest).absoluteFilePath());
                     if (meta.isValid) {
                         if (!meta.title.isEmpty())
                             title = meta.title;
