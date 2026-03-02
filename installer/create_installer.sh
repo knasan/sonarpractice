@@ -56,7 +56,7 @@ cp -r "$tmpDir"/* "$dataDir/"
 rm -rf "$tmpDir"
 
 # --- 5. Versionierung via Git ---
-VERSION=$(git -C "$REPO_ROOT" describe --tags --always --dirty 2>/dev/null || date +%Y.%m.%d)
+VERSION=$(git -C "$REPO_ROOT" describe --tags --always --abbrev=0 2>/dev/null || date +%Y.%m.%d)
 BUILD_DATE=$(date +%Y-%m-%d)
 BRANCH=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)
 
