@@ -27,11 +27,6 @@ public:
     }
 
     void clearCaches();
-
-    [[nodiscard]] QStandardItem* getFolderItem(const QString &path) const;
-
-    void updateStatuses(const QList<ScanBatch> &allBatches);
-
     void setExistingHashes(const QSet<QString> &hashes) { existingHashes_m = hashes; };
 
 private:
@@ -43,8 +38,6 @@ private:
     QHash<int, QStandardItem*> groupHeaderCache_m;
 
     QSet<QString> existingHashes_m;
-
-    void printModelStructure(QStandardItem *item, int level = 0) const;
 };
 
 #endif // FILEMANAGER_H

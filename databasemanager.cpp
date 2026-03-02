@@ -532,36 +532,6 @@ bool DatabaseManager::addFileToSong(qlonglong songId,
 }
 
 /**
- * @brief Updates the practice flag for a media file in the database.
- *
- * Sets whether a media file can be practiced or not by updating the
- * can_be_practiced column in the media_files table.
- *
- * @param fileId The ID of the media file to update.
- * @param canPractice True if the file should be available for practice,
- *                    false otherwise.
- *
- * @return True if the update was successful, false if a database error occurred.
- *         On failure, an error message is logged to qCritical().
- *
- * @see media_files table schema
- */
-bool DatabaseManager::updatePracticeFlag(int fileId, bool canPractice)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-    q.prepare("UPDATE media_files SET can_be_practiced = ? WHERE id = ?");
-    q.addBindValue(canPractice ? 1 : 0);
-    q.addBindValue(fileId);
-    if (!q.exec()) {
-        qCritical() << "[DatabaseManager] Error updatePracticeFlag: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] Error updatePracticeFlag, fullquery: " << q.executedQuery();
-        return false;
-    }
-    return true;
-}
-
-/**
  * @brief Retrieves the managed path setting from the database.
  *
  * Fetches the "managed_path" configuration value from the settings storage.
@@ -732,130 +702,6 @@ QSet<QString> DatabaseManager::getAllFileHashes()
 // =============================================================================
 
 /**
- * @brief Links multiple media files to a single song record.
- *
- * This function associates multiple media files with a common song by setting their
- * song_id to the same value. If any of the files already has a song_id, that ID is
- * reused for all files. Otherwise, a new song record is created with a title derived
- * from the first file's name.
- *
- * @param fileIds A QList of integer file IDs to be linked together.
- *
- * @return The song_id that all files are now linked to on success, or -1 on failure.
- *         Possible failure reasons:
- *         - Less than 2 files provided (fileIds.size() < 2)
- *         - Database transaction could not be started
- *         - Failed to insert new song record
- *         - Failed to update media_files records
- *         - Failed to commit transaction
- *
- * @note The function uses database transactions to ensure atomicity. If any operation
- *       fails, all changes are rolled back and -1 is returned.
- * @note If multiple files already have different song_ids, the first found song_id
- *       is used (others are overwritten).
- */
-int DatabaseManager::linkFiles(const QList<int> &fileIds)
-{
-    if (fileIds.size() < 2)
-        return -1;
-    QSqlDatabase db = QSqlDatabase::database();
-
-    if (!db.transaction())
-        return -1;
-
-    int finalSongId = -1;
-
-    // Find existing song_id
-    for (int id : fileIds) {
-        QSqlQuery songIdQuery(db);
-        songIdQuery.prepare("SELECT song_id FROM media_files WHERE id = ?");
-        songIdQuery.addBindValue(id);
-        if (songIdQuery.exec() && songIdQuery.next()) {
-            int sid = songIdQuery.value(0).toInt();
-            if (sid > 0) {
-                finalSongId = sid;
-                break;
-            }
-        } else {
-            qCritical() << "[DatabaseManager] linkFiles failed:" << songIdQuery.lastError().text();
-            qDebug() << "[DatabaseManager] linkFiles fullquery: " << songIdQuery.executedQuery();
-        }
-    }
-
-    // If no ID is found, create a new song.
-    if (finalSongId <= 0) {
-        // Get the name of the first file for the default title.
-        QSqlQuery q(db);
-        q.prepare("SELECT file_path FROM media_files WHERE id = ?");
-        q.addBindValue(fileIds.first());
-        QString title = "New song";
-        if (q.exec() && q.next()) {
-            title = QFileInfo(q.value(0).toString()).baseName();
-        }
-
-        QSqlQuery insertQuery(db);
-        insertQuery.prepare("INSERT INTO songs (title) VALUES (?)");
-        insertQuery.addBindValue(title);
-        if (!insertQuery.exec()) {
-            db.rollback();
-            qCritical() << "[DatabaseManager] insert linkFiles failed:"
-                        << insertQuery.lastError().text();
-            qDebug() << "[DatabaseManager] insert linkFiles fullquery: "
-                     << insertQuery.executedQuery();
-            return -1;
-        }
-        finalSongId = insertQuery.lastInsertId().toInt();
-    }
-
-    // link them all
-    for (int id : fileIds) {
-        QSqlQuery updateQuery(db);
-        updateQuery.prepare("UPDATE media_files SET song_id = ? WHERE id = ?");
-        updateQuery.addBindValue(finalSongId);
-        updateQuery.addBindValue(id);
-        if (!updateQuery.exec()) {
-            db.rollback();
-            qCritical() << "[DatabaseManager] update linkFiles failed:"
-                        << updateQuery.lastError().text();
-            qDebug() << "[DatabaseManager] update linkFiles fullquery: "
-                     << updateQuery.executedQuery();
-            return -1;
-        }
-    }
-
-    if (db.commit())
-        return finalSongId;
-    return -1;
-}
-
-/**
- * @brief Unlinks a media file from its associated song.
- *
- * Sets the song_id to NULL for the specified media file, effectively removing
- * the association between the file and any song it was linked to.
- *
- * @param fileId The ID of the media file to unlink.
- * @return true if the database update was successful, false otherwise.
- *         On failure, an error message is logged to the critical output.
- *
- * @note This function uses prepared statements to prevent SQL injection.
- * @see linkFile()
- */
-bool DatabaseManager::unlinkFile(int fileId)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-    q.prepare("UPDATE media_files SET song_id = NULL WHERE id = ?");
-    q.addBindValue(fileId);
-    if (!q.exec()) {
-        qCritical() << "[DatabaseManager] update unlinkFile failed:" << q.lastError().text();
-        qDebug() << "[DatabaseManager] update unlinkFile fullquery: " << q.executedQuery();
-        return false;
-    }
-    return true;
-}
-
-/**
  * @brief Adds a file relation between two files in the database.
  *
  * Inserts a relation between two files identified by their IDs into the file_relations table.
@@ -1018,154 +864,9 @@ QList<DatabaseManager::RelatedFile> DatabaseManager::getFilesByRelation(int song
     return list;
 }
 
-/**
- * Retrieves all partner files for a given song_id, except the current file.
- */
-/**
- * @brief Retrieves a list of related media files for a given song.
- *
- * Queries the database to fetch all media files associated with a specific song,
- * optionally excluding a file by its ID. For each file found, constructs a RelatedFile
- * structure containing file metadata extracted from the database and file system.
- *
- * @param songId The ID of the song to retrieve related files for. Must be greater than 0.
- * @param excludeFileId The ID of a file to exclude from the results (default: 0).
- *
- * @return QList<DatabaseManager::RelatedFile> A list of RelatedFile structures containing:
- *         - id: The file's unique identifier
- *         - relativePath: The file path from the database
- *         - songId: The associated song ID
- *         - fileName: The filename extracted from the relative path
- *         - title: Defaults to the filename (no title field in database query)
- *         - type: The file extension in lowercase
- *         Returns an empty list if songId is invalid (≤ 0) or if the database query fails.
- *
- * @note The title field is set to the filename as a fallback since the database
- *       query does not retrieve a title column.
- * @note File type is determined solely from the file extension.
- */
-QList<DatabaseManager::RelatedFile> DatabaseManager::getRelatedFiles(const int songId,
-                                                                     const int excludeFileId)
-{
-    QList<DatabaseManager::RelatedFile> list;
-    if (songId <= 0)
-        return list;
-
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    q.prepare("SELECT id, file_path FROM media_files WHERE song_id = ? AND id != ?");
-    q.addBindValue(songId);
-    q.addBindValue(excludeFileId);
-
-    if (q.exec()) {
-        while (q.next()) {
-            RelatedFile res;
-            res.id = q.value(0).toInt();              // Correctly (id)
-            res.absolutePath = q.value(1).toString(); // Correctly (file_path)
-            res.songId = songId;
-
-            // Use the filename as the title if there is no title in the database.
-            QFileInfo fi(res.absolutePath);
-            res.fileName = fi.fileName();
-            res.title = res.fileName; // Fallback, since 'title' is not in the SELECT statement
-
-            // We determine the type simply from the ending.
-            res.type = fi.suffix().toLower();
-
-            list.append(res);
-        }
-    } else {
-        qCritical() << "[DatabaseManager] getRelatedFiles Error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] getRelatedFiles fullquery: " << q.executedQuery();
-    }
-    return list;
-}
-
 // =============================================================================
 // --- Practice Sessions & Journal (Logging)
 // =============================================================================
-
-/**
- * @brief Records a practice session for a song with performance metrics and optional notes.
- *
- * This function atomically inserts a practice session record into the database, updating
- * both the practice history and song master data. If a note is provided, it is saved
- * separately to the practice journal.
- *
- * @param songId The unique identifier of the song being practiced.
- * @param bpm The tempo (beats per minute) at which the song was practiced.
- * @param totalReps The total number of repetitions performed during the session.
- * @param cleanReps The number of successful/clean repetitions (consecutive streak count).
- * @param note An optional practice note/comment. If empty or whitespace, it is not recorded.
- *
- * @return true if the practice session was successfully recorded and committed to the database;
- *         false if any operation failed (transaction is rolled back on failure).
- *
- * @details
- * - Begins a database transaction to ensure data consistency.
- * - Inserts a record into practice_history with session metrics.
- * - Updates the song's last_practiced timestamp and current_bpm in the songs table.
- * - Optionally inserts a note into practice_journal if note is not empty.
- * - Commits the transaction on success or rolls back on any error.
- *
- * @note All operations are performed within a single transaction. If any query fails,
- *       the entire transaction is rolled back to maintain database integrity.
- */
-bool DatabaseManager::addPracticeSession(
-    int songId, int bpm, int totalReps, int cleanReps, const QString &note)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-
-    if (!db.transaction())
-        return false;
-
-    QSqlQuery q(db);
-
-    // Journal entry / History
-    q.prepare("INSERT INTO practice_history (song_id, bpm_start, total_reps, successful_streaks) "
-              "VALUES (:sid, :bpm, :total, :clean)");
-    q.bindValue(":sid", songId);
-    q.bindValue(":bpm", bpm);
-    q.bindValue(":total", totalReps);
-    q.bindValue(":clean", cleanReps); // How many times a repetition was mastered without making a mistake.
-
-    if (!q.exec()) {
-        db.rollback();
-        qCritical() << "[DatabaseManager] addPracticeSession Error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] addPracticeSession fullquery: " << q.executedQuery();
-        return false;
-    }
-
-    // Update song master data (Important for dashboard!)
-    q.prepare(
-        "UPDATE songs SET last_practiced = CURRENT_TIMESTAMP, current_bpm = :bpm WHERE id = :sid");
-    q.bindValue(":bpm", bpm);
-    q.bindValue(":sid", songId);
-
-    if (!q.exec()) {
-        db.rollback();
-        qCritical() << "[DatabaseManager] addPracticeSession Error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] addPracticeSession fullquery: " << q.executedQuery();
-        return false;
-    }
-
-    // Save note (if available)
-    if (!note.trimmed().isEmpty()) {
-        q.prepare(
-            "INSERT INTO practice_journal (song_id, practiced_bpm, note_text) VALUES (?, ?, ?)");
-        q.addBindValue(songId);
-        q.addBindValue(bpm);
-        q.addBindValue(note);
-        if (!q.exec()) {
-            qCritical() << "[DatabaseManager] addPracticeSession Error: " << q.lastError().text();
-            qDebug() << "[DatabaseManager] addPracticeSession fullquery: " << q.executedQuery();
-            return false;
-        }
-    }
-
-    return db.commit();
-}
 
 /**
  * @brief Saves a list of practice sessions for a song on a specific date to the database.
@@ -1364,96 +1065,6 @@ QList<PracticeSession> DatabaseManager::getLastSessions(int songId, int limit)
 // =============================================================================
 // --- Journal & Notice
 // =============================================================================
-
-/**
- * @brief Adds a new journal note entry for a practice session
- *
- * Inserts a new record into the practice_journal table with the provided song ID,
- * note text, and current timestamp.
- *
- * @param songId The ID of the song associated with this journal entry
- * @param note The practice journal note text to be recorded
- *
- * @return true if the journal entry was successfully inserted into the database,
- *         false if the insertion failed. On failure, an error message is logged
- *         with the specific database error details.
- *
- * @note The practice_date is automatically set to the current timestamp (CURRENT_TIMESTAMP)
- *       at the time of insertion.
- *
- * @see practice_journal table schema
- */
-bool DatabaseManager::addJournalNote(int songId, const QString &note)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    // Create a new historical entry
-    q.prepare("INSERT INTO practice_journal (song_id, note_text, practice_date) "
-              "VALUES (?, ?, CURRENT_TIMESTAMP)");
-    q.addBindValue(songId);
-    q.addBindValue(note);
-
-    if (!q.exec()) {
-        qCritical() << "[DatabaseManager] addJournalNote error: " << q.lastError().text();
-        qCritical() << "[DatabaseManager] addJournalNote fullquery: " << q.executedQuery();
-        return false;
-    }
-    return true;
-}
-
-/**
- * @brief Saves or updates a practice journal note for a song on a specific date.
- *
- * This function checks if a practice journal entry already exists for the given song
- * on the specified date. If an entry exists, it updates the note text. If no entry
- * exists, it creates a new practice journal record.
- *
- * @param songId The ID of the song to which the note belongs.
- * @param date The date of the practice session (QDate object).
- * @param note The note text to save or update.
- *
- * @return bool True if the operation (insert or update) was successful, false otherwise.
- *              On failure, an error message is logged to the debug output.
- *
- * @note The date is converted to "yyyy-MM-dd" format for database storage and comparison.
- * @note If the query execution fails, the error details are logged via qCritical().
- *
- * @see QSqlQuery, QDate
- */
-bool DatabaseManager::saveOrUpdateNote(int songId, QDate date, const QString &note)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    QString dateStr = date.toString("yyyy-MM-dd");
-
-    // Check if an entry already exists for this day.
-    q.prepare("SELECT id FROM practice_journal WHERE song_id = ? AND DATE(practice_date) = ?");
-    q.addBindValue(songId);
-    q.addBindValue(dateStr);
-
-    if (q.exec() && q.next()) {
-        // Update existing entry
-        int entryId = q.value(0).toInt();
-        q.prepare("UPDATE practice_journal SET note_text = ? WHERE id = ?");
-        q.addBindValue(note);
-        q.addBindValue(entryId);
-    } else {
-        // Create new entry
-        q.prepare(
-            "INSERT INTO practice_journal (song_id, note_text, practice_date) VALUES (?, ?, ?)");
-        q.addBindValue(songId);
-        q.addBindValue(note);
-        q.addBindValue(dateStr); // Use the date from the calendar here!
-    }
-    if (!q.exec()) {
-        qCritical() << "[DatabaseManager] saveOrUpdateNote error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] saveOrUpdateNote fullquery: " << q.executedQuery();
-        return false;
-    }
-    return true;
-}
 
 // Saves the general note for the song
 /**
@@ -1784,73 +1395,6 @@ QList<QDate> DatabaseManager::getAllPracticeDates()
 // --- Reminder
 // =============================================================================
 
-/**
- * Checks if a reminder for the current period has already been completed.
- * Consider the intervals: One-time, Dail and Monthly.
- * Idea - add Weekly
- */
-bool DatabaseManager::isReminderCompleted(int reminderId)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    q.prepare("SELECT reminder_date, weekday, is_daily, is_weekly, is_monthly FROM reminders WHERE id = ?");
-    q.addBindValue(reminderId);
-
-    if (!q.exec() || !q.next()) {
-        qCritical() << "[DatabaseManager] isReminderCompleted error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] isReminderCompleted fullquery: " << q.executedQuery();
-        return false;
-    }
-
-    QVariant weekdayVar = q.value("weekday");
-    bool isDaily = q.value("is_daily").toBool();
-    bool isWeekly = q.value("is_weekly").toBool();
-    bool isMonthly = q.value("is_monthly").toBool();
-    QString reminderDate = q.value("reminder_date").toString();
-
-    if (!weekdayVar.isNull()) {
-        int targetWeekday = weekdayVar.toInt(); // 0=So, 1=Mo...
-        QSqlQuery dayCheck(db);
-        dayCheck.exec("SELECT strftime('%w', 'now')");
-        if (dayCheck.next()) {
-            int today = dayCheck.value(0).toInt();
-            if (today != targetWeekday) {
-                return true;
-            }
-        }
-    }
-
-    QString checkSql = "SELECT COUNT(*) FROM reminder_completions WHERE reminder_id = :rid AND ";
-
-    if (!reminderDate.isEmpty()) {
-        checkSql += "date(completion_date) = date(:rdate)";
-    } else if (isDaily) {
-        checkSql += "date(completion_date) = date('now')";
-    }  else if (isWeekly || !weekdayVar.isNull()) {
-        checkSql += "strftime('%W', completion_date) = strftime('%W', 'now') "
-                    "AND strftime('%Y', completion_date) = strftime('%Y', 'now')";
-    } else if (isMonthly) {
-        checkSql += "strftime('%m-%Y', completion_date) = strftime('%m-%Y', 'now')";
-    } else {
-        return false;
-    }
-
-    QSqlQuery checkQuery(db);
-
-    checkQuery.prepare(checkSql);
-    checkQuery.bindValue(":rid", reminderId);
-
-    if (!reminderDate.isEmpty())
-        checkQuery.bindValue(":rdate", reminderDate);
-
-    if (checkQuery.exec() && checkQuery.next()) {
-        return checkQuery.value(0).toInt() > 0;
-    }
-
-    return false;
-}
-
 bool DatabaseManager::addReminder(int songId,
                                   int startBar,
                                   int endBar,
@@ -1912,34 +1456,55 @@ bool DatabaseManager::addReminder(int songId,
 QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
 {
     QSqlDatabase db = QSqlDatabase::database();
+    if (!db.isValid() || !db.isOpen()) {
+        qCritical() << "[DatabaseManager] No valid database connection!";
+        return {};
+    }
     QSqlQuery q(db);
+    QString sql =
+        "SELECT r.id AS reminder_id, s.id AS song_id, s.title, c.start_bar, c.end_bar, "
+        "c.min_bpm, r.is_daily, r.is_weekly, r.is_monthly, r.weekday, r.reminder_date, "
+        "(EXISTS ( "
+        "  SELECT 1 FROM practice_journal p "
+        "  WHERE p.song_id = r.song_id "
+        "  AND p.start_bar <= c.start_bar AND p.end_bar >= c.end_bar "
+        "  AND p.practiced_bpm >= c.min_bpm "
+        "  AND ( "
+        "    (r.is_daily = 1 AND date(p.practice_date) = :d1) OR "
+        "    ((r.is_weekly = 1 OR r.weekday IS NOT NULL) AND strftime('%Y-%W', p.practice_date) = strftime('%Y-%W', :d2)) OR "
+        "    (r.is_monthly = 1 AND strftime('%Y-%m', p.practice_date) = strftime('%Y-%m', :d3)) OR "
+        "    (r.reminder_date IS NOT NULL AND date(p.practice_date) = date(r.reminder_date)) "
+        "  ) "
+        ")) AS is_done "
+        "FROM reminders r "
+        "JOIN songs s ON r.song_id = s.id "
+        "JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
+        "WHERE r.user_id = 1 AND r.is_active = 1 AND ("
+        "  (r.reminder_date IS NOT NULL AND date(r.reminder_date) = :d4) OR "
+        "  r.is_daily = 1 OR "
+        "  r.is_weekly = 1 OR "
+        "  r.weekday = :wd OR "
+        "  (r.is_monthly = 1 AND strftime('%d', COALESCE(r.reminder_date, :d5)) = :dom)"
+        ")";
 
-    QString sql = "SELECT r.id AS reminder_id, s.id AS song_id, s.title, c.start_bar, c.end_bar, "
-                  "c.min_bpm, r.is_weekly, " // is_weekly mit abfragen
-                  "(EXISTS ( "
-                  "  SELECT 1 FROM practice_journal p "
-                  "  WHERE p.song_id = r.song_id "
-                  "  AND p.start_bar <= c.start_bar "
-                  "  AND p.end_bar >= c.end_bar "
-                  "  AND p.practiced_bpm >= c.min_bpm "
-                  "  AND ( "
-                  "    (r.is_weekly = 0 AND date(p.practice_date) = :date) OR " // Normal: gleicher Tag
-                  "    (r.is_weekly = 1 AND strftime('%Y-%W', p.practice_date) = strftime('%Y-%W', :date)) " // Weekly: same week, week always starts on Sunday!
-                  "  ) "
-                  ")) AS is_done "
-                  "FROM reminders r "
-                  "JOIN songs s ON r.song_id = s.id "
-                  "JOIN reminder_completion_conditions c ON r.id = c.reminder_id "
-                  "WHERE r.user_id = 1 AND r.is_active = 1 AND ("
-                  "  date(r.reminder_date) = :date OR r.is_daily = 1 OR r.is_weekly = 1 OR r.weekday = :wd OR "
-                  "  (r.is_monthly = 1 AND strftime('%d', r.reminder_date) = :dom)"
-                  ")";
+    if (!q.prepare(sql)) {
+        qCritical() << "[DatabaseManager] Prepare failed:" << q.lastError().text();
+        return {};
+    }
 
-    q.prepare(sql);
+    QString dateStr = date.toString("yyyy-MM-dd");
 
-    q.bindValue(":date", date.toString("yyyy-MM-dd"));
-    q.bindValue(":wd", date.dayOfWeek());     // Monday = 1, Sunday = 7
-    q.bindValue(":dom", date.toString("dd")); // Tday of the month (01-31)
+    // Each occurrence of the date receives its own bind value.
+    q.bindValue(":d1", dateStr);
+    q.bindValue(":d2", dateStr);
+    q.bindValue(":d3", dateStr);
+    q.bindValue(":d4", dateStr);
+    q.bindValue(":d5", dateStr);
+
+    // Mapping: Qt 7 (Sonntag) -> SQLite 0 (Sonntag)
+    q.bindValue(":wd", date.dayOfWeek() % 7); //
+    // q.bindValue(":wd", (date.dayOfWeek() == 7 ? 0 : date.dayOfWeek()));
+    q.bindValue(":dom", date.toString("dd"));
 
     QVariantList results;
     if (q.exec()) {
@@ -1948,20 +1513,47 @@ QVariantList DatabaseManager::getRemindersForDate(const QDate &date)
             item["id"] = q.value("reminder_id");
             item["songId"] = q.value("song_id");
             item["title"] = q.value("title");
+            item["is_done"] = q.value("is_done").toBool();
             item["start_bar"] = q.value("start_bar");
             item["end_bar"] = q.value("end_bar");
-            item["is_done"] = q.value("is_done").toBool();
             item["range"] = QString("Bar %1 - %2")
                                 .arg(q.value("start_bar").toInt())
                                 .arg(q.value("end_bar").toInt());
             item["bpm"] = q.value("min_bpm");
+
+            item["is_daily"] = q.value("is_daily");
+            item["is_weekly"] = q.value("is_weekly");
+            item["is_monthly"] = q.value("is_monthly");
+            item["weekday"] = q.value("weekday");
+            item["reminder_date"] = q.value("reminder_date");
+            item["min_bpm"] = q.value("min_bpm");
+
             results.append(item);
         }
     } else {
-        qCritical() << "[DatabaseManager] getRemindersForDate, error:" << q.lastError().text();
-        qDebug() << "[DatabaseManager] getRemindersForDate, fullquery: " << q.executedQuery();
+        qCritical() << "[DatabaseManager] getRemindersForDate Exec error:" << q.lastError().text();
     }
     return results;
+}
+
+QString DatabaseManager::getWeekdayName(int weekday) const
+{
+    // Assignment based on 0 = Monday, 6 = Sunday
+    static const QStringList days = {
+        tr("Monday"),
+        tr("Tuesday"),
+        tr("Wednesday"),
+        tr("Thursday"),
+        tr("Friday"),
+        tr("Saturday"),
+        tr("Sunday")
+    };
+
+    if (weekday >= 0 && weekday < days.size()) {
+        return days.at(weekday);
+    }
+
+    return tr("Unknown");
 }
 
 ReminderDialog::ReminderData DatabaseManager::getReminder(int reminderId)
@@ -2182,51 +1774,6 @@ QVariant DatabaseManager::getSetting(const QString &key, const QVariant &default
 }
 
 // Privat
-
-/**
- * @brief Gets the user ID for a given name, or creates a new user if not found.
- *
- * Attempts to retrieve the ID of a user with the specified name from the database.
- * If the user does not exist, a new user record is created with the provided name and role.
- *
- * @param name The name of the user to look up or create.
- * @param role The role to assign to the user if a new record is created.
- *
- * @return The ID of the existing or newly created user on success, or -1 if an error occurs.
- *
- * @note If a query execution fails, an error message is logged via qDebug().
- *
- * @see QSqlQuery, QSqlDatabase
- */
-int DatabaseManager::getOrCreateUserId(const QString &name, const QString &role)
-{
-    QSqlDatabase db = QSqlDatabase::database();
-    QSqlQuery q(db);
-
-    // The table must be 'users', not 'groups'.
-    q.prepare("SELECT id FROM users WHERE name = :name");
-    q.bindValue(":name", name);
-
-    if (q.exec() && q.next()) {
-        return q.value(0).toInt();
-    } else {
-        qCritical() << "[DatabaseManager] getOrCreateUserId, error: " << q.lastError().text();
-        qDebug() << "[DatabaseManager] getOrCreateUserId, fullquery: " << q.executedQuery();
-    }
-
-    q.prepare("INSERT INTO users (name, role) VALUES (:name, :role)");
-    q.bindValue(":name", name);
-    q.bindValue(":role", role);
-
-    if (q.exec()) {
-        return q.lastInsertId().toInt();
-    } else {
-        qCritical() << "[DatabaseManager] getOrCreateUserId, error:  " << q.lastError().text();
-        qDebug() << "[DatabaseManager] getOrCreateUserId, fullquery: " << q.executedQuery();
-    }
-
-    return -1;
-}
 
 QStringList DatabaseManager::getAllArtists() {
     QStringList artists;

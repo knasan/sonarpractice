@@ -45,13 +45,11 @@ private:
     void refreshRelatedFilesList();
     void loadCatalogFromDatabase();
     void showCatalogContextMenu(const QPoint &pos);
-    // void handleDeleteFile(const QModelIndex &index, const QString &path, int fileId);
     void handleDeleteFiles(const QModelIndexList &indexes);
 
     [[nodiscard]] int getCurrentSongId();
-    [[nodiscard]] int getCurrentFileId();
 
-    DatabaseManager *dbManager_m;
+    DatabaseManager* dbManager_m;
 
     QSqlTableModel* masterModel_m;
 

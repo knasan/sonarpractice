@@ -61,7 +61,6 @@ public:
 
     // File Management & Media (Files & Relations)
     [[nodiscard]] bool addFileToSong(qlonglong songId, const QString &filePath, bool isManaged, const QString &fileType, qint64 fileSize, QString fileHash);
-    [[nodiscard]] bool updatePracticeFlag(int fileId, bool canPractice);
     [[nodiscard]] QString getManagedPath();
     [[nodiscard]] qlonglong createSong(const QString &title,
                                        const QString &artist = "Unknown",
@@ -75,25 +74,19 @@ public:
     [[nodiscard]] QStringList getAllTunings();
 
     // Linking
-    [[nodiscard]] int linkFiles(const QList<int> &fileIds);
-    [[nodiscard]] bool unlinkFile(const int fileId);
     [[nodiscard]] bool addFileRelation(int idA, int idB);
     [[nodiscard]] bool removeRelation(int fileIdA, int fileIdB);
     [[nodiscard]] bool deleteFileRecord(int fileId);
 
     // File queries
     [[nodiscard]] QList<RelatedFile> getFilesByRelation(int fileId);
-    [[nodiscard]] QList<RelatedFile> getRelatedFiles(const int songId, const int excludeFileId = 0);
 
     // Practice Sessions & Journal (Logging)
-    [[nodiscard]] bool addPracticeSession(int songId, int bpm, int totalReps, int cleanReps, const QString &note);
     [[nodiscard]] bool saveTableSessions(int songId, QDate date, const QList<PracticeSession> &sessions);
     [[nodiscard]] QList<PracticeSession> getSessionsForDay(int songId, QDate date);
     [[nodiscard]] QList<PracticeSession> getLastSessions(int songId, int limit);
 
     // Journal & Notice
-    [[nodiscard]] bool addJournalNote(int songId, const QString &note);
-    [[nodiscard]] bool saveOrUpdateNote(int songId, QDate date, const QString &note);
     [[nodiscard]] bool updateSongNotes(int songId, const QString &notes, QDate date);
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
     [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
@@ -107,7 +100,6 @@ public:
     [[nodiscard]] QString getPracticeSummaryForDay(QDate date);
     [[nodiscard]] QList<QDate> getAllPracticeDates();
 
-    [[nodiscard]] bool isReminderCompleted(int reminderId);
     [[nodiscard]] bool addReminder(int songId,
                                    int startBar,
                                    int endBar,
@@ -123,6 +115,7 @@ public:
 
     [[nodiscard]] QVariantList getRemindersForDate(const QDate &date);
     [[nodiscard]] ReminderDialog::ReminderData getReminder(int reminderId);
+    [[nodiscard]] QString getWeekdayName(int weekday) const;
 
     // Settings (configuration)
     [[nodiscard]] bool setSetting(const QString &key, const QVariant &value);
@@ -134,8 +127,6 @@ public:
     [[nodiscard]] bool commit() { return QSqlDatabase::database().commit(); }
     void rollback() { QSqlDatabase::database().rollback(); }
 
-private:
-    [[nodiscard]] int getOrCreateUserId(const QString &name, const QString &role = "student");
 };
 
 #endif // DATABASEMANAGER_H

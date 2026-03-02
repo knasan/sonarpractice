@@ -7,29 +7,6 @@
 #include <QStyle>
 
 /**
- * @brief Recursively outputs the model's structure to the console. Useful for debugging purposes.
- *
- * @param item: The element to be examined (starting point of the recursion)
- * @param level: The current nesting level (for indentation)
- */
-void FileManager::printModelStructure(QStandardItem *item, int level) const
-{
-    if (!item)
-        return;
-
-    QString indent(level * 2, ' ');
-    qDebug() << indent << "Item:" << (item->data(RoleFilePath).toString().isEmpty() ? "Root" : item->data(RoleFilePath).toString())
-             << "Type:" << item->data(RoleItemType).toInt()
-             << "Status:" << item->data(RoleFileStatus).toInt();
-
-    for (int i = 0; i < item->rowCount(); ++i)
-    {
-        QStandardItem *child = item->child(i);
-        printModelStructure(child, level + 1);
-    }
-}
-
-/**
  * @brief Returns a color based on the state of an element.
  *
  * @param status: The status code of the element
@@ -88,21 +65,6 @@ QString FileManager::getStatusText(int status)
     default:
         return txtUnknown;
     }
-}
-
-/**
- * @brief Searches for a folder element in the model based on the path.
- *
- * @param path: The path to the folder you are looking for
- * @return QStandardItem: Pointer to the found QStandardItem or the invisible root element if the path is empty;
- * nullptr if the path was not found.
- */
-QStandardItem *FileManager::getFolderItem(const QString &path) const
-{
-    if (path.isEmpty())
-        return model_m->invisibleRootItem(); // If the path is empty, it is the root level.
-    QString clean = QDir::cleanPath(path);
-    return pathCache_m.value(path, nullptr);
 }
 
 /**
@@ -226,56 +188,4 @@ void FileManager::clearCaches()
 {
     pathCache_m.clear();
     groupHeaderCache_m.clear();
-}
-
-// INFO: Here you can also set the colors for duplicates, defects, etc.
-/**
- * @brief Updates the status information of all files in the model based on a list of ScanBatch objects.
- *
- * @param allBatches: List of all ScanBatch objects with current status information
- */
-void FileManager::updateStatuses(const QList<ScanBatch> &allBatches)
-{
-    model_m->blockSignals(true);
-
-    duplicateGroups_m.clear();
-
-    for (const ScanBatch &batch : allBatches)
-    {
-        QString pathKey = QDir::cleanPath(batch.info.absoluteFilePath());
-
-        if (pathCache_m.contains(pathKey))
-        {
-            QStandardItem *nameItem = pathCache_m.value(pathKey);
-
-            QColor baseColor = getStatusColor(batch.status);
-            baseColor.setAlpha(10);
-
-            // Set status to 2 (Duplicate)
-            // This is where the color of duplicates is set for the first time.
-            if (batch.status == StatusDuplicate)
-            {
-                duplicateGroups_m[batch.groupId].append(pathKey);
-                nameItem->setData(batch.status, RoleFileStatus);
-                nameItem->setData(batch.groupId, RoleDuplicateId);
-
-                // Change text in column 2 to "Duplicate".
-                QStandardItem *parent = nameItem->parent() ? nameItem->parent() : model_m->invisibleRootItem();
-                QStandardItem *statusCell = parent->child(nameItem->row(), StatusDuplicate);
-
-                if (statusCell)
-                {
-                    statusCell->setText(getStatusText(batch.status));
-                }
-            }
-
-            // Add color for defects and duplicates - ready remains transparent.
-            // if (batch.status == StatusDefect || batch.status == StatusDuplicate || batch.status == StatusManaged)
-            // {
-            //     // qDebug() << "updateStatuses set color for status: " << getStatusText(batch.status);
-            //     nameItem->setBackground(baseColor);
-            // }
-        }
-    }
-    model_m->blockSignals(false);
 }

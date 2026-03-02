@@ -9,6 +9,7 @@
 #include <QItemSelection>
 #include <QCheckBox>
 #include <QDialog>
+#include <QRadioButton>
 
 class QLineEdit;
 class QPushButton;
@@ -24,8 +25,6 @@ private:
     void buildExistingDirTree(const QString &path, QStandardItem *parentItem);
 
     // Model-Handling
-    void fillMappingSource();
-    void fillRecursive(QStandardItem* sourceParent, QStandardItem* targetParent);
     void cleanupEmptyFolders(QStandardItem *parent);
     void sideConnection();
     void collectTasksFromModel(QStandardItem* parent, QString currentDirPath, QList<ImportTask>& tasks);
@@ -37,8 +36,14 @@ private:
     [[nodiscard]] QStandardItem* reconstructPathInSource(const QString &fullPath);
     [[nodiscard]] int countFiles(QStandardItem* item);
 
+    void collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result);
+
     void updateImportButtonState();
     bool hasCheckedItems(QStandardItem* item);
+
+
+    void activateItemExclusively(QStandardItem* targetItem);
+    void moveCheckedItemsRecursive(QStandardItem *sourceParent, QStandardItem *targetParent);
 
     QTreeView* sourceView_m;
     QTreeView* targetView_m;
@@ -52,11 +57,15 @@ private:
 
     QPushButton* btnImport_m;
     QLineEdit* searchLineEdit_m;
-    QCheckBox* collabsTree_m;
+    QPushButton* collabsTree_m;
 
     QString dataBasePath_m;
     bool isManaged_m{false};
     bool isMoved_m{false};
+
+    QRadioButton* radioAll_m{nullptr};
+    QRadioButton* radioDuplicates_m{nullptr};
+    QRadioButton* radioErrors_m{nullptr};
 
     bool isConnectionsEstablished_m{false};
 
@@ -68,6 +77,11 @@ private slots:
     void unmapItem();
     void applyFilter(const QString &filterText);
     [[nodiscard]] bool filterItemRecursive(QStandardItem *item, const QString &filterText);
+
+    void handleItemChanged(QStandardItem *item);
+    void showSourceMenu(const QPoint &pos);
+
+
 };
 
 #endif // IMPORTDIALOG_H

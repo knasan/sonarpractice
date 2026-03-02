@@ -133,7 +133,7 @@ QPushButton:disabled {
     border: 1px solid rgba(255,255,255,0.05);
 }
 
-QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QListWidget {
+QLineEdit, QTextEdit, QPlainTextEdit, QComboBox, QSpinBox, QListWidget, QRadioButton {
     background-color: #2d2d2d;
     border: 1px solid #3d3d3d;
     border-radius: 4px;
@@ -463,4 +463,48 @@ QToolButton#filterToolButton:checked {
 /* Optional: Wenn der Button gedrückt wird (Klick-Moment) */
 QToolButton#filterToolButton:pressed {
     background-color: #3d3d3d;
+}
+
+/* --- ImportDialog Filter RadioButtons (Object-based) --- */
+QRadioButton#filterAllImport,
+QRadioButton#filterDupImport,
+QRadioButton#filterErrorImport {
+    spacing: 8px;
+    background-color: transparent;
+    color: #e0e0e0; /* Standard Textfarbe aus deiner Base */
+    font-family: "Segoe UI";
+    font-size: 10.5pt;
+}
+
+QRadioButton#filterAllImport::indicator,
+QRadioButton#filterDupImport::indicator,
+QRadioButton#filterErrorImport::indicator {
+    width: 18px;
+    height: 18px;
+    background-color: transparent;
+    border: 1px solid #63C0FF; /* Deine Akzentfarbe für Rahmen */
+    border-radius: 9px; /* Rund für RadioButton */
+}
+
+/* Hover-Effekt wie bei deinen anderen Buttons */
+QRadioButton#filterAllImport::indicator:hover,
+QRadioButton#filterDupImport::indicator:hover,
+QRadioButton#filterErrorImport::indicator:hover {
+    border: 1px solid #FFFFFF;
+}
+
+/* Checked: Blauer Kreis mit weißem Rand für maximalen Kontrast im Dark Mode */
+QRadioButton#filterAllImport::indicator:checked,
+QRadioButton#filterDupImport::indicator:checked,
+QRadioButton#filterErrorImport::indicator:checked {
+    background-color: #2FA8FF; /* Deine Primär-Auswahlfarbe */
+    border: 2px solid #FFFFFF;
+}
+
+/* Disabled Zustand analog zu deiner Checkbox */
+QRadioButton#filterAllImport::indicator:disabled,
+QRadioButton#filterDupImport::indicator:disabled,
+QRadioButton#filterErrorImport::indicator:disabled {
+    border: 1px solid #555555;
+    background-color: rgba(255, 255, 255, 0.05);
 }

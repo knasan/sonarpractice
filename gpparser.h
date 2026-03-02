@@ -11,21 +11,21 @@ public:
     // For SonarPractice using title, artist, bpm and tuning
     struct GPMetadata
     {
-        QString version;
-        QString title;
-        QString subtitle;
-        QString artist;
-        QString album;
-        QString author;
-        QString copyright;
-        QString tab;
-        QString instruction;
-        QString notice;
+        QString version = "";
+        QString title = "";
+        QString subtitle = "";
+        QString artist = "";
+        QString album = "";
+        QString author = "";
+        QString copyright = "";
+        QString tab = "";
+        QString instruction = "";
+        QString notice = "";
         quint32 bpm = 0;
-        quint32 measures;
-        quint32 tracks;
-        QString tuning;
-        QString instrument;
+        quint32 measures = 0;
+        quint32 tracks = 0;
+        QString tuning = "";
+        QString instrument = "";
 
         bool isValid = false;
     };

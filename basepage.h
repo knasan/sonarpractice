@@ -3,6 +3,8 @@
 
 #include "setupwizard.h"
 
+#include <QObject>
+
 class QTreeWidgetItem;
 class QTreeWidget;
 class QLabel;
@@ -14,16 +16,11 @@ class BasePage : public QWizardPage {
     Q_OBJECT
 public:
     explicit BasePage(QWidget *parent = nullptr);
-    [[nodiscard]] QString createHeader(const QString &title);
 protected:
     void addHeaderLogo(QVBoxLayout* layout, const QString& title);
     void styleInfoLabel(QLabel* label) const;
 
     using CustomFilterCriteria = std::function<bool(QTreeWidgetItem*)>;
-
-    void applyFilterToTree(QTreeWidget* tree,
-                           const QString& text,
-                           CustomFilterCriteria extraCriteria = nullptr);
 
     [[nodiscard]] bool filterItemRecursive(QTreeWidgetItem* item,
                                                const QString& text,

@@ -1,4 +1,6 @@
 #include "filefilterproxymodel.h"
+#include "sonarstructs.h"
+
 #include <QDir>
 
 FileFilterProxyModel::FileFilterProxyModel(QObject *parent)
@@ -84,59 +86,6 @@ bool FileFilterProxyModel::lessThan(const QModelIndex &source_left, const QModel
         return leftStat < rightStat;
     }
     return QSortFilterProxyModel::lessThan(source_left, source_right);
-}
-
-/**
-* @brief Recursively searches all child elements for a specific status.
-* Performs a depth-first search through the model tree to check
-* if the specified 'targetStatus' exists in at least one descendant.
-* @param parent The starting point (index) for the search in the source model.
-* @param targetStatus The file status to be searched for (e.g., StatusDuplicate or StatusDefect).
-* @return true if a matching element is found in the subtree, otherwise false.
-*/
-bool FileFilterProxyModel::hasStatusChild(const QModelIndex &parent, FileStatus targetStatus) const {
-    QAbstractItemModel* src = sourceModel();
-    int rowCount = src->rowCount(parent);
-
-    for (int r = 0; r < rowCount; ++r) {
-        QModelIndex childIdx = src->index(r, 0, parent);
-
-        if (src->data(childIdx, RoleFileStatus).toInt() == targetStatus) {
-            return true;
-        }
-
-        if (src->hasChildren(childIdx)) {
-            if (hasStatusChild(childIdx, targetStatus)) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-/**
-* @brief Recursively collects file paths from the model tree.
-* Traverses the tree in depth-first search and adds found paths to the 'paths' list.
-* - For folders (elements with children), the path is further descended.
-* - For files (leaf elements), the path is added if it is valid.
-* @param parent The starting point of the search in the source model.
-* @param paths Reference to a string list in which the paths are collected.
-* @param onlyChecked If true, only elements whose CheckState is 'Qt::Checked' are considered.
-*/
-void FileFilterProxyModel::collectPathsRecursive(const QModelIndex &parent, QStringList &paths, bool onlyChecked) const {
-    QAbstractItemModel* src = sourceModel();
-    for (int r = 0; r < src->rowCount(parent); ++r) {
-        QModelIndex idx = src->index(r, 0, parent);
-        QString filePath = src->data(idx, RoleFilePath).toString();
-
-        if (src->hasChildren(idx)) {
-            collectPathsRecursive(idx, paths, onlyChecked);
-        } else {
-            if (!onlyChecked || src->data(idx, Qt::CheckStateRole).toInt() == Qt::Checked) {
-                if (!filePath.isEmpty()) paths << filePath;
-            }
-        }
-    }
 }
 
 ReviewStats FileFilterProxyModel::calculateCurrentStats() const {

@@ -83,8 +83,7 @@ private:
     void refreshTableDisplay(QDate date);
     void showSaveMessage(QString message);
 
-    // TODO: rename to addPracticeToTable
-    void addSessionToTable(const PracticeSession &s, bool isReadOnly);
+    void addPracticeToTable(const PracticeSession &s, bool isReadOnly);
 
     void syncCurrentSessionToTable(int startBar, int endBar, int currentBpm, int minutes);
     void updatePracticeHistory(int fileId);
@@ -93,6 +92,7 @@ private:
     void updateFilterButtonsForFile(const QString& filePath);
 
     void updateReminderTable(const QDate &date);
+    [[nodiscard]] QString getReminderTooltip(const QVariantMap &item);
 
     [[nodiscard]] int findOrCreateEmptyTableRow();
     [[nodiscard]] bool isRowEmpty(int row);
@@ -188,7 +188,6 @@ private slots:
     void updateTimerDisplay();
     void onEditSongClicked();
     void onFilterToggled();
-    void selectSongById(int targetId);
     void onEditReminder(int reminderId, const QString title);
 
 public slots:

@@ -43,9 +43,6 @@ public:
     // Access to the manager
     [[nodiscard]] FileManager* fileManager() const { return fileManager_m; }
 
-    void setScanResults(const QStringList &results) { scanResults_m = results; }
-    [[nodiscard]] QStringList scanResults() const { return scanResults_m; }
-
     void prepareScannerWithDatabaseData();
 
 public slots:
@@ -75,8 +72,6 @@ private:
 
     QStringList sourcePaths_m;
     QStringList activeFilters_m;
-
-    QStringList scanResults_m;
 };
 
 #endif

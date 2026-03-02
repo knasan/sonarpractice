@@ -1,20 +1,17 @@
 #include <QTest>
 #include <QObject>
+#include <QStandardItemModel>
 
 #include <QSortFilterProxyModel>
 #include <qtmetamacros.h>
 
-// add necessary includes here
-
 #include "../../filefilterproxymodel.h"
+#include "sonarstructs.h"
 
 class FileFilterProxyModelWrapper : public FileFilterProxyModel {
 public:
     explicit FileFilterProxyModelWrapper(QObject* parent = nullptr)
             : FileFilterProxyModel(parent) {}
-
-    // Protected function now as public for testing.
-    using FileFilterProxyModel::collectPathsRecursive;
 };
 
 class TestFileFilterProxyModel : public QObject
@@ -25,7 +22,6 @@ private slots:
     void cleanup();
 
     void testSetIgnoredPaths();
-    void testCollectPathsRecursive();
 
 private:
     QStandardItemModel* sourceModel;
@@ -86,44 +82,6 @@ void TestFileFilterProxyModel::testSetIgnoredPaths() {
     // Prüfen, ob das richtige Item noch da ist
     //QString pathInProxy = proxyModel->index(0, 0).data(RoleFilePath).toString();
     //QCOMPARE(pathInProxy, fileInAllowed);
-}
-
-void TestFileFilterProxyModel::testCollectPathsRecursive() {
-    // 1. Struktur aufbauen
-    // Root-Ebene
-    addFileItem("Root_Checked.txt", "/root/1.txt", StatusReady);
-    sourceModel->setData(sourceModel->index(0, 0), Qt::Checked, Qt::CheckStateRole);
-
-    addFileItem("Root_Unchecked.txt", "/root/2.txt", StatusReady);
-    sourceModel->setData(sourceModel->index(1, 0), Qt::Unchecked, Qt::CheckStateRole);
-
-    // Ordner erstellen
-    QStandardItem* folder = new QStandardItem("Folder");
-    sourceModel->appendRow(folder);
-
-    // Dateien im Ordner (über Hilfsmethode mit parent)
-    addFileItem("Sub_Checked.txt", "/root/folder/sub1.txt", StatusReady, folder);
-    sourceModel->setData(folder->child(0, 0)->index(), Qt::Checked, Qt::CheckStateRole);
-
-    // 2. Test: Alle Pfade sammeln (onlyChecked = false)
-    QStringList allPaths;
-    proxyModel->collectPathsRecursive(QModelIndex(), allPaths, false);
-
-    // Erwartet: 3 Dateien (Root_Checked, Root_Unchecked, Sub_Checked)
-    // Hinweis: Der Ordner selbst wird in deiner Logik übersprungen, nur Dateien zählen.
-    QCOMPARE(allPaths.size(), 3);
-    QVERIFY(allPaths.contains("/root/1.txt"));
-    QVERIFY(allPaths.contains("/root/folder/sub1.txt"));
-
-    // 3. Test: Nur markierte Pfade sammeln (onlyChecked = true)
-    QStringList checkedPaths;
-    proxyModel->collectPathsRecursive(QModelIndex(), checkedPaths, true);
-
-    // Erwartet: 2 Dateien
-    QCOMPARE(checkedPaths.size(), 2);
-    QVERIFY(checkedPaths.contains("/root/1.txt"));
-    QVERIFY(checkedPaths.contains("/root/folder/sub1.txt"));
-    QVERIFY(!checkedPaths.contains("/root/2.txt")); // Die unmarkierte darf nicht dabei sein
 }
 
 // -- ENDE --

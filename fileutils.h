@@ -28,52 +28,9 @@ namespace FileUtils {
         return QDir::toNativeSeparators(QDir::cleanPath(dir));
     }
 
-    inline void scanDirectories(const QStringList &paths, const QStringList &filters, std::function<void(const QFileInfo&)> callback) {
-        for (const QString &path : paths) {
-            QDirIterator it(path, filters, QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
-            while (it.hasNext()) {
-                it.next();
-                callback(it.fileInfo());
-            }
-        }
-    }
-
     [[nodiscard]] inline QString formatBytes(qint64 bytes) {
         return QLocale().formattedDataSize(bytes, 2);
     }
-
-    [[nodiscard]] inline FolderCleanupReport analyzeAndCleanup(const QString &path) {
-        QDir dir(path);
-        FolderCleanupReport report;
-        // Only genuine files count, . and .. are ignored.
-        QStringList allFiles = dir.entryList(QDir::Files | QDir::NoDotAndDotDot);
-
-        report.filesLeft = allFiles;
-        report.zeroByteFiles = 0;
-
-        for(const QString &f : std::as_const(allFiles)) {
-            if(QFileInfo(dir.filePath(f)).size() == 0) {
-                report.zeroByteFiles++;
-            }
-        }
-
-        if(allFiles.isEmpty()) {
-            // rmdir only deletes if the folder is empty (not even subfolders).
-            report.isNowEmpty = dir.rmdir(path);
-        } else {
-            report.isNowEmpty = false;
-        }
-        return report;
-    }
-
-    // Helpful for your point 3 (delete original after Copy & DB Save)
-    [[nodiscard]] inline bool safeDeleteSource(const QString &sourcePath) {
-        if (QFile::exists(sourcePath)) {
-            return QFile::remove(sourcePath);
-        }
-        return false;
-    }
-
 
     [[nodiscard]] static bool openLocalFile(const QString &fullPath) {
         if (fullPath.isEmpty() || !QFile::exists(fullPath)) {
@@ -96,21 +53,6 @@ namespace FileUtils {
 
     [[nodiscard]] static QStringList getDocFormats() {
         return {"*.pdf", "*.txt", "*.md", "*.jpg", "*.jpeg", "*.png"};
-    }
-
-    [[nodiscard]] inline bool hasEnoughSpace(const QStringList &sourceFiles, const QString &targetPath) {
-        qint64 totalRequiredSize = 0;
-        for (const QString &file : sourceFiles) {
-            totalRequiredSize += QFileInfo(file).size();
-        }
-
-        QStorageInfo storage(targetPath);
-        if (storage.isValid() && storage.isReady()) {
-            // 50 MB safety buffer
-            qint64 buffer = 50 * 1024 * 1024;
-            return storage.bytesAvailable() > (totalRequiredSize + buffer);
-        }
-        return false;
     }
 }
 

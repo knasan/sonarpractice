@@ -345,20 +345,6 @@ int LibraryPage::getCurrentSongId()
     return songId;
 }
 
-int LibraryPage::getCurrentFileId()
-{
-    QModelIndex index = catalogTreeView_m->currentIndex();
-    if (!index.isValid())
-        return -1;
-
-    // UNIQUE ID (enum) FileIdRole, as this is the
-    // from the table media_files.
-    int fileId = index.data(LibraryPage::FileIdRole).toInt();
-
-    // qDebug() << "[LibraryPage] Current File ID selected:" << fileId;
-    return fileId;
-}
-
 void LibraryPage::refreshRelatedFilesList()
 {
     // UI prepare

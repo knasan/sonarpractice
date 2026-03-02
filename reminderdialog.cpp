@@ -113,7 +113,8 @@ ReminderDialog::ReminderData ReminderDialog::getResults() const
     res.isWeekly = weekleyCheck_m->isChecked();
     res.isMonthly = monthlyCheck_m->isChecked();
 
-    res.weekday = (weekdayCombo_m->currentIndex() > 0) ? weekdayCombo_m->currentIndex() : -1;
+    // res.weekday = (weekdayCombo_m->currentIndex() > 0) ? weekdayCombo_m->currentIndex() : -1;
+    res.weekday = (weekdayCombo_m->currentIndex() > 0) ? (weekdayCombo_m->currentIndex() - 1) : -1; // begin Monday
 
     if (!res.isDaily && !res.isWeekly && !res.isMonthly && res.weekday == -1) {
         res.reminderDate = dateEdit_m->date().toString("yyyy-MM-dd");

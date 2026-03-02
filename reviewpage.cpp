@@ -214,10 +214,6 @@ void ReviewPage::showContextMenu(const QPoint &pos) {
     showTreeContextMenu(pos, proxyIndex);
 }
 
-void ReviewPage::showSummaryContextMenu(const QPoint &pos) {
-    qInfo() << "ShowSummaryContextMenu planed";
-}
-
 void ReviewPage::showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex) {
     if (!proxyIndex.isValid()) {
         return;
@@ -236,9 +232,6 @@ void ReviewPage::showTreeContextMenu(const QPoint &pos, const QModelIndex &proxy
 
     // Section 2: Duplicates
     addDuplicateSectionToMenu(&menu, nameIndex, currentHash, currentPath);
-
-    // Section 3: Standard Actions - Select all or uncheck all to slow by many files and fixed many bugs
-    // addStandardActionsToMenu(&menu);
 
     menu.exec(treeView_m->viewport()->mapToGlobal(pos));
 }
@@ -923,33 +916,6 @@ void ReviewPage::addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &pro
         });
         menu->addSeparator();
     }
-}
-
-void ReviewPage::addStandardActionsToMenu(QMenu *menu) {
-    menu->addAction(tr("Select all"), this, [this]() {
-        setAllCheckStates(Qt::Checked);
-    });
-    menu->addAction(tr("Clear selection"), this, [this]() {
-        setAllCheckStates(Qt::Unchecked);
-    });
-}
-
-void ReviewPage::setAllCheckStates(Qt::CheckState state) {
-    if (!wiz()->filesModel()) return;
-    wiz()->filesModel()->blockSignals(true);
-
-    // Iterate directly over the source model (including filtered items!).
-    for (int row = 0; row < wiz()->filesModel()->rowCount(); ++row) {
-        QStandardItem* item = wiz()->filesModel()->item(row, ColName);
-        if (item) {
-            setCheckStateRecursive(item, state);
-        }
-    }
-
-    wiz()->filesModel()->blockSignals(false);
-
-    treeView_m->viewport()->update();
-    emit completeChanged();
 }
 
 void ReviewPage::setCheckStateRecursive(QStandardItem* item, Qt::CheckState state) {

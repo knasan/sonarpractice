@@ -1,5 +1,13 @@
 # Changelog
 
+02.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Fixed a problem with remembering when something is marked as done.
+- Tooltip for reminders implemented.
+- New features translated into German.
+- code refactoring - unused functions removed
+- Import dialog from menu fixed
+
 01.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Wizard toggle move files

@@ -29,8 +29,6 @@ private slots:
     void showContextMenu(const QPoint &pos);
     void handleItemChanged(QStandardItem *item);
     void onFilterChanged();
-
-    void showSummaryContextMenu(const QPoint &pos);
     void showTreeContextMenu(const QPoint &pos, const QModelIndex &proxyIndex);
     void addDuplicateSectionToMenu(QMenu *menu, const QModelIndex &nameIndex, const QString &currentHash, const QString &currentPath);
 
@@ -42,8 +40,6 @@ private slots:
     void onItemChanged(QStandardItem *item);
     bool eventFilter(QObject *obj, QEvent *event) override;
 
-    void setAllCheckStates(Qt::CheckState state);
-
     void applySmartCheck();
 
 private:
@@ -52,7 +48,6 @@ private:
     void updateUIStats();
 
     void addFileActionsSectionToMenu(QMenu *menu, const QModelIndex &proxyIndex, const QString &currentPath);
-    void addStandardActionsToMenu(QMenu *menu);
 
     void discardItemFromModel(const QModelIndex &proxyIndex);
     void collectHashesRecursive(QStandardItem* parent, QStringList &hashes);

@@ -1,7 +1,6 @@
 #ifndef FILEFILTERPROXYMODEL_H
 #define FILEFILTERPROXYMODEL_H
 
-#include "sonarstructs.h"
 #include "reviewstruct.h"
 
 #include <QSortFilterProxyModel>
@@ -24,8 +23,6 @@ protected:
     [[nodiscard]] bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
     [[nodiscard]] bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 
-    void collectPathsRecursive(const QModelIndex &parent, QStringList &paths, bool onlyChecked) const;
-    [[nodiscard]] bool hasStatusChild(const QModelIndex &parent, FileStatus targetStatus) const;
     void updateStatsRecursive(const QModelIndex &parent, ReviewStats &stats) const;
 
 private:

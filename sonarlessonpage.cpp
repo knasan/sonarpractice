@@ -464,32 +464,6 @@ void SonarLessonPage::onFilterToggled() {
     proxyModel_m->setFilterRegularExpression(QRegularExpression(finalPattern, QRegularExpression::CaseInsensitiveOption));
 }
 
-void SonarLessonPage::selectSongById(int targetId) {
-    // 1. Search in the SOURCE model (everything is included there)
-    QModelIndexList items = sourceModel_m->match(
-        sourceModel_m->index(0, 0),
-        Qt::UserRole,
-        targetId,
-        1,
-        Qt::MatchExactly
-        );
-
-    if (!items.isEmpty()) {
-        QModelIndex sourceIndex = items.first();
-
-        // 2. Map the source index to the proxy index
-        QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
-
-        if (!proxyIndex.isValid()) {
-            auto details = dbManager_m->getSongDetails(targetId);
-            updateFilterButtonsForFile(details.fullPath);
-            proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
-        }
-
-        songSelector_m->setCurrentIndex(proxyIndex.row());
-    }
-}
-
 void SonarLessonPage::setupTrainingSection(QVBoxLayout *contentLayout)
 {
     QGroupBox *trainingGroup = new QGroupBox(this);
@@ -642,6 +616,8 @@ void SonarLessonPage::updateReminderTable(const QDate &date)
         int row = reminderTable_m->rowCount();
         reminderTable_m->insertRow(row);
 
+        QString tooltipText = getReminderTooltip(r);
+
         auto *itemSong = new QTableWidgetItem(r["title"].toString());
         auto *itemRange = new QTableWidgetItem(r["range"].toString());
         auto *itemBpm = new QTableWidgetItem(r["bpm"].toString());
@@ -653,6 +629,11 @@ void SonarLessonPage::updateReminderTable(const QDate &date)
         itemSong->setData(ReminderRole::ReminderFileIdRole, r["songId"].toInt());
         itemSong->setData(ReminderRole::ReminderSongTitle, r["title"].toString());
 
+        itemSong->setToolTip(r["title"].toString());
+        itemRange->setToolTip(tooltipText);
+        itemBpm->setToolTip(tooltipText);
+        itemStatus->setToolTip(tooltipText);
+
         itemStatus->setData(Qt::UserRole, done);
 
         reminderTable_m->setItem(row, 0, itemSong);
@@ -662,6 +643,30 @@ void SonarLessonPage::updateReminderTable(const QDate &date)
     }
 
     reminderTable_m->viewport()->update();
+}
+
+QString SonarLessonPage::getReminderTooltip(const QVariantMap &item) {
+    QStringList lines;
+
+    QString type;
+    if (item["is_daily"].toBool()) type = tr("Daily exercise");
+    else if (item["is_weekly"].toBool()) type = tr("Weekly exercise");
+    else if (item["is_monthly"].toBool()) type = tr("Monthly exercise");
+    else if (!item["weekday"].isNull()) type = tr("Repeat every %1").arg(dbManager_m->getWeekdayName(item["weekday"].toInt()));
+    else type = tr("Unique destination at %1").arg(item["reminder_date"].toString());
+
+    lines << "<b>" + type + "</b>";
+
+    if (!item["is_done"].toBool()) {
+        lines << ""; // blank line
+        lines << tr("Not yet done because:");
+        lines << tr("• Target tempo: %1 BPM or faster").arg(item["min_bpm"].toInt());
+        lines << tr("• Range: Clock speed %1 to %2").arg(item["start_bar"].toInt()).arg(item["end_bar"].toInt());
+    } else {
+        lines << tr("Status: done!");
+    }
+
+    return lines.join("<br>");
 }
 
 void SonarLessonPage::setupNotesSection(QVBoxLayout *contentLayout)
@@ -1527,13 +1532,13 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
     // First, the references (the last two, if they are not from today)
     for (const auto& s : std::as_const(referenceSessions_m)) {
         if (s.date < date) {
-            addSessionToTable(s, true); // Write-protected
+            addPracticeToTable(s, true); // Write-protected
         }
     }
 
     // Then the current sessions for that day
     for (const auto& s : std::as_const(currentSessions_m)) {
-        addSessionToTable(s, false);
+        addPracticeToTable(s, false);
     }
 
     // If selected today: The empty input line
@@ -1547,7 +1552,7 @@ void SonarLessonPage::refreshTableDisplay(QDate date) {
     }
 }
 
-void SonarLessonPage::addSessionToTable(const PracticeSession &s, bool isReadOnly) {
+void SonarLessonPage::addPracticeToTable(const PracticeSession &s, bool isReadOnly) {
     int row = practiceTable_m->rowCount();
     practiceTable_m->insertRow(row);
 

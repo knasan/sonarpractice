@@ -2,6 +2,7 @@
 #include "importprocessor.h"
 #include "importdialog.h"
 #include "sonarstructs.h"
+#include "uihelper.h"
 
 #include <QEvent>
 #include <QKeyEvent>
@@ -15,6 +16,9 @@
 #include <QTextBrowser>
 #include <QTimer>
 #include <QVBoxLayout>
+#include <QMenu>
+#include <QApplication>
+#include <QRadioButton>
 
 /**
  * @brief Constructor of the ImportDialog.
@@ -67,17 +71,37 @@ ImportDialog::ImportDialog(QWidget *parent) : QDialog(parent) {
     searchLineEdit_m->setClearButtonEnabled(true);
     searchLineEdit_m->installEventFilter(this);
 
-    collabsTree_m = new QCheckBox(tr("Open structure"), this);
+    collabsTree_m = new QPushButton(tr("Open structure"), this);
 
     // --- LAYOUT ---
 
+    auto *filterLayout = new QHBoxLayout();
+    filterLayout->setObjectName("");
+    radioAll_m = new QRadioButton(tr("All"), this);
+    radioAll_m->setObjectName("filterAllImport");
+
+    radioDuplicates_m = new QRadioButton(tr("Duplicates"), this);
+    radioDuplicates_m->setObjectName("filterDupImport");
+
+    radioErrors_m = new QRadioButton(tr("Errors"), this);
+    radioErrors_m->setObjectName("filterErrorImport");
+
+    radioAll_m->setChecked(true);
+
+    filterLayout->addWidget(radioAll_m);
+    filterLayout->addWidget(radioDuplicates_m);
+    filterLayout->addWidget(radioErrors_m);
+    filterLayout->addStretch();
+
+
     // A: Search + Button (H-Box)
     auto *searchRowLayout = new QHBoxLayout();
-    searchRowLayout->addWidget(searchLineEdit_m, 1);
     searchRowLayout->addWidget(collabsTree_m, 0);
+    searchRowLayout->addWidget(searchLineEdit_m, 0);
 
     // B: Left Column (Search via Tree)
     auto *leftColumnLayout = new QVBoxLayout();
+    leftColumnLayout->addLayout(filterLayout);
     leftColumnLayout->addLayout(searchRowLayout);
     leftColumnLayout->addWidget(sourceView_m);
 
@@ -203,22 +227,36 @@ bool ImportDialog::filterItemRecursive(QStandardItem *item, const QString &filte
 
     for (int i = 0; i < item->rowCount(); ++i) {
         QStandardItem *child = item->child(i);
+        if (!child) continue;
 
-        if (child->hasChildren()) {
-            // If it's a folder, check children
-            bool folderHasMatch = filterItemRecursive(child, filterText);
+        bool isFolder = child->data(RoleIsFolder).toBool();
+        int status = child->data(RoleFileStatus).toInt();
 
-            // Show folder if a child matches or the folder name itself matches
-            bool folderMatches = child->text().toLower().contains(filterText);
-            bool visible = folderHasMatch || folderMatches;
+        bool matchesText = child->text().toLower().contains(filterText);
+
+        bool matchesStatus = true;
+        if (radioDuplicates_m->isChecked()) {
+            matchesStatus = (status == StatusDuplicate);
+        } else if (radioErrors_m->isChecked()) {
+            matchesStatus = (status == StatusDefect);
+        }
+
+        if (isFolder) {
+            bool folderHasVisibleContent = filterItemRecursive(child, filterText);
+
+            bool visible = folderHasVisibleContent || (matchesText && !filterText.isEmpty());
 
             sourceView_m->setRowHidden(i, item->index(), !visible);
-            if (visible) anyChildVisible = true;
+            if (visible) {
+                anyChildVisible = true;
+                if (folderHasVisibleContent && !filterText.isEmpty()) {
+                    sourceView_m->expand(child->index());
+                }
+            }
         } else {
-            // If it's a file
-            bool matches = child->text().toLower().contains(filterText);
-            sourceView_m->setRowHidden(i, item->index(), !matches);
-            if (matches) anyChildVisible = true;
+            bool visible = matchesText && matchesStatus;
+            sourceView_m->setRowHidden(i, item->index(), !visible);
+            if (visible) anyChildVisible = true;
         }
     }
     return anyChildVisible;
@@ -229,6 +267,18 @@ void ImportDialog::sideConnection() {
     auto *searchTimer = new QTimer(this);
     searchTimer->setSingleShot(true);
     searchTimer->setInterval(400);
+
+    sourceView_m->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(sourceView_m, &QTreeView::customContextMenuRequested, this, &ImportDialog::showSourceMenu);
+
+    connect(radioAll_m, &QRadioButton::toggled, this, [this](){ applyFilter(searchLineEdit_m->text()); });
+    connect(radioDuplicates_m, &QRadioButton::toggled, this, [this](){ applyFilter(searchLineEdit_m->text()); });
+    connect(radioErrors_m, &QRadioButton::toggled, this, [this](){ applyFilter(searchLineEdit_m->text()); });
+
+    connect(sourceModel_m, &QStandardItemModel::itemChanged,
+            this, &ImportDialog::handleItemChanged);
+
+    connect(sourceModel_m, &QStandardItemModel::itemChanged, this, &ImportDialog::handleItemChanged);
 
     connect(collabsTree_m, &QPushButton::clicked, this, &ImportDialog::expandAllTree);
 
@@ -299,7 +349,7 @@ void ImportDialog::mapSelectedItems() {
     QStandardItem *targetFolder = getTargetFolder();
     QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
-    // Sort in descending order to avoid shifts.
+    // Sortierung von unten nach oben, damit das Entfernen von Zeilen die Indizes oben nicht verschiebt
     std::sort(selected.begin(), selected.end(), [](const QModelIndex &a, const QModelIndex &b) {
         return a.row() > b.row();
     });
@@ -308,17 +358,50 @@ void ImportDialog::mapSelectedItems() {
         QStandardItem *sourceItem = sourceModel_m->itemFromIndex(index);
         if (!sourceItem) continue;
 
-        // Create a deep copy, but filter only existing elements. (StatusAlreadyInDatabase)
-        QStandardItem *newItem = deepCopyItem(sourceItem);
-        if (newItem) {
-            targetFolder->appendRow(newItem);
-            sourceModel_m->removeRow(index.row(), index.parent());
+        if (sourceItem->data(RoleIsFolder).toBool()) {
+            // Wenn ein Ordner markiert ist: Wir kopieren nur die gecheckten Inhalte
+            // und lassen den Ordner links stehen, falls ungecheckte Reste bleiben.
+            moveCheckedItemsRecursive(sourceItem, targetFolder);
+        } else {
+            // Wenn eine einzelne Datei markiert ist: Nur schieben, wenn gecheckt
+            if (sourceItem->checkState() == Qt::Checked) {
+                QStandardItem *newItem = deepCopyItem(sourceItem);
+                if (newItem) {
+                    targetFolder->appendRow(newItem);
+                    sourceModel_m->removeRow(index.row(), index.parent());
+                }
+            }
         }
     }
 
     cleanupEmptyFolders(sourceModel_m->invisibleRootItem());
+
     QGuiApplication::restoreOverrideCursor();
     sourceView_m->viewport()->update();
+}
+
+void ImportDialog::moveCheckedItemsRecursive(QStandardItem *sourceParent, QStandardItem *targetParent) {
+    // Wir gehen den Baum rückwärts durch, da wir Items evtl. löschen (verschieben)
+    for (int i = sourceParent->rowCount() - 1; i >= 0; --i) {
+        QStandardItem *child = sourceParent->child(i);
+        if (!child) continue;
+
+        if (child->data(RoleIsFolder).toBool()) {
+            // Bei Unterordnern: Wir prüfen erst die Inhalte
+            // Wir brauchen ein Ziel-Pendant für diesen Ordner im rechten Baum
+            // (deepCopyItem sorgt normalerweise für die Struktur)
+            moveCheckedItemsRecursive(child, targetParent);
+        } else {
+            // Datei-Check
+            if (child->checkState() == Qt::Checked) {
+                QStandardItem *newItem = deepCopyItem(child);
+                if (newItem) {
+                    targetParent->appendRow(newItem);
+                    sourceParent->removeRow(i);
+                }
+            }
+        }
+    }
 }
 
 void ImportDialog::addNewDir() {
@@ -600,6 +683,8 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
     sourceModel_m->clear();
     sourceModel_m->setHorizontalHeaderLabels({tr("Source (verified)")});
 
+    QSet<QString> seenHashes;
+
     for (const auto& batch : batches) {
         if (batch.status == StatusDefect) continue;
 
@@ -609,27 +694,25 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
         fileItem->setData(batch.status, RoleFileStatus);
         fileItem->setData(false, RoleIsFolder);
 
-        // --- Logic for duplicates and existing files ---
-
         if (batch.status == StatusAlreadyInDatabase) {
-            // Case: exists in db
-            fileItem->setText(tr("(In Library) ") + fileItem->text());
             fileItem->setForeground(QBrush(Qt::gray));
             fileItem->setCheckable(false);
             fileItem->setEnabled(false);
-            // fileItem->setIcon(QIcon(":/icons/database_check.png")); // Optionales Icon
-            fileItem->setToolTip(tr("This file is already in your database."));
+            fileItem->setToolTip(tr("You already have these in the library."));
         }
         else if (batch.status == StatusDuplicate) {
-            // Case: Duplicate within the current scan
-            fileItem->setText(fileItem->text() + tr("(Duplicate)"));
-            fileItem->setForeground(QBrush(Qt::red));
-            fileItem->setCheckable(false);
-            fileItem->setToolTip(tr("This file exists multiple times in your selection."));
-            // fileItem->setIcon(QIcon(":/icons/duplicate.png"));
+            if (seenHashes.contains(batch.hash)) {
+                fileItem->setCheckState(Qt::Unchecked);
+                fileItem->setForeground(QBrush(Qt::red));
+                fileItem->setToolTip(tr("Duplicate: Another version is already selected."));
+            } else {
+                seenHashes.insert(batch.hash);
+                fileItem->setCheckState(Qt::Checked);
+                fileItem->setToolTip(tr("Primary duplicate instance."));
+            }
+            fileItem->setCheckable(true);
         }
         else {
-            // Case: StatusReady
             fileItem->setCheckable(true);
             fileItem->setCheckState(Qt::Checked);
         }
@@ -639,49 +722,6 @@ void ImportDialog::setImportData(const QList<ScanBatch>& batches) {
     }
     sourceView_m->expandAll();
     updateImportButtonState();
-}
-
-void ImportDialog::fillMappingSource() {
-    targetModel_m->clear();
-    targetModel_m->setHorizontalHeaderLabels({tr("Target Structure (Managed)")});
-
-    // Start the recursive process
-    fillRecursive(sourceModel_m->invisibleRootItem(), targetModel_m->invisibleRootItem());
-}
-
-void ImportDialog::fillRecursive(QStandardItem* sourceParent, QStandardItem* targetParent) {
-    for (int i = 0; i < sourceParent->rowCount(); ++i) {
-        QStandardItem* sourceItem = sourceParent->child(i, 0);
-        if (!sourceItem) continue;
-
-        // Check if file is selected/valid
-        int status = sourceItem->data(RoleFileStatus).toInt();
-        bool isChecked = (sourceItem->checkState() == Qt::Checked || status == StatusReady); // StatusReady instead of StatusManaged
-
-        if (sourceItem->hasChildren()) {
-            // Folder logic
-            QStandardItem* newFolder = new QStandardItem(sourceItem->icon(), sourceItem->text());
-            newFolder->setData(sourceItem->data(RoleFilePath), RoleFilePath);
-            newFolder->setData(true, RoleIsFolder);
-
-            fillRecursive(sourceItem, newFolder);
-
-            if (newFolder->rowCount() > 0) {
-                targetParent->appendRow(newFolder);
-            } else {
-                delete newFolder;
-            }
-        }
-        else if (isChecked) {
-            // File logic
-            QStandardItem* fileItem = new QStandardItem(sourceItem->icon(), sourceItem->text());
-            fileItem->setData(sourceItem->data(RoleFilePath), RoleFilePath);
-            fileItem->setData(sourceItem->data(RoleFileHash), RoleFileHash);
-            fileItem->setData(sourceItem->data(RoleFileSizeRaw), RoleFileSizeRaw);
-            fileItem->setData(false, RoleIsFolder);
-            targetParent->appendRow(fileItem);
-        }
-    }
 }
 
 void ImportDialog::updateImportButtonState() {
@@ -711,4 +751,131 @@ bool ImportDialog::hasCheckedItems(QStandardItem* item) {
     }
 
     return false;
+}
+
+void ImportDialog::handleItemChanged(QStandardItem *item) {
+    if (sourceModel_m->signalsBlocked()) return;
+
+    if (!item || item->data(RoleIsFolder).toBool()) return;
+
+    if (item->data(RoleFileStatus).toInt() == StatusDuplicate) {
+
+        if (item->checkState() == Qt::Checked) {
+            QString hash = item->data(RoleFileHash).toString();
+            QList<QStandardItem*> allDups;
+            collectItemsByHashRecursive(sourceModel_m->invisibleRootItem(), hash, allDups);
+
+            sourceModel_m->blockSignals(true);
+            for (QStandardItem* dup : std::as_const(allDups)) {                if (dup != item) {
+                    dup->setCheckState(Qt::Unchecked);
+                }
+            }
+            sourceModel_m->blockSignals(false);
+        }
+
+        activateItemExclusively(item);
+    }
+
+    updateImportButtonState();
+}
+
+void ImportDialog::collectItemsByHashRecursive(QStandardItem* parent, const QString &hash, QList<QStandardItem*> &result) {
+    for (int i = 0; i < parent->rowCount(); ++i) {
+        QStandardItem* child = parent->child(i);
+        if (child->data(RoleFileHash).toString() == hash) {
+            result.append(child);
+        }
+        if (child->hasChildren()) {
+            collectItemsByHashRecursive(child, hash, result);
+        }
+    }
+}
+
+void ImportDialog::showSourceMenu(const QPoint &pos) {
+    QModelIndex index = sourceView_m->indexAt(pos);
+    if (!index.isValid()) return;
+
+    QStandardItem* item = sourceModel_m->itemFromIndex(index);
+    QString fullPath = item->data(RoleFilePath).toString();
+    QMenu menu(this);
+
+    // --- Sektion 1: Datei-Aktionen ---
+    QAction* openAct = menu.addAction(tr("Open file"));
+    openAct->setIcon(style()->standardIcon(QStyle::SP_DialogOpenButton));
+
+    // Nutze deinen bewährten UIHelper
+    connect(openAct, &QAction::triggered, this, [this, fullPath]() {
+        UIHelper::openFileWithFeedback(this, fullPath);
+    });
+
+    menu.addSeparator();
+    if (item->data(RoleFileStatus).toInt() == StatusDuplicate) {
+        QString currentHash = item->data(RoleFileHash).toString();
+        QList<QStandardItem*> dups;
+        collectItemsByHashRecursive(sourceModel_m->invisibleRootItem(), currentHash, dups);
+
+        if (dups.size() > 1) {
+            QMenu* jumpMenu = menu.addMenu(tr("Show other locations..."));
+            for (QStandardItem* dupItem : std::as_const(dups)) {
+                QString path = dupItem->data(RoleFilePath).toString();
+                QAction* action = jumpMenu->addAction(path);
+
+                if (dupItem == item) {
+                    action->setEnabled(false);
+                    action->setText(action->text() + tr(" (Current)"));
+                }
+
+                connect(action, &QAction::triggered, this, [this, dupItem]() {
+                    sourceView_m->scrollTo(dupItem->index());
+                    sourceView_m->setCurrentIndex(dupItem->index());
+                    sourceView_m->selectionModel()->select(dupItem->index(),
+                                                           QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+                });
+            }
+        }
+    }
+
+    menu.exec(sourceView_m->viewport()->mapToGlobal(pos));
+}
+
+void ImportDialog::activateItemExclusively(QStandardItem* targetItem) {
+    if (!targetItem) return;
+
+    QString hash = targetItem->data(RoleFileHash).toString();
+    sourceModel_m->blockSignals(true);
+
+    QList<QStandardItem*> allDups;
+    collectItemsByHashRecursive(sourceModel_m->invisibleRootItem(), hash, allDups);
+
+    bool anyChecked = false;
+    for (QStandardItem* item : std::as_const(allDups)) {
+        if (item->checkState() == Qt::Checked) {
+            anyChecked = true;
+            break;
+        }
+    }
+
+    for (QStandardItem* item : std::as_const(allDups)) {
+        if (anyChecked) {
+            if (item->checkState() == Qt::Checked) {
+                item->setForeground(QApplication::palette().text());
+                item->setToolTip(tr("This instance is selected for import."));
+                item->setBackground(QBrush(QColor(240, 248, 255))); // AliceBlue
+            } else {
+                item->setCheckState(Qt::Unchecked);
+                item->setForeground(QBrush(Qt::red));
+                item->setToolTip(tr("Duplicate: Another instance is selected for import."));
+                item->setBackground(QBrush(Qt::transparent));
+            }
+        } else {
+            item->setCheckState(Qt::Unchecked);
+            item->setForeground(QBrush(Qt::red));
+            item->setToolTip(tr("Duplicate: No instance selected. Pick one to import."));
+            item->setBackground(QBrush(Qt::transparent));
+        }
+    }
+
+    sourceModel_m->blockSignals(false);
+    updateImportButtonState();
+    sourceView_m->update();
 }
