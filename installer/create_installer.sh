@@ -67,10 +67,11 @@ cp -v "$INSTALLERDIR/package_template.xml" \
    "$INSTALLERDIR/packages/io.github.knasan.sonarpractice/meta/package.xml"
 
 # 6b. Platzhalter mit sed ersetzen
-# Wir nutzen | als Trenner, falls Pfade Schrägstriche enthalten
 sed -i "s|@VERSION@|$VERSION|g" "$INSTALLERDIR/config/config.xml"
 sed -i "s|@BUILD_DATE@|$BUILD_DATE|g" "$INSTALLERDIR/config/config.xml"
+
 sed -i "s|@VERSION@|$VERSION|g" "$INSTALLERDIR/packages/io.github.knasan.sonarpractice/meta/package.xml"
+sed -i "s|@BUILD_DATE@|$BUILD_DATE|g" "$INSTALLERDIR/packages/io.github.knasan.sonarpractice/meta/package.xml"
 
 echo "Baue Installer für Version: $VERSION"
 
