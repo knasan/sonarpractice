@@ -736,6 +736,23 @@ bool DatabaseManager::addFileRelation(int idA, int idB)
     return true;
 }
 
+bool DatabaseManager::updateFilePath(int songId, const QString &newPath)
+{
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+
+    // Wichtig: Da songId in media_files der FK ist, nutzen wir diesen oder die ID
+    q.prepare("UPDATE media_files SET file_path = ? WHERE song_id = ?");
+    q.addBindValue(newPath);
+    q.addBindValue(songId);
+
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] updateFilePath failed:" << q.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 /**
  * @brief Removes a relation between two files from the database.
  *

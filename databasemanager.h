@@ -78,6 +78,8 @@ public:
     [[nodiscard]] bool removeRelation(int fileIdA, int fileIdB);
     [[nodiscard]] bool deleteFileRecord(int fileId);
 
+    [[nodiscard]] bool updateFilePath(int songId, const QString &newPath);
+
     // File queries
     [[nodiscard]] QList<RelatedFile> getFilesByRelation(int fileId);
 

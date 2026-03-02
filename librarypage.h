@@ -45,7 +45,11 @@ private:
     void refreshRelatedFilesList();
     void loadCatalogFromDatabase();
     void showCatalogContextMenu(const QPoint &pos);
+    void handleRenameFile(const QModelIndex &index);
     void handleDeleteFiles(const QModelIndexList &indexes);
+
+
+    void copyFileNameToClipboard(const QModelIndex &index);
 
     [[nodiscard]] int getCurrentSongId();
 

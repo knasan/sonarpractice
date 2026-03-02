@@ -26,6 +26,9 @@
 #include <QTimer>
 #include <QCoreApplication>
 #include <QProgressDialog>
+#include <QInputDialog>
+#include <QClipboard>
+#include <QGuiApplication>
 
 LibraryPage::LibraryPage(QWidget *parent, DatabaseManager *dbManager)
     : QWidget(parent), dbManager_m(dbManager)
@@ -400,9 +403,18 @@ void LibraryPage::showCatalogContextMenu(const QPoint &pos)
     if (selectedIndexes.size() > 1)
         openAction->setEnabled(false);
 
+    QAction *copyNameAction = menu.addAction(tr("Copy Filename"));
+    copyNameAction->setIcon(style()->standardIcon(QStyle::SP_DirIcon));
+
     QAction *deleteAction = nullptr;
-    if (expertModeCheck_m->isChecked())
+    if (expertModeCheck_m->isChecked() && selectedIndexes.size() == 1)
     {
+        menu.addSeparator();
+        QAction *renameAction = menu.addAction(tr("Rename"));
+        connect(renameAction, &QAction::triggered, this, [this, selectedIndexes](){
+            handleRenameFile(selectedIndexes.first());
+        });
+
         menu.addSeparator();
         deleteAction = menu.addAction(deleteText);
         deleteAction->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
@@ -421,9 +433,57 @@ void LibraryPage::showCatalogContextMenu(const QPoint &pos)
         }
         UIHelper::openFileWithFeedback(this, fullPath);
     }
+
+    if(selected == copyNameAction && selectedIndexes.size() == 1)
+        copyFileNameToClipboard(clickedIndex);
+
     else if (deleteAction && selected == deleteAction)
     {
         handleDeleteFiles(selectedIndexes);
+    }
+}
+
+void LibraryPage::handleRenameFile(const QModelIndex &index)
+{
+    int songId = index.data(LibraryPage::SongIdRole).toInt();
+    QString oldRelPath = index.data(LibraryPage::FilePathRole).toString();
+
+    bool isManaged = (dbManager_m->getSetting("is_managed", QString("false")) == "true");
+    QString baseDir = isManaged ? dbManager_m->getManagedPath() : "";
+    QString oldFullPath = QDir::cleanPath(isManaged ? baseDir + "/" + oldRelPath : oldRelPath);
+
+    QFileInfo oldFileInfo(oldFullPath);
+
+    bool ok;
+    QString newFileName = QInputDialog::getText(this, tr("Expert: Rename File"),
+                                                tr("New filename (with extension):"),
+                                                QLineEdit::Normal,
+                                                oldFileInfo.fileName(), &ok);
+
+    if (!ok || newFileName.isEmpty() || newFileName == oldFileInfo.fileName()) return;
+
+    QString newFullPath = oldFileInfo.absoluteDir().filePath(newFileName);
+    QString newRelPath = isManaged ? QDir(baseDir).relativeFilePath(newFullPath) : newFullPath;
+
+    if (QFile::exists(newFullPath)) {
+        QMessageBox::warning(this, tr("Rename"), tr("Target file already exists!"));
+        return;
+    }
+
+    // --- EXECUTION ---
+    if (QFile::rename(oldFullPath, newFullPath)) {
+        if (dbManager_m->updateFilePath(songId, newRelPath)) {
+            catalogModel_m->itemFromIndex(index)->setText(newFileName);
+            catalogModel_m->itemFromIndex(index)->setData(newRelPath, LibraryPage::FilePathRole);
+
+            qDebug() << "[LibraryPage] Successfully renamed to" << newFileName;
+        } else {
+            // ROLLBACK: If the database fails, rename the file!
+            QFile::rename(newFullPath, oldFullPath);
+            QMessageBox::critical(this, tr("Error"), tr("DB Update failed. File rolled back."));
+        }
+    } else {
+        QMessageBox::critical(this, tr("Error"), tr("Could not rename file on disk."));
     }
 }
 
@@ -474,4 +534,22 @@ void LibraryPage::handleDeleteFiles(const QModelIndexList &indexes)
     }
 
     qDebug() << "[LibraryPage] Successfully deleted" << successCount << "of" << indexes.size() << "files.";
+}
+
+void LibraryPage::copyFileNameToClipboard(const QModelIndex &index)
+{
+    if (!index.isValid()) return;
+
+    // Wir holen uns den Pfad aus der Role, die du bereits definiert hast
+    QString fullPath = index.data(LibraryPage::FilePathRole).toString();
+
+    // Mit QFileInfo extrahieren wir nur den reinen Dateinamen (z.B. "Song.mp3(Duplikat)")
+    QString fileName = QFileInfo(fullPath).fileName();
+
+    // Zugriff auf die systemweite Zwischenablage
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    clipboard->setText(fileName);
+
+    // Kleines Feedback in der Statusbar oder per Tooltip (optional)
+    qDebug() << "[LibraryPage] Copied to clipboard:" << fileName;
 }
