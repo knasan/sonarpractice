@@ -105,7 +105,7 @@ jobs:
           
           find . -name "SonarPractice_Web_Setup.exe" -exec cp {} deploy/download/ \;
 
-          VERSION=$(git describe --tags --always --dirty)
+          VERSION=$(git describe --tags --always)
           echo "$VERSION" > deploy/download/version.txt
           
           touch deploy/.nojekyll
