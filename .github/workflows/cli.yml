@@ -41,7 +41,7 @@ jobs:
       - name: Update Version in CMakeLists.txt
         shell: bash
         run: |
-          VERSION=$(git describe --tags --always --dirty)
+          VERSION=$(git describe --tags --always)
           sed -i "s/VERSION 0.0.0/VERSION $VERSION/g" CMakeLists.txt || exit 1
 
       - name: Build Application (CMake)
