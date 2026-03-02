@@ -41,7 +41,7 @@ jobs:
       - name: Update Version in CMakeLists.txt
         shell: bash
         run: |
-          VERSION=$(git describe --tags --always)
+          VERSION=$(git describe --tags --always --abbrev=0)
           sed -i "s/VERSION 0.0.0/VERSION $VERSION/g" CMakeLists.txt || exit 1
 
       - name: Build Application (CMake)
@@ -105,7 +105,7 @@ jobs:
           
           find . -name "SonarPractice_Web_Setup.exe" -exec cp {} deploy/download/ \;
 
-          VERSION=$(git describe --tags --always)
+          VERSION=$(git describe --tags --always --abbrev=0)
           echo "$VERSION" > deploy/download/version.txt
           
           touch deploy/.nojekyll
