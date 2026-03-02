@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -e # Bricht bei Fehlern sofort ab
+set -e
 
 # --- 1. Pfade & Verzeichnisse definieren ---
 # Wir nutzen die Variablen aus der cli.yml oder leiten sie dynamisch ab
@@ -61,7 +61,6 @@ BUILD_DATE=$(date +%Y-%m-%d)
 BRANCH=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD)
 
 # --- 6. Templates anpassen & Bauen ---
-
 # 6a. Templates in die Zielordner kopieren
 cp -v "$INSTALLERDIR/config_template.xml" "$INSTALLERDIR/config/config.xml"
 cp -v "$INSTALLERDIR/package_template.xml" \
@@ -75,6 +74,5 @@ sed -i "s|@VERSION@|$VERSION|g" "$INSTALLERDIR/packages/io.github.knasan.sonarpr
 
 echo "Baue Installer für Version: $VERSION"
 
-# --- 6. Templates anpassen & Bauen ---
-"$IFW_BIN_DIR/repogen.exe" -p "$INSTALLERDIR/packages" "$INSTALLERDIR/repo"
-"$IFW_BIN_DIR/binarycreator.exe" --online-only -c "$INSTALLERDIR/config/config.xml" -p "$INSTALLERDIR/packages" SonarPractice_Web_Setup.exe
+"$IFW_BIN_DIR/repogen.exe" -p "$INSTALLERDIR/packages" "$INSTALLERDIR/repo" || exit 1
+"$IFW_BIN_DIR/binarycreator.exe" --online-only -c "$INSTALLERDIR/config/config.xml" -p "$INSTALLERDIR/packages" SonarPractice_Web_Setup.exe || exit 1
