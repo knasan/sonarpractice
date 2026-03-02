@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>SonarPractice</DisplayName>
+    <Name>io.github.knasan.sonarpractice</Name>
+    <Version>@VERSION@</Version>
+    <ReleaseDate>@BUILD_DATE@</ReleaseDate>
+    <Publisher>Sandy Marko Knauer</Publisher>
+    <Default>true</Default>
+    <Script>installscript.qs</Script>
+    <RequiresAdminRights>true</RequiresAdminRights>
+    <Licenses>
+        <License name="Lizenzvereinbarung (GNU GPL v3)" file="license.txt" />
+    </Licenses>
+    <UserInterfaces>
+        <UserInterface>page.ui</UserInterface>
+    </UserInterfaces>
+</Package>

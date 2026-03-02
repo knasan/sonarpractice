@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <WizardStyle>Modern</WizardStyle>
+    <Name>SonarPractice</Name>
+    <Version>@VERSION@</Version> <RemoteRepositories>
+        <Repository>
+            <Url>https://knasan.github.io/sonarpractice/repo</Url>
+            <DisplayName>SonarPractice Online Repository</DisplayName>
+            <Enabled>1</Enabled>
+        </Repository>
+    </RemoteRepositories>
+    <Title>SonarPractice Setup</Title>
+    <Publisher>Sandy Marko Knauer</Publisher>
+    <StartMenuDir>SonarPractice</StartMenuDir>
+    <TargetDir>@ApplicationsDir@/SonarPractice</TargetDir>
+    <RunProgram>@TargetDir@/SonarPractice.exe</RunProgram>
+    <RunProgramDescription>SonarPractice jetzt starten</RunProgramDescription>
+    <ControlScript>controlscript.qs</ControlScript>
+    <Logo>logo.png</Logo>
+    <InstallerWindowIcon>logo.ico</InstallerWindowIcon>
+</Installer>
