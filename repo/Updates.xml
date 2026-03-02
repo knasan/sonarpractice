@@ -5,20 +5,20 @@
  <PackageUpdate>
   <Name>io.github.knasan.sonarpractice</Name>
   <DisplayName>SonarPractice</DisplayName>
-  <Version>v0.2.4-2-g84f499d</Version>
+  <Version>v0.2.4</Version>
   <ReleaseDate>2026-03-02</ReleaseDate>
   <Publisher>Sandy Marko Knauer</Publisher>
   <Default>true</Default>
   <Script>installscript.qs</Script>
   <RequiresAdminRights>true</RequiresAdminRights>
-  <UpdateFile CompressedSize="19434314" OS="Any" UncompressedSize="71624352"/>
+  <UpdateFile CompressedSize="19434917" OS="Any" UncompressedSize="71624352"/>
   <DownloadableArchives>generic.7z,iconengines.7z,imageformats.7z,networkinformation.7z,platforms.7z,sqldrivers.7z,styles.7z,tls.7z,translations.7z,content.7z</DownloadableArchives>
   <UserInterfaces>page.ui</UserInterfaces>
   <Licenses>
    <License file="license.txt" name="Lizenzvereinbarung (GNU GPL v3)"/>
   </Licenses>
-  <SHA1>7ab9dac5404a3eef99a83913945b1237ec536311</SHA1>
+  <SHA1>67e4653046d69cf697aea8b34fc3ba23226dabf9</SHA1>
  </PackageUpdate>
- <SHA1>7ab9dac5404a3eef99a83913945b1237ec536311</SHA1>
- <MetadataName>2026-03-02-0106_meta.7z</MetadataName>
+ <SHA1>67e4653046d69cf697aea8b34fc3ba23226dabf9</SHA1>
+ <MetadataName>2026-03-02-0120_meta.7z</MetadataName>
 </Updates>
