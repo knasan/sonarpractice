@@ -157,12 +157,15 @@ public:
             qCritical() << "CRITICAL: last_import_date could not be saved to DB:" << QDateTime::currentDateTime().toString(Qt::ISODate);
         }
 
+        emit dataChanged();
+
         return DatabaseManager::instance().commit();
     }
 
 signals:
     void progressUpdated(int value);
     void error(const QString &message);
+    void dataChanged();
 };
 
 #endif // IMPORTPROCESSOR_H

@@ -52,7 +52,21 @@ namespace FileUtils {
     }
 
     [[nodiscard]] static QStringList getDocFormats() {
-        return {"*.pdf", "*.txt", "*.md", "*.jpg", "*.jpeg", "*.png"};
+        return {"*.txt", "*.md", "*.odt", "*.ods", "*.docx", "*.xlsx", "*.pdf", "*.jpg", "*.jpeg", "*.png"};
+    }
+
+    [[nodiscard]] static bool isMutable(const QString &filePath) {
+        QString ext = "*." + QFileInfo(filePath).suffix().toLower();
+
+        // All Guitar Pro formats are fundamentally editable.
+        if (getGuitarProFormats().contains(ext)) return true;
+
+        // Targeted selection from the documents (no images/PDFs)
+        static const QStringList mutableFiles = {
+            "*.txt", "*.md", "*.odt", "*.ods", "*.docx", "*.xlsx"
+        };
+
+        return mutableFiles.contains(ext);
     }
 }
 

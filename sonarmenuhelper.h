@@ -42,18 +42,18 @@ public:
             showAboutDialog(window);
         });
 
-        QAction* updateAction = helpMenu->addAction(QObject::tr("&Update"));
-        QObject::connect(updateAction, &QAction::triggered, []() {
-            QString updaterPath = QCoreApplication::applicationDirPath() + "/maintenancetool.exe";
+        #ifdef Q_OS_WIN
+            QAction* updateAction = helpMenu->addAction(QObject::tr("&Update"));
+            QObject::connect(updateAction, &QAction::triggered, []() {
+                QString updaterPath = QCoreApplication::applicationDirPath() + "/maintenancetool.exe";
 
-            qDebug() << "UpdaterPath: " << updaterPath;
+                if (QFile::exists(updaterPath)) {
+                    QProcess::startDetached(updaterPath, {"--updater"});
+                }
+            });
 
-            if (QFile::exists(updaterPath)) {
-                QProcess::startDetached(updaterPath, {"--updater"});
-            }
-        });
-
-        helpMenu->addSeparator();
+            helpMenu->addSeparator();
+        #endif
 
         QAction* aboutQtAction = helpMenu->addAction(QObject::tr("About &Qt"));
         QObject::connect(aboutQtAction, &QAction::triggered, qApp, &QApplication::aboutQt);
@@ -61,12 +61,12 @@ public:
 
 private:
     static void showAboutDialog(QMainWindow* parent) {
-#ifndef APP_VERSION
-#define APP_VERSION "Unknown"
-#endif
-#ifndef COMPILER_INFO
-#define COMPILER_INFO "Unknown Compiler"
-#endif
+        #ifndef APP_VERSION
+        #define APP_VERSION "Unknown"
+        #endif
+        #ifndef COMPILER_INFO
+        #define COMPILER_INFO "Unknown Compiler"
+        #endif
 
         QMessageBox aboutBox(parent);
         aboutBox.setWindowTitle(QObject::tr("About SonarPractice"));
@@ -119,24 +119,6 @@ private:
         aboutBox.exec();
 
     }
-
-    // static void setupMenu(QMenu* helpMenu, QWidget* parent) {
-    //     QAction* updateAction = helpMenu->addAction(QObject::tr("&Update"));
-
-    //     QObject::connect(updateAction, &QAction::triggered, [parent]() {
-    //         QString appDirPath = QCoreApplication::applicationDirPath();
-    //         QDir dir(appDirPath);
-
-    //         QString updaterPath = dir.absoluteFilePath("maintenancetool.exe");
-
-    //         if (QFile::exists(updaterPath)) {
-    //             QProcess::startDetached(updaterPath, {"--updater"});
-    //         } else {
-    //             QMessageBox::critical(parent, "Fehler", "Updater nicht gefunden.");
-    //         }
-    //     });
-    // }
-
 };
 
 #endif // SONARMENUHELPER_H

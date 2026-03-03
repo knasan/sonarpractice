@@ -45,10 +45,12 @@ public:
         ReminderFileIdRole = Qt::UserRole + 2,
         ReminderSongTitle = Qt::UserRole + 3,
     };
+
 protected:
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
+    void initialLoadFromDb();
     void setupUI();
     void setupSidebar(QHBoxLayout *mainLayout);
     void setupSongInformationSection(QVBoxLayout *contentLayout);
@@ -105,9 +107,11 @@ private:
     [[nodiscard]] QList<PracticeSession> collectTableData();
 
     [[nodiscard]] int getCurrentSongId();
+    [[nodiscard]] int getCurrentFileId();
 
-    void initialLoadFromDb();
     void updateEmptyTableMessage();
+
+    void updateFileHashIfNeeded(int songId);
 
     QString savedMessage_m = tr("Successfully saved");
     QString savedMessageFailed_m = tr("Saved failed");
@@ -170,9 +174,14 @@ private:
     bool isTimerRunning_m{false};
     bool isConnectionsEstablished_m{false};
 
+    bool reloadingPage_m{false};
+    bool isChangingSong_m{false};
+
     // Data
     QString currentSongPath_m;
     int currentFileId_m{-1};
+    int lastSelectedIndex_m{-1};
+    int lastSongId_m{-1};
     QList<PracticeSession> currentSessions_m;
     QList<PracticeSession> referenceSessions_m;
 
@@ -182,6 +191,8 @@ private:
     QStandardItemModel* sourceModel_m;
     QSortFilterProxyModel* proxyModel_m;
 
+    bool isFileUsed_m{false};
+
 private slots:
     void onSongChanged(int songId);
     void onSaveClicked();
@@ -189,12 +200,19 @@ private slots:
     void onEditSongClicked();
     void onFilterToggled();
     void onEditReminder(int reminderId, const QString title);
-
-public slots:
     void addTableRow();
     void removeTableRow();
     void onAddReminderClicked();
 
+public slots:
+    void markReloadPage() {
+        reloadingPage_m = false;
+
+        if (this->isVisible()) {
+            initialLoadFromDb();
+            reloadingPage_m = true;
+        }
+    }
 };
 
 #endif // SONARLESSONPAGE_H

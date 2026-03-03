@@ -3,6 +3,8 @@
 
 #include <QFile>
 #include <QString>
+#include <QByteArray>
+#include <QtGlobal>
 
 class FNV1a {
 public:
@@ -15,32 +17,31 @@ public:
             return QString();
         }
 
-        qint64 fileSize = file.size();
-        if (fileSize == 0) return QString("0");
+        const qint64 fileSize = file.size();
+        if (fileSize == 0) return QString("0000000000000000");
 
-        // Read 3 blocks of 1024 bytes each (start, middle, end)
-        // That's only 3KB per file -> extremely fast!
-        QList<qint64> offsets;
-        offsets << 0;                               // start
-        if (fileSize > 2048) {
-            offsets << (fileSize / 2);              // middle
-            offsets << (fileSize - 1024);           // end
-        }
+        hash ^= static_cast<uint64_t>(fileSize);
+        hash *= FNV_prime;
 
-        for (qint64 offset : std::as_const(offsets)) {
+        const int numSamples = 10;
+        const qint64 sampleSize = 320;
+
+        for (int i = 0; i < numSamples; ++i) {
+            qint64 offset = 0;
+            if (fileSize > sampleSize) {
+                offset = (fileSize - sampleSize) * i / (numSamples - 1);
+            }
+
             if (file.seek(offset)) {
-                QByteArray chunk = file.read(1024);
-                for (int i = 0; i < chunk.size(); ++i) {
-                    hash ^= static_cast<uint8_t>(chunk.at(i));
+                QByteArray chunk = file.read(sampleSize);
+                for (char byte : std::as_const(chunk)) {
+                    hash ^= static_cast<uint8_t>(byte);
                     hash *= FNV_prime;
                 }
             }
         }
-        file.close();
 
-        // Combine the hash with the file size for maximum security
-        hash ^= static_cast<uint64_t>(fileSize);
-        hash *= FNV_prime;
+        file.close();
 
         return QString("%1").arg(hash, 16, 16, QChar('0')).toUpper();
     }

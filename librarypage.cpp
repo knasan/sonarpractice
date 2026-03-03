@@ -49,12 +49,12 @@ LibraryPage::LibraryPage(QWidget *parent, DatabaseManager *dbManager)
     // Connections (Signals and Slots)
 
     // Search on Master Model
-    connect(searchEdit_m, &QLineEdit::textChanged, this, [this](const QString &text)
-            {
+    connect(searchEdit_m, &QLineEdit::textChanged, this, [this](const QString &text) {
         for (int i = 0; i < catalogModel_m->rowCount(); ++i) {
             bool match = catalogModel_m->item(i)->text().contains(text, Qt::CaseInsensitive);
             catalogTreeView_m->setRowHidden(i, QModelIndex(), !match);
-        } });
+        }
+    });
 }
 
 void LibraryPage::showEvent(QShowEvent *event)

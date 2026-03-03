@@ -69,9 +69,11 @@ public:
 
     [[nodiscard]] int getOrCreateArtist(const QString &name);
     [[nodiscard]] int getOrCreateTuning(const QString &name);
-    [[nodiscard]] QSet<QString> getAllFileHashes();
     [[nodiscard]] QStringList getAllArtists();
     [[nodiscard]] QStringList getAllTunings();
+
+    [[nodiscard]] QSet<QString> getAllFileHashes();
+    [[nodiscard]] bool updateFileHash(int songId, const QString &fileHash);
 
     // Linking
     [[nodiscard]] bool addFileRelation(int idA, int idB);

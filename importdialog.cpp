@@ -343,13 +343,11 @@ QStandardItem* ImportDialog::getTargetFolder() {
 void ImportDialog::mapSelectedItems() {
     QItemSelectionModel *select = sourceView_m->selectionModel();
     QModelIndexList selected = select->selectedRows();
-
     if (selected.isEmpty()) return;
 
-    QStandardItem *targetFolder = getTargetFolder();
+    QStandardItem *rootTarget = getTargetFolder();
     QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
-    // Sortierung von unten nach oben, damit das Entfernen von Zeilen die Indizes oben nicht verschiebt
     std::sort(selected.begin(), selected.end(), [](const QModelIndex &a, const QModelIndex &b) {
         return a.row() > b.row();
     });
@@ -359,15 +357,14 @@ void ImportDialog::mapSelectedItems() {
         if (!sourceItem) continue;
 
         if (sourceItem->data(RoleIsFolder).toBool()) {
-            // Wenn ein Ordner markiert ist: Wir kopieren nur die gecheckten Inhalte
-            // und lassen den Ordner links stehen, falls ungecheckte Reste bleiben.
-            moveCheckedItemsRecursive(sourceItem, targetFolder);
+            QStandardItem *newFolderInTarget = createOrGetFolder(rootTarget, sourceItem->text(), sourceItem->icon());
+
+            moveCheckedItemsRecursive(sourceItem, newFolderInTarget);
         } else {
-            // Wenn eine einzelne Datei markiert ist: Nur schieben, wenn gecheckt
             if (sourceItem->checkState() == Qt::Checked) {
                 QStandardItem *newItem = deepCopyItem(sourceItem);
                 if (newItem) {
-                    targetFolder->appendRow(newItem);
+                    rootTarget->appendRow(newItem);
                     sourceModel_m->removeRow(index.row(), index.parent());
                 }
             }
@@ -375,24 +372,56 @@ void ImportDialog::mapSelectedItems() {
     }
 
     cleanupEmptyFolders(sourceModel_m->invisibleRootItem());
-
     QGuiApplication::restoreOverrideCursor();
-    sourceView_m->viewport()->update();
+}
+
+QStandardItem* ImportDialog::createOrGetFolder(QStandardItem *parent, const QString &name, const QIcon &icon) {
+    for (int i = 0; i < parent->rowCount(); ++i) {
+        QStandardItem *child = parent->child(i);
+        if (child->data(RoleIsFolder).toBool() && child->text() == name) {
+            return child;
+        }
+    }
+
+    // Wenn nicht, neu erstellen
+    QStandardItem *newFolder = new QStandardItem(icon, name);
+    newFolder->setData(true, RoleIsFolder);
+    newFolder->setData("", RoleFilePath);
+    parent->appendRow(newFolder);
+    return newFolder;
 }
 
 void ImportDialog::moveCheckedItemsRecursive(QStandardItem *sourceParent, QStandardItem *targetParent) {
-    // Wir gehen den Baum rückwärts durch, da wir Items evtl. löschen (verschieben)
+    if (!sourceParent || !targetParent) return;
+
+    // TODO:
+
     for (int i = sourceParent->rowCount() - 1; i >= 0; --i) {
         QStandardItem *child = sourceParent->child(i);
         if (!child) continue;
 
         if (child->data(RoleIsFolder).toBool()) {
-            // Bei Unterordnern: Wir prüfen erst die Inhalte
-            // Wir brauchen ein Ziel-Pendant für diesen Ordner im rechten Baum
-            // (deepCopyItem sorgt normalerweise für die Struktur)
-            moveCheckedItemsRecursive(child, targetParent);
+
+            QStandardItem *newTargetFolder = nullptr;
+
+            for (int j = 0; j < targetParent->rowCount(); ++j) {
+                if (targetParent->child(j)->text() == child->text() &&
+                    targetParent->child(j)->data(RoleIsFolder).toBool()) {
+                    newTargetFolder = targetParent->child(j);
+                    break;
+                }
+            }
+
+            if (!newTargetFolder) {
+                newTargetFolder = new QStandardItem(child->icon(), child->text());
+                newTargetFolder->setData(true, RoleIsFolder);
+                newTargetFolder->setData(sourceParent->text(), RoleFilePath);
+                targetParent->appendRow(newTargetFolder);
+            }
+
+            moveCheckedItemsRecursive(child, newTargetFolder);
+
         } else {
-            // Datei-Check
             if (child->checkState() == Qt::Checked) {
                 QStandardItem *newItem = deepCopyItem(child);
                 if (newItem) {

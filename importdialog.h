@@ -44,6 +44,7 @@ private:
 
     void activateItemExclusively(QStandardItem* targetItem);
     void moveCheckedItemsRecursive(QStandardItem *sourceParent, QStandardItem *targetParent);
+    QStandardItem* createOrGetFolder(QStandardItem *parent, const QString &name, const QIcon &icon);
 
     QTreeView* sourceView_m;
     QTreeView* targetView_m;

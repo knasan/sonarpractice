@@ -85,6 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
     stackedWidget_m->addWidget(libraryPage_m);  // Index 1
 
     connect(this, &MainWindow::dataChanged, libraryPage_m, &LibraryPage::markAsDirty);
+    connect(this, &MainWindow::dataChanged, lessonPage_m, &SonarLessonPage::markReloadPage);
 
     layout->addWidget(stackedWidget_m);
 

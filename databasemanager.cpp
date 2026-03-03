@@ -697,6 +697,23 @@ QSet<QString> DatabaseManager::getAllFileHashes()
     return hashSet;
 }
 
+bool DatabaseManager::updateFileHash(int songId, const QString &fileHash) {
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery q(db);
+
+    q.prepare("UPDATE media_files SET file_hash = ? WHERE song_id = ?");
+    q.addBindValue(fileHash);
+    q.addBindValue(songId);
+
+    if (!q.exec()) {
+        qCritical() << "[DatabaseManager] updateFileHash failed:" << q.lastError().text();
+        return false;
+    }
+    return true;
+
+    return false;
+}
+
 // =============================================================================
 // --- Linking
 // =============================================================================

@@ -1,5 +1,12 @@
 # Changelog
 
+03.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Data import from Menu reload page fixed
+- FNVH1: fixed false positiv smalls files
+- Feature: Message for unsaved session
+- Hash when openFile pressed, make hash update before before switch song. #12
+
 02.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Fixed a problem with remembering when something is marked as done.

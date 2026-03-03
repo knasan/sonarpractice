@@ -17,6 +17,7 @@
 #include "fileutils.h"
 #include "uihelper.h"
 #include "songeditdialog.h"
+#include "fnv1a.h"
 
 #include <QCalendarWidget>
 #include <QComboBox>
@@ -79,6 +80,7 @@ SonarLessonPage::SonarLessonPage(DatabaseManager *dbManager, QWidget *parent)
         onSongChanged(songSelector_m->currentIndex());
     }
     onFilterToggled();
+    lastSelectedIndex_m = songSelector_m->currentIndex();
 }
 
 void SonarLessonPage::setupUI()
@@ -838,6 +840,16 @@ void SonarLessonPage::sitesConnects() {
     // Establish connection: When a song is changed in the ComboBox
     isConnectionsEstablished_m = true;
 
+    // File Opened?
+    connect(btnGpIcon_m, &QPushButton::clicked, this, [this]() {
+        currentSongPath_m = QDir::cleanPath(songSelector_m->itemData(songSelector_m->currentIndex(), PathRole).toString());
+        UIHelper::openFileWithFeedback(this, currentSongPath_m);
+
+        // TODO: fileutils get nostatic files
+        isFileUsed_m = true;
+    });
+
+    // DataChanged - From Import or Change from Library
     connect(btnGpIcon_m, &QPushButton::clicked, this, [this]() {
         currentSongPath_m = QDir::cleanPath(
             songSelector_m->itemData(songSelector_m->currentIndex(), PathRole).toString());
@@ -976,41 +988,23 @@ void SonarLessonPage::sitesConnects() {
                     }
 
                     connect(action, &QAction::triggered, this, [this, songId]() {
-                        int index = songSelector_m->findData(songId, FileIdRole);
-                        if (index != -1) {
-                            songSelector_m->setCurrentIndex(index);
-                            calendar_m->setSelectedDate(QDate::currentDate());
-                        }
-                    });
+                        // Find the song in the SourceModel
+                        QModelIndexList matches = sourceModel_m->match(sourceModel_m->index(0, 0), SelectorRole::FileIdRole, songId, 1, Qt::MatchExactly);
+                        if (matches.isEmpty()) return;
 
-                    connect(action, &QAction::triggered, this, [this, songId]() {
-                        // 1. Search in the SOURCE MODE (RAM), as EVERYTHING is located there, regardless of whether it's filtered or not.
-                        QModelIndexList matches = sourceModel_m->match(
-                            sourceModel_m->index(0, 0),
-                            SelectorRole::FileIdRole,
-                            songId,
-                            1,
-                            Qt::MatchExactly
-                            );
+                        QModelIndex sourceIndex = matches.first();
+                        QString filePath = sourceIndex.data(SelectorRole::PathRole).toString();
 
-                        if (!matches.isEmpty()) {
-                            QModelIndex sourceIndex = matches.first();
+                        // Adjust the filter (so that the song is visible in the proxy)
+                        updateFilterButtonsForFile(filePath);
 
-                            // 2. Check if the song is currently visible through the proxy.
-                            QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+                        // Trigger the change in the selector (triggers onSongChanged)
+                        QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+                        if (proxyIndex.isValid()) {
+                            songSelector_m->setCurrentIndex(proxyIndex.row());
 
-                            if (!proxyIndex.isValid()) {
-                                // Song is hidden! Retrieve the path from RAM and enable filter buttons.
-                                QString filePath = sourceIndex.data(SelectorRole::PathRole).toString();
-                                updateFilterButtonsForFile(filePath); // Diese Methode musst du implementieren (siehe unten)
-
-                                // After the filter update, the ProxyIndex is now valid.
-                                proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
-                            }
-
-                            // 3. Select securely now
-                            if (proxyIndex.isValid()) {
-                                songSelector_m->setCurrentIndex(proxyIndex.row());
+                            // Calendar check: Only if onSongChanged has NOT been canceled.
+                            if (songSelector_m->currentIndex() == proxyIndex.row()) {
                                 calendar_m->setSelectedDate(QDate::currentDate());
                             }
                         }
@@ -1187,6 +1181,31 @@ void SonarLessonPage::updateTimerDisplay() {
 
 void SonarLessonPage::onSongChanged(int index) {
     if (index < 0 || isLoading_m) return;
+    if (index == lastSelectedIndex_m) return;
+
+    isChangingSong_m = true; // Guard Song Change
+
+    bool hasUnsavedWork = (isDirtyTable_m || isDirtyNotes_m);
+
+    if (hasUnsavedWork) {
+        auto res = QMessageBox::warning(this, tr("Unsaved Changes"),
+                                        tr("There are unsaved changes.\n"
+                                           "Save your session before switching. Switch?"),
+                                        QMessageBox::Yes | QMessageBox::No);
+        if (res == QMessageBox::No) {
+            songSelector_m->blockSignals(true);
+            songSelector_m->setCurrentIndex(lastSelectedIndex_m);
+            songSelector_m->blockSignals(false);
+            return;
+        }
+    }
+
+
+    int oldFileId = songSelector_m->itemData(lastSelectedIndex_m, SelectorRole::FileIdRole).toInt();
+    QString oldPath = currentSongPath_m;
+    if (oldFileId > 0 && FileUtils::isMutable(oldPath)) {
+        updateFileHashIfNeeded(oldFileId);
+    }
 
     // Data directly from the ProxyModel (which points to the SourceModel)
     QModelIndex proxyIndex = proxyModel_m->index(index, 0);
@@ -1197,6 +1216,9 @@ void SonarLessonPage::onSongChanged(int index) {
     QString title  = proxyModel_m->data(proxyIndex, TitleRole).toString();
     QString tempo  = proxyModel_m->data(proxyIndex, TempoRole).toString();
     QString tuning = proxyModel_m->data(proxyIndex, TuningRole).toString();
+
+    qDebug() << "SongId: " << getCurrentSongId();
+    qDebug() << "FileId: " << getCurrentFileId();
 
     artist_m->setText(artist);
     title_m->setText(title);
@@ -1236,6 +1258,8 @@ void SonarLessonPage::onSongChanged(int index) {
     loadJournalForDay(getCurrentSongId(), calendar_m->selectedDate());
 
     updateEmptyTableMessage();
+
+    lastSelectedIndex_m = songSelector_m->currentIndex();
 }
 
 void SonarLessonPage::setupResourceButton(QPushButton *btn,
@@ -1351,6 +1375,7 @@ void SonarLessonPage::updateFilterButtonsForFile(const QString& filePath) {
  * This means that if the notes were saved first, the message would be lost.
  */
 void SonarLessonPage::onSaveClicked() {
+
     int songId = getCurrentSongId();
     if (songId <= 0) {
         qDebug() << "[SonarLessonPage] onSaveClicked wrong songId: " << songId;
@@ -1390,12 +1415,13 @@ void SonarLessonPage::onSaveClicked() {
     updateCalendarHighlights();
     updateReminderTable(calendar_m->selectedDate());
     loadJournalForDay(songId, calendar_m->selectedDate());
+    updateFileHashIfNeeded(songId);
 }
 
 void SonarLessonPage::showSaveMessage(QString message) {
     statusLabel_m->setText(message);
-    // show for 10 secons a saved message
-    QTimer::singleShot(10000, this, [this]() { statusLabel_m->clear(); });
+    // show for 20 secons a saved message
+    QTimer::singleShot(20000, this, [this]() { statusLabel_m->clear(); });
 }
 
 bool SonarLessonPage::saveTableRowsToDatabase() {
@@ -1488,8 +1514,11 @@ QList<PracticeSession> SonarLessonPage::collectTableData() {
 }
 
 int SonarLessonPage::getCurrentSongId() {
-    int currentIndex = songSelector_m->currentIndex();
-    return songSelector_m->itemData(currentIndex, FileIdRole).toInt();
+    return songSelector_m->currentData(SelectorRole::SongIdRole).toInt();
+}
+
+int SonarLessonPage::getCurrentFileId() {
+    return songSelector_m->currentData(SelectorRole::FileIdRole).toInt();
 }
 
 // Calendar update Overload
@@ -1711,6 +1740,7 @@ void SonarLessonPage::initialLoadFromDb() {
         // }
 
         display = QFileInfo(song.fullPath).fileName();
+        // qDebug() << "SongId: " << song.id << ", File: " << song.fullPath;
 
         QStandardItem* item = new QStandardItem(display);
         item->setData(QVariant::fromValue(song.id), SelectorRole::FileIdRole);
@@ -1744,4 +1774,19 @@ void SonarLessonPage::updateEmptyTableMessage() {
 
         practiceTable_m->setItem(0, 0, item);
     }
+}
+
+void SonarLessonPage::updateFileHashIfNeeded(int songId) {
+    if (!isFileUsed_m) return;
+
+    QString currentPath = currentSongPath_m;
+
+    if (songId > 0 && QFile::exists(currentPath)) {
+        QString newHash = FNV1a::calculate(currentPath);
+
+        if (dbManager_m->updateFileHash(songId, newHash)) {
+            qDebug() << "Hash updated for file: " << currentPath << ", songId: " << songId << ", new Hash: " << newHash;
+        }
+    }
+    isFileUsed_m = false;
 }
