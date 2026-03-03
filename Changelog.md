@@ -8,6 +8,7 @@
 - code refactoring - unused functions removed
 - Import dialog from menu fixed
 - Librarypage add rename file and copy filename to clipboard
+- Menu: Add Update
 
 01.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 

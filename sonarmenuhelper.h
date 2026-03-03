@@ -8,6 +8,8 @@
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QCoreApplication>
+#include <QDir>
+#include <QProcess>
 
 class SonarMenuHelper {
     Q_DECLARE_TR_FUNCTIONS(SonarMenuHelper)
@@ -38,6 +40,17 @@ public:
         QAction* aboutAction = helpMenu->addAction(QObject::tr("&About"));
         QObject::connect(aboutAction, &QAction::triggered, [window]() {
             showAboutDialog(window);
+        });
+
+        QAction* updateAction = helpMenu->addAction(QObject::tr("&Update"));
+        QObject::connect(updateAction, &QAction::triggered, []() {
+            QString updaterPath = QCoreApplication::applicationDirPath() + "/maintenancetool.exe";
+
+            qDebug() << "UpdaterPath: " << updaterPath;
+
+            if (QFile::exists(updaterPath)) {
+                QProcess::startDetached(updaterPath, {"--updater"});
+            }
         });
 
         helpMenu->addSeparator();
@@ -106,6 +119,24 @@ private:
         aboutBox.exec();
 
     }
+
+    // static void setupMenu(QMenu* helpMenu, QWidget* parent) {
+    //     QAction* updateAction = helpMenu->addAction(QObject::tr("&Update"));
+
+    //     QObject::connect(updateAction, &QAction::triggered, [parent]() {
+    //         QString appDirPath = QCoreApplication::applicationDirPath();
+    //         QDir dir(appDirPath);
+
+    //         QString updaterPath = dir.absoluteFilePath("maintenancetool.exe");
+
+    //         if (QFile::exists(updaterPath)) {
+    //             QProcess::startDetached(updaterPath, {"--updater"});
+    //         } else {
+    //             QMessageBox::critical(parent, "Fehler", "Updater nicht gefunden.");
+    //         }
+    //     });
+    // }
+
 };
 
 #endif // SONARMENUHELPER_H
