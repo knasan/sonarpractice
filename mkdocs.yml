@@ -1,6 +1,8 @@
 site_name: SonarPractice Dokumentation
 theme:
   name: material
+  icon:
+    repo: fontawesome/brands/github
   palette:
     # Dunkles Design 
     - media: "(prefers-color-scheme: dark)"
@@ -34,3 +36,12 @@ markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
+
+extra:
+  announcement: >
+    SonarPractice ist Open Source! Du möchtest mithelfen oder Feedback geben? 
+    Besuche uns auf <a href="https://github.com/knasan/sonarpractice">GitHub</a>.
+  social:
+      - icon: fontawesome/solid/download
+        link: https://dein-username.github.io/sonarpractice/download/SonarPractice_Web_Setup.exe
+        name: Download Installer

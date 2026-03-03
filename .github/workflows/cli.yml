@@ -45,6 +45,12 @@ jobs:
           arch: 'win64_llvm_mingw' 
           tools: 'tools_ifw tools_llvm_mingw1706 tools_ninja tools_cmake'
 
+      - name: Change Version
+        shell: bash
+        run: |
+          VERSION=$(git describe --tags --always --abbrev=0)
+          sed -i "s/0.0.0/$VERSION/g" CMakeLists.txt
+
       - name: Build Application (CMake)
         shell: bash
         run: |
