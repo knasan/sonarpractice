@@ -815,7 +815,7 @@ void ImportDialog::showSourceMenu(const QPoint &pos) {
         collectItemsByHashRecursive(sourceModel_m->invisibleRootItem(), currentHash, dups);
 
         if (dups.size() > 1) {
-            QMenu* jumpMenu = menu.addMenu(tr("Show other locations..."));
+            QMenu* jumpMenu = menu.addMenu(tr("Go to duplicate"));
             for (QStandardItem* dupItem : std::as_const(dups)) {
                 QString path = dupItem->data(RoleFilePath).toString();
                 QAction* action = jumpMenu->addAction(path);

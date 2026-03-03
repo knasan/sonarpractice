@@ -455,7 +455,7 @@ void LibraryPage::handleRenameFile(const QModelIndex &index)
     QFileInfo oldFileInfo(oldFullPath);
 
     bool ok;
-    QString newFileName = QInputDialog::getText(this, tr("Expert: Rename File"),
+    QString newFileName = QInputDialog::getText(this, tr("Rename File"),
                                                 tr("New filename (with extension):"),
                                                 QLineEdit::Normal,
                                                 oldFileInfo.fileName(), &ok);
