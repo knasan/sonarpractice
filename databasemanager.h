@@ -95,7 +95,7 @@ public:
     [[nodiscard]] QString getNoteForDay(int songId, QDate date);
     [[nodiscard]] DatabaseManager::SongDetails getSongDetails(qlonglong songId);
 
-    [[nodiscard]] QList<DatabaseManager::SongDetails> getFilteredFiles(bool gp, bool audio, bool video, bool pdf, bool unlinkedOnly);
+    [[nodiscard]] QList<DatabaseManager::SongDetails> getFilteredFiles(bool gp, bool audio, bool video, bool doc, bool unlinkedOnly);
 
     [[nodiscard]] bool updateSong(int songId, const QString &title, int artistId, int tuningId, int bpm);
 

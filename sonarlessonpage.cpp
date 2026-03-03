@@ -1200,7 +1200,6 @@ void SonarLessonPage::onSongChanged(int index) {
         }
     }
 
-
     int oldFileId = songSelector_m->itemData(lastSelectedIndex_m, SelectorRole::FileIdRole).toInt();
     QString oldPath = currentSongPath_m;
     if (oldFileId > 0 && FileUtils::isMutable(oldPath)) {
@@ -1209,6 +1208,17 @@ void SonarLessonPage::onSongChanged(int index) {
 
     // Data directly from the ProxyModel (which points to the SourceModel)
     QModelIndex proxyIndex = proxyModel_m->index(index, 0);
+    QModelIndex sourceIndex = proxyModel_m->mapToSource(proxyIndex);
+
+    int sId = 0;
+
+    if (sourceIndex.isValid()) {
+        sId = sourceIndex.data(SelectorRole::SongIdRole).toInt();
+        auto recentSessions = dbManager_m->getLastSessions(sId, 3);
+        updatePracticeTable(recentSessions);
+    }
+
+    if(sId == 0) return;
 
     // Different roles to read data directly from RAM
     // (You must populate these roles during the initial load!)
@@ -1216,9 +1226,6 @@ void SonarLessonPage::onSongChanged(int index) {
     QString title  = proxyModel_m->data(proxyIndex, TitleRole).toString();
     QString tempo  = proxyModel_m->data(proxyIndex, TempoRole).toString();
     QString tuning = proxyModel_m->data(proxyIndex, TuningRole).toString();
-
-    qDebug() << "SongId: " << getCurrentSongId();
-    qDebug() << "FileId: " << getCurrentFileId();
 
     artist_m->setText(artist);
     title_m->setText(title);
@@ -1229,15 +1236,6 @@ void SonarLessonPage::onSongChanged(int index) {
     currentSongPath_m = proxyModel_m->data(proxyIndex, PathRole).toString();
     btnGpIcon_m->setEnabled(!currentSongPath_m.isEmpty());
 
-    QModelIndex sourceIndex = proxyModel_m->mapToSource(proxyIndex);
-
-    int sId = 0;
-
-    if (sourceIndex.isValid()) {
-        sId = sourceIndex.data(SelectorRole::SongIdRole).toInt();
-        auto recentSessions = dbManager_m->getLastSessions(sId, 3);
-        updatePracticeTable(recentSessions);
-    }
 
     QList<DatabaseManager::RelatedFile> allFiles = dbManager_m->getFilesByRelation(sId);
     QList<DatabaseManager::RelatedFile> gpFiles, audioFiles, videoFiles, pdfFiles;
@@ -1724,23 +1722,25 @@ void SonarLessonPage::initialLoadFromDb() {
     isLoading_m = true;
     sourceModel_m->clear();
 
-    auto allSongs = dbManager_m->getFilteredFiles(true, true, true, true, false);
+    bool unlikeCheck = false;
+
+    btnFilterGp_m->setChecked(Qt::Checked);
+    btnFilterAudio_m->setChecked(Qt::Checked);
+    btnFilterVideo_m->setChecked(Qt::Checked);
+    btnFilterDocument_m->setChecked(Qt::Checked);
+
+    bool gpCheck = btnFilterGp_m->isChecked();
+    bool audioCheck = btnFilterAudio_m->isChecked();
+    bool videoCheck = btnFilterVideo_m->isChecked();
+    bool docCheck = btnFilterDocument_m->isChecked();
+
+    // all true and unlike false = load all from database
+    auto allSongs = dbManager_m->getFilteredFiles(gpCheck, audioCheck, videoCheck, docCheck, unlikeCheck);
 
     for (const auto &song : std::as_const(allSongs)) {
         QString display;
 
-        // 1. Check if the artist and title fields are filled in appropriately.
-        // bool hasArtist = !song.artist.isEmpty() && song.artist.toLower() != "unknown artist";
-        // bool hasTitle  = !song.title.isEmpty()  && song.title.toLower()  != "unknown";
-        // if (hasArtist && hasTitle) {
-        //     display = song.artist + " - " + song.title + " (" + QFileInfo(song.fullPath).fileName() + ")";
-        // } else {
-        //     // 2.Fallback: If everything is "Unknown", we take the filename.
-        //     display = QFileInfo(song.fullPath).fileName();
-        // }
-
         display = QFileInfo(song.fullPath).fileName();
-        // qDebug() << "SongId: " << song.id << ", File: " << song.fullPath;
 
         QStandardItem* item = new QStandardItem(display);
         item->setData(QVariant::fromValue(song.id), SelectorRole::FileIdRole);
@@ -1754,9 +1754,30 @@ void SonarLessonPage::initialLoadFromDb() {
         sourceModel_m->appendRow(item);
     }
 
-    if (proxyModel_m->rowCount() > 0) {
-        songSelector_m->setCurrentIndex(0);
-        onSongChanged(0);
+    btnFilterGp_m->setChecked(Qt::Checked);
+    btnFilterAudio_m->setChecked(Qt::Unchecked);
+    btnFilterVideo_m->setChecked(Qt::Unchecked);
+    btnFilterDocument_m->setChecked(Qt::Unchecked);
+
+    // trigger filters
+    QModelIndexList matches = sourceModel_m->match(sourceModel_m->index(0, 0), SelectorRole::FileIdRole, getCurrentSongId(), 1, Qt::MatchExactly);
+    if (matches.isEmpty()) return;
+
+    QModelIndex sourceIndex = matches.first();
+    QString filePath = sourceIndex.data(SelectorRole::PathRole).toString();
+
+    // Adjust the filter (so that the song is visible in the proxy)
+    updateFilterButtonsForFile(filePath);
+
+    // Trigger the change in the selector (triggers onSongChanged)
+    QModelIndex proxyIndex = proxyModel_m->mapFromSource(sourceIndex);
+    if (proxyIndex.isValid()) {
+        songSelector_m->setCurrentIndex(proxyIndex.row());
+
+        // Calendar check: Only if onSongChanged has NOT been canceled.
+        if (songSelector_m->currentIndex() == proxyIndex.row()) {
+            calendar_m->setSelectedDate(QDate::currentDate());
+        }
     }
 
     isLoading_m = false;

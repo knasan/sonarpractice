@@ -6,6 +6,7 @@
 - FNVH1: fixed false positiv smalls files
 - Feature: Message for unsaved session
 - Hash when openFile pressed, make hash update before before switch song. #12
+- Fixed wrong song information - startup
 
 02.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
