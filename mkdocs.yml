@@ -43,5 +43,5 @@ extra:
     Besuche uns auf <a href="https://github.com/knasan/sonarpractice">GitHub</a>.
   social:
       - icon: fontawesome/solid/download
-        link: https://dein-username.github.io/sonarpractice/download/SonarPractice_Web_Setup.exe
+        link: https://knasan.github.io/sonarpractice/download/SonarPractice_Web_Setup.exe
         name: Download Installer
