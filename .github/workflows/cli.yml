@@ -22,6 +22,13 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Get Clean Version
+        shell: bash
+        run: |
+          # Hier ist das Repo noch im Originalzustand
+          VERSION=$(git describe --tags --always --abbrev=0)
+          echo "APP_VERSION=$VERSION" >> $GITHUB_ENV
+
       - name: List Available Qt Tools
         shell: bash
         run: |
@@ -38,12 +45,6 @@ jobs:
           arch: 'win64_llvm_mingw' 
           tools: 'tools_ifw tools_llvm_mingw1706 tools_ninja tools_cmake'
 
-      - name: Update Version in CMakeLists.txt
-        shell: bash
-        run: |
-          VERSION=$(git describe --tags --always --abbrev=0)
-          sed -i "s/VERSION 0.0.0/VERSION $VERSION/g" CMakeLists.txt || exit 1
-
       - name: Build Application (CMake)
         shell: bash
         run: |
@@ -54,6 +55,7 @@ jobs:
           
           export PATH="$QT_CMAKE_BIN:$LLVM_BIN:$NINJA_BIN:$PATH"
 
+          rm -r build 
           mkdir build && cd build
           
           "$QT_CMAKE_BIN/cmake.exe" -G "Ninja" \
