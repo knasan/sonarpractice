@@ -28,16 +28,14 @@ fi
 
 # --- 2. Vorbereitung der Ordner ---
 tmpDir="tmp"
+dataDir="$INSTALLERDIR/packages/io.github.knasan.sonarpractice/data"
 
 # --- 1.5. Alte Altlasten vernichten ---
 echo "Reinige Arbeitsverzeichnisse..."
 rm -rf "$INSTALLERDIR/repo"
 rm -rf "$INSTALLERDIR/config/config.xml"
 rm -rf "$INSTALLERDIR/packages/io.github.knasan.sonarpractice/meta/package.xml"
-rm -rf "$dataDir"  # Löscht den alten Inhalt von packages/.../data/
-mkdir -p "$dataDir"
-
-dataDir="$INSTALLERDIR/packages/io.github.knasan.sonarpractice/data"
+rm -rf "$dataDir"
 
 mkdir -p "$dataDir"
 mkdir -p "$tmpDir"

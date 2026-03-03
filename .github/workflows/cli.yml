@@ -56,7 +56,7 @@ jobs:
           export PATH="$QT_CMAKE_BIN:$LLVM_BIN:$NINJA_BIN:$PATH"
 
           rm -rf build 
-          mkdir build && cd build
+          mkdir -p build && cd build
           
           "$QT_CMAKE_BIN/cmake.exe" -G "Ninja" \
           -DCMAKE_BUILD_TYPE=Release \
