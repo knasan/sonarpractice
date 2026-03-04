@@ -10,12 +10,13 @@
 #include <QLineEdit>
 #include <QSortFilterProxyModel>
 #include <QStandardItem>
+#include <QTextBrowser>
 #include <QWidget>
 
 class QPushButton;
 class QProgressBar;
 class QTableWidget;
-class QTextEdit;
+class QTextBrowser;
 class QSpinBox;
 class QLabel;
 class QComboBox;
@@ -45,9 +46,6 @@ public:
         ReminderFileIdRole = Qt::UserRole + 2,
         ReminderSongTitle = Qt::UserRole + 3,
     };
-
-protected:
-    bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
     void initialLoadFromDb();
@@ -132,7 +130,7 @@ private:
     QTableWidget* practiceTable_m;
 
     // Notes Section
-    QTextEdit* notesEdit_m;
+    QTextBrowser* notesEdit_m;
     QPushButton* btnBold_m;
     QPushButton* btnItalic_m;
     QPushButton* btnHeader1_m;
@@ -140,6 +138,11 @@ private:
     QPushButton* btnList_m;
     QPushButton* btnCheck_m;
     QPushButton* btnAddReminder_m;
+
+    QPushButton* btnEditNotes_m;
+
+    QTimer* saveNotesTimer_m;
+    QTimer* savePracticeTimer_m;
 
     // Resource Buttons
     QPushButton* btnPdfIcon_m;
@@ -179,9 +182,14 @@ private:
 
     // Data
     QString currentSongPath_m;
+
     int currentFileId_m{-1};
     int lastSelectedIndex_m{-1};
     int lastSongId_m{-1};
+
+    QString rawMarkdown_m;
+    QString placeHolder_m;
+
     QList<PracticeSession> currentSessions_m;
     QList<PracticeSession> referenceSessions_m;
 
@@ -203,6 +211,10 @@ private slots:
     void addTableRow();
     void removeTableRow();
     void onAddReminderClicked();
+    void toggleEditMode();
+
+    void onBtnBoldClicked();
+    void onBtnItalicClicked();
 
 public slots:
     void markReloadPage() {

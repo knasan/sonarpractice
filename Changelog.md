@@ -1,5 +1,12 @@
 # Changelog
 
+05.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- Notes Markdown fixes (hyperlink and more)
+- Add auto save for notes (10 sec)
+- Add auto save for practice table (30 sec)
+- Note edit workflow improved by an Edit and Preview button
+
 03.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Data import from Menu reload page fixed
