@@ -1,5 +1,9 @@
 # Changelog
 
+06.03.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- fix load note text from songId
+
 05.03.26, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - Notes Markdown fixes (hyperlink and more)

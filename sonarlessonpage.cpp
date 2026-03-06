@@ -1562,7 +1562,6 @@ void SonarLessonPage::loadJournalForDay(int songId, QDate date) {
 
     if (!rawMarkdown_m.isEmpty()) {
         isPlaceholderActive_m = false;
-        rawMarkdown_m = placeHolder_m;
         notesEdit_m->setMarkdown(rawMarkdown_m);
     } else {
         rawMarkdown_m = placeHolder_m;
