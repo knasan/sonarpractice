@@ -445,8 +445,10 @@ void SonarLessonPage::onEditSongClicked() {
 
         // Call up the update function in the DatabaseManager
         if(!dbManager_m->updateSong(songId, newTitle, artistId, tuningId, newBpm)) {
+            statusLabel_m->setStyleSheet("color: read");
             statusLabel_m->setText(savedMessageFailed_m);
         } else {
+            statusLabel_m->setStyleSheet("color: green");
             showSaveMessage(savedMessage_m);
             // load DB and reselect the Song
             initialLoadFromDb();
@@ -615,8 +617,10 @@ void SonarLessonPage::onEditReminder(int reminderId, const QString title) {
         ReminderDialog::ReminderData newData = dlg.getResults();
 
         if(!dbManager_m->updateReminder(reminderId, newData)) {
+            statusLabel_m->setStyleSheet("color: read");
             showSaveMessage(savedMessageFailed_m);
         } else {
+            statusLabel_m->setStyleSheet("color: green");
             showSaveMessage(savedMessage_m);
         }
 
@@ -1535,9 +1539,11 @@ bool SonarLessonPage::saveTableRowsToDatabase() {
     bool allOk = dbManager_m->saveTableSessions(songId, calendar_m->selectedDate(), sessions);
     if (allOk) {
         isDirtyTable_m = false;
+        statusLabel_m->setStyleSheet("color: green");
         showSaveMessage(savedMessage_m);
         updateButtonState();
     } else {
+        statusLabel_m->setStyleSheet("color: read");
         showSaveMessage(savedMessageFailed_m);
     }
 
