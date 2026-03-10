@@ -1,5 +1,11 @@
 # Changelog
 
+11.03.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- The SQL query for Notes has been modified so that the last entry that existed
+at that time is always displayed. This prevents notes from simply not being shown,
+and also allows notes to be edited retroactively if they were loaded via the calendar.
+
 06.03.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - fix load note text from songId

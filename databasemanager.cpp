@@ -1174,9 +1174,13 @@ QString DatabaseManager::getNoteForDay(int songId, QDate date)
     // Convert date to ISO format yyyy-MM-dd
     QString dateStr = date.toString("yyyy-MM-dd");
 
-    q.prepare("SELECT note_text FROM practice_journal "
-              "WHERE song_id = ? AND DATE(practice_date) = ? "
-              "LIMIT 1");
+    q.prepare("SELECT note_text, practice_date FROM practice_journal "
+              "WHERE song_id = ? "
+              "AND note_text IS NOT NULL "
+              "AND note_text != '' "
+              "AND practice_date <= ? "
+              "ORDER BY practice_date DESC "
+              "LIMIT 1;");
     q.addBindValue(songId);
     q.addBindValue(dateStr);
 

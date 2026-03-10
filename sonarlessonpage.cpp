@@ -966,12 +966,9 @@ void SonarLessonPage::sitesConnects() {
         // Retrieve the newly selected date from the calendar.
         QDate selectedDate = calendar_m->selectedDate();
 
-        // Get the current song ID from the selector.
-        int songId = songSelector_m->currentData().toInt();
-
         // load the data for this combination
         notesEdit_m->clear();
-        loadJournalForDay(songId, selectedDate);
+        loadJournalForDay(getCurrentSongId(), selectedDate);
         updateReminderTable(selectedDate);
     });
 
