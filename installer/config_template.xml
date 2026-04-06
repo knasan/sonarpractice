@@ -15,7 +15,7 @@
     <TargetDir>@ApplicationsDir@/SonarPractice</TargetDir>
     <RunProgram>@TargetDir@/SonarPractice.exe</RunProgram>
     <RunProgramDescription>SonarPractice jetzt starten</RunProgramDescription>
-    <RequiresAdminRights>true</RequiresAdminRights>
+    <RunPrivileged>true</RunPrivileged>
     <ControlScript>controlscript.qs</ControlScript>
     <Logo>logo.png</Logo>
     <InstallerWindowIcon>logo.ico</InstallerWindowIcon>
