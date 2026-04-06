@@ -1,5 +1,13 @@
 # Changelog
 
+06.04.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+Add "RequiresAdminRights" to the installation configuration template and remove it from the package template.
+
+25.03.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
+
+- fix: show preview (open file path) from file dialog
+
 11.03.2026, Sandy Marko Knauer <sandy.marko.k@gmail.com>
 
 - The SQL query for Notes has been modified so that the last entry that existed

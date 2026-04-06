@@ -344,7 +344,6 @@ int LibraryPage::getCurrentSongId()
     // retrieve SongIdRole from data
     int songId = index.data(LibraryPage::SongIdRole).toInt();
 
-    qDebug() << "[LibraryPage] Resolved SongId from Role:" << songId;
     return songId;
 }
 

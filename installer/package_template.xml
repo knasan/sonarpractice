@@ -7,7 +7,6 @@
     <Publisher>Sandy Marko Knauer</Publisher>
     <Default>true</Default>
     <Script>installscript.qs</Script>
-    <RequiresAdminRights>true</RequiresAdminRights>
     <Licenses>
         <License name="Lizenzvereinbarung (GNU GPL v3)" file="license.txt" />
     </Licenses>

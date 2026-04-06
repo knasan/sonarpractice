@@ -11,8 +11,8 @@
 #include <QButtonGroup>
 #include <QMenu>
 
-FileSelectionDialog::FileSelectionDialog(int excludeId, QWidget *parent)
-    : QDialog(parent)
+FileSelectionDialog::FileSelectionDialog(int excludeId, QWidget *parent,DatabaseManager *dbManager)
+    : QDialog(parent), dbManager_m(dbManager)
 {
     setWindowTitle(tr("Select files to link"));
     setMinimumSize(450, 600);
@@ -136,8 +136,13 @@ void FileSelectionDialog::showContextMenu(const QPoint &pos) {
     QListWidgetItem *item = listWidget_m->itemAt(pos);
     if (!item) return;
 
-    QString fullPath = item->data(Qt::UserRole + 2).toString();
-    if (fullPath.isEmpty()) return;
+    QString relPath        = item->data(Qt::UserRole + 2).toString();
+    if (relPath.isEmpty()) return;
+
+    // is managed
+    bool isManaged = (dbManager_m->getSetting("is_managed", QString("false")) == "true");
+    QString baseDir = isManaged ? dbManager_m->getManagedPath() : "";
+    QString fullPath = QDir::cleanPath(isManaged ? baseDir + "/" + relPath : relPath);
 
     QMenu menu(this);
     QAction *openAction = menu.addAction(tr("Open file for review"));
